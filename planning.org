@@ -1,0 +1,32 @@
+#+TITLE: Planning
+
+* Scoping
+
+** APIs
+
+   Google Books API: https://developers.google.com/books/
+   relevant API doc: https://developers.google.com/books/docs/v1/using
+
+   Allows for searching by title, author and provides links for thumbnails.
+
+   Example:
+   #+BEGIN_SRC bash
+      curl -X GET 'https://www.googleapis.com/books/v1/volumes?q=intitle:flowers+inauthor:keyes'
+   #+END_SRC
+
+* Emacs Client
+
+** Transient
+
+   Main menu:
+   - *Search*"
+     With variables matching the google search keywords
+   - *My shelves*
+
+** Book List buffer
+
+   Style should be similar to ~steam.el~, with thumbnails follow by meta
+   information (can we use org in some kind of ro mode for this?). Key input
+   would be replaced by commands operating on the book section the cursor is
+   currently on. For example, ~a~ lists books by the current author, ~s~ saves
+   the book to a given shelf.

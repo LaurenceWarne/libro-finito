@@ -1,0 +1,271 @@
+{
+  "kind": "books#volumes",
+  "totalItems": 4,
+  "items": [
+    {
+      "kind": "books#volume",
+      "id": "gK98gXR8onwC",
+      "etag": "LuU/7Wl/8hw",
+      "selfLink": "https://www.googleapis.com/books/v1/volumes/gK98gXR8onwC",
+      "volumeInfo": {
+        "title": "Flowers for Algernon",
+        "subtitle": "A One-act Play",
+        "authors": [
+          "David Rogers",
+          "Daniel Keyes"
+        ],
+        "publisher": "Dramatic Publishing",
+        "publishedDate": "1969",
+        "industryIdentifiers": [
+          {
+            "type": "ISBN_10",
+            "identifier": "0871293870"
+          },
+          {
+            "type": "ISBN_13",
+            "identifier": "9780871293879"
+          }
+        ],
+        "readingModes": {
+          "text": false,
+          "image": true
+        },
+        "pageCount": 32,
+        "printType": "BOOK",
+        "categories": [
+          "American drama"
+        ],
+        "averageRating": 5,
+        "ratingsCount": 1,
+        "maturityRating": "NOT_MATURE",
+        "allowAnonLogging": false,
+        "contentVersion": "0.0.2.0.preview.1",
+        "panelizationSummary": {
+          "containsEpubBubbles": false,
+          "containsImageBubbles": false
+        },
+        "imageLinks": {
+          "smallThumbnail": "http://books.google.com/books/content?id=gK98gXR8onwC&printsec=frontcover&img=1&zoom=5&edge=curl&source=gbs_api",
+          "thumbnail": "http://books.google.com/books/content?id=gK98gXR8onwC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api"
+        },
+        "language": "en",
+        "previewLink": "http://books.google.co.uk/books?id=gK98gXR8onwC&printsec=frontcover&dq=intitle:flowers+inauthor:keyes&hl=&cd=1&source=gbs_api",
+        "infoLink": "http://books.google.co.uk/books?id=gK98gXR8onwC&dq=intitle:flowers+inauthor:keyes&hl=&source=gbs_api",
+        "canonicalVolumeLink": "https://books.google.com/books/about/Flowers_for_Algernon.html?hl=&id=gK98gXR8onwC"
+      },
+      "saleInfo": {
+        "country": "GB",
+        "saleability": "NOT_FOR_SALE",
+        "isEbook": false
+      },
+      "accessInfo": {
+        "country": "GB",
+        "viewability": "PARTIAL",
+        "embeddable": true,
+        "publicDomain": false,
+        "textToSpeechPermission": "ALLOWED",
+        "epub": {
+          "isAvailable": false
+        },
+        "pdf": {
+          "isAvailable": false
+        },
+        "webReaderLink": "http://play.google.com/books/reader?id=gK98gXR8onwC&hl=&printsec=frontcover&source=gbs_api",
+        "accessViewStatus": "SAMPLE",
+        "quoteSharingAllowed": false
+      }
+    },
+    {
+      "kind": "books#volume",
+      "id": "VbOtAQAACAAJ",
+      "etag": "N39hsjvzoBM",
+      "selfLink": "https://www.googleapis.com/books/v1/volumes/VbOtAQAACAAJ",
+      "volumeInfo": {
+        "title": "Flowers for Algernon",
+        "authors": [
+          "Daniel Keyes"
+        ],
+        "publisher": "Weidenfeld & Nicolson",
+        "publishedDate": "2017-07-13",
+        "description": "'A masterpiece of poignant brilliance . . . heartbreaking' Guardian Charlie Gordon, a floor sweeper born with an unusually low IQ, has been chosen as the perfect subject for an experimental surgery that doctors hope will increase his intelligence - a procedure that has been highly successful when tested on a lab mouse named Algernon. All Charlie wants is to be smart and have friends, but the treatement turns him into a genius. Then Algernon begins to fade. What will become of Charlie?",
+        "industryIdentifiers": [
+          {
+            "type": "ISBN_10",
+            "identifier": "1474605737"
+          },
+          {
+            "type": "ISBN_13",
+            "identifier": "9781474605731"
+          }
+        ],
+        "readingModes": {
+          "text": false,
+          "image": false
+        },
+        "pageCount": 256,
+        "printType": "BOOK",
+        "categories": [
+          "Brain"
+        ],
+        "averageRating": 5,
+        "ratingsCount": 1,
+        "maturityRating": "NOT_MATURE",
+        "allowAnonLogging": false,
+        "contentVersion": "preview-1.0.0",
+        "panelizationSummary": {
+          "containsEpubBubbles": false,
+          "containsImageBubbles": false
+        },
+        "imageLinks": {
+          "smallThumbnail": "http://books.google.com/books/content?id=VbOtAQAACAAJ&printsec=frontcover&img=1&zoom=5&source=gbs_api",
+          "thumbnail": "http://books.google.com/books/content?id=VbOtAQAACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api"
+        },
+        "language": "en",
+        "previewLink": "http://books.google.co.uk/books?id=VbOtAQAACAAJ&dq=intitle:flowers+inauthor:keyes&hl=&cd=2&source=gbs_api",
+        "infoLink": "http://books.google.co.uk/books?id=VbOtAQAACAAJ&dq=intitle:flowers+inauthor:keyes&hl=&source=gbs_api",
+        "canonicalVolumeLink": "https://books.google.com/books/about/Flowers_for_Algernon.html?hl=&id=VbOtAQAACAAJ"
+      },
+      "saleInfo": {
+        "country": "GB",
+        "saleability": "NOT_FOR_SALE",
+        "isEbook": false
+      },
+      "accessInfo": {
+        "country": "GB",
+        "viewability": "NO_PAGES",
+        "embeddable": false,
+        "publicDomain": false,
+        "textToSpeechPermission": "ALLOWED",
+        "epub": {
+          "isAvailable": false
+        },
+        "pdf": {
+          "isAvailable": false
+        },
+        "webReaderLink": "http://play.google.com/books/reader?id=VbOtAQAACAAJ&hl=&printsec=frontcover&source=gbs_api",
+        "accessViewStatus": "NONE",
+        "quoteSharingAllowed": false
+      }
+    },
+    {
+      "kind": "books#volume",
+      "id": "uCqioAEACAAJ",
+      "etag": "accQWBbvsv0",
+      "selfLink": "https://www.googleapis.com/books/v1/volumes/uCqioAEACAAJ",
+      "volumeInfo": {
+        "title": "Flowers for Algernon - Downloadable Multiple Critical Perspectives",
+        "authors": [
+          "Daniel Keyes"
+        ],
+        "publishedDate": "2011-01-01",
+        "description": "Probe the depth and richness of your favorite titles and usher your students into an understanding of what really made us want to teach literature in the first place. Each guide offers clear and concise explanations of three different critical perspectives.",
+        "industryIdentifiers": [
+          {
+            "type": "ISBN_10",
+            "identifier": "1935467972"
+          },
+          {
+            "type": "ISBN_13",
+            "identifier": "9781935467977"
+          }
+        ],
+        "readingModes": {
+          "text": false,
+          "image": false
+        },
+        "printType": "BOOK",
+        "maturityRating": "NOT_MATURE",
+        "allowAnonLogging": false,
+        "contentVersion": "preview-1.0.0",
+        "language": "en",
+        "previewLink": "http://books.google.co.uk/books?id=uCqioAEACAAJ&dq=intitle:flowers+inauthor:keyes&hl=&cd=3&source=gbs_api",
+        "infoLink": "http://books.google.co.uk/books?id=uCqioAEACAAJ&dq=intitle:flowers+inauthor:keyes&hl=&source=gbs_api",
+        "canonicalVolumeLink": "https://books.google.com/books/about/Flowers_for_Algernon_Downloadable_Multip.html?hl=&id=uCqioAEACAAJ"
+      },
+      "saleInfo": {
+        "country": "GB",
+        "saleability": "NOT_FOR_SALE",
+        "isEbook": false
+      },
+      "accessInfo": {
+        "country": "GB",
+        "viewability": "NO_PAGES",
+        "embeddable": false,
+        "publicDomain": false,
+        "textToSpeechPermission": "ALLOWED",
+        "epub": {
+          "isAvailable": false
+        },
+        "pdf": {
+          "isAvailable": false
+        },
+        "webReaderLink": "http://play.google.com/books/reader?id=uCqioAEACAAJ&hl=&printsec=frontcover&source=gbs_api",
+        "accessViewStatus": "NONE",
+        "quoteSharingAllowed": false
+      },
+      "searchInfo": {
+        "textSnippet": "Probe the depth and richness of your favorite titles and usher your students into an understanding of what really made us want to teach literature in the first place."
+      }
+    },
+    {
+      "kind": "books#volume",
+      "id": "xYK5oAEACAAJ",
+      "etag": "JADn5ZCc/Kg",
+      "selfLink": "https://www.googleapis.com/books/v1/volumes/xYK5oAEACAAJ",
+      "volumeInfo": {
+        "title": "Flowers for Algernon - Multiple Critical Perspectives",
+        "authors": [
+          "Daniel Keyes"
+        ],
+        "publishedDate": "2011-01-01",
+        "description": "Probe the depth and richness of your favorite titles and usher your students into an understanding of what really made us want to teach literature in the first place. Each guide offers clear and concise explanations of three different critical perspectives.",
+        "industryIdentifiers": [
+          {
+            "type": "ISBN_10",
+            "identifier": "1935467964"
+          },
+          {
+            "type": "ISBN_13",
+            "identifier": "9781935467960"
+          }
+        ],
+        "readingModes": {
+          "text": false,
+          "image": false
+        },
+        "printType": "BOOK",
+        "maturityRating": "NOT_MATURE",
+        "allowAnonLogging": false,
+        "contentVersion": "preview-1.0.0",
+        "language": "en",
+        "previewLink": "http://books.google.co.uk/books?id=xYK5oAEACAAJ&dq=intitle:flowers+inauthor:keyes&hl=&cd=4&source=gbs_api",
+        "infoLink": "http://books.google.co.uk/books?id=xYK5oAEACAAJ&dq=intitle:flowers+inauthor:keyes&hl=&source=gbs_api",
+        "canonicalVolumeLink": "https://books.google.com/books/about/Flowers_for_Algernon_Multiple_Critical_P.html?hl=&id=xYK5oAEACAAJ"
+      },
+      "saleInfo": {
+        "country": "GB",
+        "saleability": "NOT_FOR_SALE",
+        "isEbook": false
+      },
+      "accessInfo": {
+        "country": "GB",
+        "viewability": "NO_PAGES",
+        "embeddable": false,
+        "publicDomain": false,
+        "textToSpeechPermission": "ALLOWED",
+        "epub": {
+          "isAvailable": false
+        },
+        "pdf": {
+          "isAvailable": false
+        },
+        "webReaderLink": "http://play.google.com/books/reader?id=xYK5oAEACAAJ&hl=&printsec=frontcover&source=gbs_api",
+        "accessViewStatus": "NONE",
+        "quoteSharingAllowed": false
+      },
+      "searchInfo": {
+        "textSnippet": "Probe the depth and richness of your favorite titles and usher your students into an understanding of what really made us want to teach literature in the first place."
+      }
+    }
+  ]
+}
