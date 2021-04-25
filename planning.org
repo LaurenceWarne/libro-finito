@@ -14,6 +14,22 @@
       curl -X GET 'https://www.googleapis.com/books/v1/volumes?q=intitle:flowers+inauthor:keyes'
    #+END_SRC
 
+* TODO list
+
+** Bigger things  
+*** TODO Remove poc package
+*** TODO Add test framework to sbt
+*** TODO Add docker build (with docker-compose)
+*** TODO Integrate with GH Actions
+*** TODO db backend
+*** TODO Import Goodreads shelves
+*** TODO Import Calbire collections (what are they called??)
+
+** Smaller Things
+*** TODO Log when decoding fails (ie with title: hi, author: there)
+*** TODO Sort out logging middleware
+*** TODO Add scalafix (for imports, etc)
+
 * Emacs Client
 
 ** Transient

@@ -19,6 +19,7 @@ trait BookAPI[F[_]] {
 final case class BookArgs(
     titleKeywords: Option[String],
     authorKeywords: Option[String]
+    //dropValuesWithNoThumbnail: Option[Boolean] = true.some
 )
 
 final case class GoogleBookAPI[F[_]: ConcurrentEffect](client: Client[F])
@@ -35,23 +36,31 @@ final case class GoogleBookAPI[F[_]: ConcurrentEffect](client: Client[F])
       .mkString("+")
     for {
       json <- client.expect[String](
-        s"https://www.googleapis.com/books/v1/volumes?q=$queryStr&printType=books"
+        s"https://www.googleapis.com/books/v1/volumes?q=$queryStr&printType=books&langRestrict=en"
       )
-      _ = println(decode[GoogleResponse](json))
       // We would have to use implicitly[ConcurrentEffect[F]] without
       // import cats.effect.syntax._
       googleResponse <-
         ConcurrentEffect[F].fromEither(decode[GoogleResponse](json))
-      _ = println(googleResponse)
-    } yield googleResponse.items.map(bookItem =>
-      Book(
-        bookItem.volumeInfo.title,
-        bookItem.volumeInfo.authors.head,
-        bookItem.volumeInfo.description.getOrElse("No Description!"),
-        bookItem.volumeInfo.industryIdentifiers.head.getIsbn13,
-        bookItem.volumeInfo.imageLinks.fold(emptyThumbnailUri)(_.thumbnail)
-      )
-    )
+      _ = println(decode[GoogleResponse](json))
+    } yield googleResponse.items.collect {
+      case GoogleVolume(
+            GoogleBookItem(
+              title,
+              author :: otherAuthors,
+              maybeDescription,
+              Some(GoogleImageLinks(_, largeThumbnail)),
+              industryIdentifier :: otherIdentifiers
+            )
+          ) =>
+        Book(
+          title,
+          author,
+          maybeDescription.getOrElse("No Description!"),
+          industryIdentifier.getIsbn13,
+          largeThumbnail
+        )
+    }
   }
 }
 
