@@ -20,5 +20,7 @@ lazy val fin = project
       "io.circe" %% "circe-core",
       "io.circe" %% "circe-generic",
       "io.circe" %% "circe-parser"
-    ).map(_ % circeVersion)
+    ).map(_ % circeVersion),
+    libraryDependencies += "com.disneystreaming" %% "weaver-cats" % "0.7.2" % Test,
+    testFrameworks += new TestFramework("weaver.framework.CatsEffect")
   )
