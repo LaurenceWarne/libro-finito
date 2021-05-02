@@ -1,4 +1,4 @@
-package fin.poc
+package fin.api
 
 import cats.effect.Sync
 import cats.effect.syntax._
@@ -12,16 +12,11 @@ import io.circe.parser.decode
 import io.circe.generic.semiauto._
 import cats.MonadError
 
-trait BookAPI[F[_]] {
-  def search(bookArgs: BookArgs): F[List[Book]]
-}
-
-final case class BookArgs(
-    titleKeywords: Option[String],
-    authorKeywords: Option[String]
-    //dropValuesWithNoThumbnail: Option[Boolean] = true.some
-)
-
+/**
+  * A BookAPI implementation which uses the <a href='https://developers.google.com/books/docs/v1/using'>Google Books API</a>
+  *
+  * @param client http client
+  */
 final case class GoogleBookAPI[F[_]: ConcurrentEffect](client: Client[F])
     extends BookAPI[F] {
 
@@ -32,7 +27,7 @@ final case class GoogleBookAPI[F[_]: ConcurrentEffect](client: Client[F])
 
   def search(bookArgs: BookArgs): F[List[Book]] = {
     val queryStr = (bookArgs.titleKeywords.map("intitle:" + _).toList ++
-      bookArgs.authorKeywords.map("inauthor:" + _).toList)
+      bookArgs.authorKeywords.map("inauthor:" + _))
       .mkString("+")
     for {
       json <- client.expect[String](
@@ -43,6 +38,7 @@ final case class GoogleBookAPI[F[_]: ConcurrentEffect](client: Client[F])
       googleResponse <-
         ConcurrentEffect[F].fromEither(decode[GoogleResponse](json))
       _ = println(decode[GoogleResponse](json))
+
     } yield googleResponse.items.collect {
       case GoogleVolume(
             GoogleBookItem(
@@ -64,6 +60,9 @@ final case class GoogleBookAPI[F[_]: ConcurrentEffect](client: Client[F])
   }
 }
 
+/**
+  * Utilities for decoding responses from the google books API
+  */
 object GoogleBookAPI {
 
   implicit val googleIsbnInfoDecoder: Decoder[GoogleIsbnInfo] =

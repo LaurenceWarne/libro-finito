@@ -26,6 +26,8 @@ import cats.data.OptionT
 import org.http4s.EntityDecoder
 import fs2.text
 
+import fin.api.{GoogleBookAPI, Queries}
+
 object Main extends IOApp {
 
   implicit val runtime = Runtime.default
@@ -80,15 +82,3 @@ object Main extends IOApp {
     server.as(ExitCode.Success)
   }
 }
-
-final case class Book(
-    title: String,
-    author: String,
-    description: String,
-    isbn: String,
-    thumbnailUri: String
-)
-
-final case class Queries[F[_]](
-    books: BookArgs => F[List[Book]]
-)

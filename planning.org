@@ -17,7 +17,7 @@
 * TODO list
 
 ** Bigger things  
-*** TODO Remove poc package
+*** DONE Remove poc package
 *** TODO Add test framework to sbt
 *** TODO Add docker build (with docker-compose)
 *** TODO Integrate with GH Actions
@@ -26,9 +26,11 @@
 *** TODO Import Calbire collections (what are they called??)
 
 ** Smaller Things
+*** TODO Add a logging framework
 *** TODO Log when decoding fails (ie with title: hi, author: there)
 *** TODO Sort out logging middleware
 *** TODO Add scalafix (for imports, etc)
+*** TODO Decrease/investigate memory usage
 
 * Emacs Client
 
