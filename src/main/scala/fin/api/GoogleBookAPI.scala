@@ -29,16 +29,16 @@ final case class GoogleBookAPI[F[_]: ConcurrentEffect](client: Client[F])
     val queryStr = (bookArgs.titleKeywords.map("intitle:" + _).toList ++
       bookArgs.authorKeywords.map("inauthor:" + _))
       .mkString("+")
+    val uri =
+      show"https://www.googleapis.com/books/v1/volumes?q=$queryStr&printType=books&langRestrict=en"
+    println(uri)
     for {
-      json <- client.expect[String](
-        s"https://www.googleapis.com/books/v1/volumes?q=$queryStr&printType=books&langRestrict=en"
-      )
+      json <- client.expect[String](uri)
       // We would have to use implicitly[ConcurrentEffect[F]] without
       // import cats.effect.syntax._
       googleResponse <-
         ConcurrentEffect[F].fromEither(decode[GoogleResponse](json))
-      _ = println(decode[GoogleResponse](json))
-
+      _ = println("DECODED: " + decode[GoogleResponse](json))
     } yield googleResponse.items.collect {
       case GoogleVolume(
             GoogleBookItem(

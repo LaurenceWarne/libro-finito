@@ -45,10 +45,12 @@ object Main extends IOApp {
           )
         )
       ) *>
-        service(req).flatMap { response =>
-          OptionT.liftF(IO(println("RESPONSE:   " + response))) *>
-            OptionT.liftF(IO(response))
-        }
+        service(req)
+          .onError(e => OptionT.liftF(IO(println("ERROR:    " + e))))
+          .flatMap { response =>
+            OptionT.liftF(IO(println("RESPONSE:   " + response))) *>
+              OptionT.liftF(IO(response))
+          }
     }
 
   override def run(args: List[String]): IO[ExitCode] = {
