@@ -1,7 +1,9 @@
 package fin.api
 
+import cats.MonadError
 import cats.effect.Sync
 import cats.effect.syntax._
+import cats.implicits._
 import org.http4s.client.blaze._
 import org.http4s.client._
 import org.http4s.implicits._
@@ -10,18 +12,19 @@ import org.http4s.QueryParam._
 import cats.effect.ConcurrentEffect
 import org.http4s.blaze.http.HttpClient
 import cats.implicits._
+import io.chrisdavenport.log4cats.Logger
 import io.circe._
 import io.circe.parser.decode
 import io.circe.generic.semiauto._
-import cats.MonadError
 
 /**
   * A BookAPI implementation which uses the <a href='https://developers.google.com/books/docs/v1/using'>Google Books API</a>
   *
   * @param client http client
   */
-final case class GoogleBookAPI[F[_]: ConcurrentEffect](client: Client[F])
-    extends BookAPI[F] {
+final case class GoogleBookAPI[F[_]: ConcurrentEffect: Logger](
+    client: Client[F]
+) extends BookAPI[F] {
 
   import GoogleBookAPI._
 
@@ -31,13 +34,13 @@ final case class GoogleBookAPI[F[_]: ConcurrentEffect](client: Client[F])
   def search(bookArgs: BookArgs): F[List[Book]] = {
     for {
       uri <- MonadError[F, Throwable].fromEither(uriFromArgs(bookArgs))
-      _ = println(uri)
+      _ <- Logger[F].debug(uri.toString)
       json <- client.expect[String](uri)
       // We would have to use implicitly[MonadError[F, Throwable]] without
       // import cats.effect.syntax._
       googleResponse <-
         MonadError[F, Throwable].fromEither(decode[GoogleResponse](json))
-      _ = println("DECODED: " + decode[GoogleResponse](json))
+      _ <- Logger[F].debug("DECODED: " + decode[GoogleResponse](json))
     } yield googleResponse.items.collect {
       case GoogleVolume(
             GoogleBookItem(

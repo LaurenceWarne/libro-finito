@@ -7,10 +7,14 @@ lazy val fin = project
   .in(file("."))
   .settings(
     scalaVersion := "2.13.5",
+    libraryDependencies += compilerPlugin(
+      "com.olegpy" %% "better-monadic-for" % "0.3.1"
+    ),
     libraryDependencies += "org.typelevel" %% "cats-effect" % "2.5.0",
     libraryDependencies += "com.github.ghostdogpr" %% "caliban" % "0.9.5",
     libraryDependencies += "com.github.ghostdogpr" %% "caliban-http4s" % "0.9.5",
     libraryDependencies += "com.github.ghostdogpr" %% "caliban-cats" % "0.9.5",
+    libraryDependencies += "io.chrisdavenport" %% "log4cats-slf4j" % "1.1.1",
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-dsl" % http4sVersion,
       "org.http4s" %% "http4s-blaze-server" % http4sVersion,

@@ -27,28 +27,30 @@ import org.http4s.EntityDecoder
 import fs2.text
 
 import fin.api.{GoogleBookAPI, Queries}
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import io.chrisdavenport.log4cats.Logger
 
 object Main extends IOApp {
 
   implicit val runtime = Runtime.default
 
-  def loggingMiddleware(service: HttpRoutes[IO]): HttpRoutes[IO] =
+  def loggingMiddleware(
+      service: HttpRoutes[IO]
+  )(implicit logger: Logger[IO]): HttpRoutes[IO] =
     Kleisli { req: Request[IO] =>
       OptionT.liftF(
-        IO(
-          println(
-            "REQUEST:  " + req + req.body
-              .through(text.utf8Decode)
-              .compile
-              .toList
-              .unsafeRunSync()
-          )
+        logger.info(
+          "REQUEST:  " + req + req.body
+            .through(text.utf8Decode)
+            .compile
+            .toList
+            .unsafeRunSync()
         )
       ) *>
         service(req)
-          .onError(e => OptionT.liftF(IO(println("ERROR:    " + e))))
+          .onError(e => OptionT.liftF(logger.error("ERROR:    " + e)))
           .flatMap { response =>
-            OptionT.liftF(IO(println("RESPONSE:   " + response))) *>
+            OptionT.liftF(logger.info("RESPONSE:   " + response)) *>
               OptionT.liftF(IO(response))
           }
     }
@@ -57,10 +59,11 @@ object Main extends IOApp {
     val server =
       (BlazeClientBuilder[IO](global).resource, Blocker[IO]).tupled.use {
         case (client, blocker) =>
-          val bookAPI = GoogleBookAPI[IO](client)
-          val queries = Queries[IO](bookArgs => bookAPI.search(bookArgs))
-          val api = GraphQL.graphQL(RootResolver(queries))
           for {
+            implicit0(logger: Logger[IO]) <- Slf4jLogger.create[IO]
+            bookAPI = GoogleBookAPI[IO](client)
+            queries = Queries[IO](bookArgs => bookAPI.search(bookArgs))
+            api = GraphQL.graphQL(RootResolver(queries))
             interpreter <- api.interpreterAsync[IO]
             routes: HttpRoutes[IO] =
               Http4sAdapter.makeHttpServiceF[IO, CalibanError](interpreter)

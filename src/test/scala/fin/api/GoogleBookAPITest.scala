@@ -8,8 +8,11 @@ import org.http4s.client.Client
 import org.http4s.implicits._
 import org.http4s.Response
 import fs2.Stream
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 
 object GoogleBookAPITest extends SimpleIOSuite {
+
+  implicit val logger = Slf4jLogger.unsafeCreate[IO]
 
   def mockedClient(response: String): Client[IO] =
     Client.apply[IO](_ =>
