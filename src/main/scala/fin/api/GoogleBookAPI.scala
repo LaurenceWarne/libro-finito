@@ -4,6 +4,9 @@ import cats.effect.Sync
 import cats.effect.syntax._
 import org.http4s.client.blaze._
 import org.http4s.client._
+import org.http4s.implicits._
+import org.http4s.Uri
+import org.http4s.QueryParam._
 import cats.effect.ConcurrentEffect
 import org.http4s.blaze.http.HttpClient
 import cats.implicits._
@@ -26,18 +29,14 @@ final case class GoogleBookAPI[F[_]: ConcurrentEffect](client: Client[F])
     "https://user-images.githubusercontent.com/101482/29592647-40da86ca-875a-11e7-8bc3-941700b0a323.png"
 
   def search(bookArgs: BookArgs): F[List[Book]] = {
-    val queryStr = (bookArgs.titleKeywords.map("intitle:" + _).toList ++
-      bookArgs.authorKeywords.map("inauthor:" + _))
-      .mkString("+")
-    val uri =
-      show"https://www.googleapis.com/books/v1/volumes?q=$queryStr&printType=books&langRestrict=en"
-    println(uri)
     for {
+      uri <- MonadError[F, Throwable].fromEither(uriFromArgs(bookArgs))
+      _ = println(uri)
       json <- client.expect[String](uri)
-      // We would have to use implicitly[ConcurrentEffect[F]] without
+      // We would have to use implicitly[MonadError[F, Throwable]] without
       // import cats.effect.syntax._
       googleResponse <-
-        ConcurrentEffect[F].fromEither(decode[GoogleResponse](json))
+        MonadError[F, Throwable].fromEither(decode[GoogleResponse](json))
       _ = println("DECODED: " + decode[GoogleResponse](json))
     } yield googleResponse.items.collect {
       case GoogleVolume(
@@ -79,6 +78,22 @@ object GoogleBookAPI {
 
   implicit val googleResponseDecoder: Decoder[GoogleResponse] =
     deriveDecoder[GoogleResponse]
+
+  def uriFromArgs(bookArgs: BookArgs): Either[Exception, Uri] =
+    Either.cond(
+      bookArgs.authorKeywords
+        .filterNot(_.isEmpty)
+        .nonEmpty || bookArgs.titleKeywords.filterNot(_.isEmpty).nonEmpty,
+      uri"https://www.googleapis.com/books/v1/volumes" +? (
+        "q",
+        (bookArgs.titleKeywords.filterNot(_.isEmpty).map("intitle:" + _) ++
+          bookArgs.authorKeywords.map("inauthor:" + _))
+          .mkString("+")
+      ),
+      new Exception(
+        "At least one of author keywords and title keywords must be specified"
+      )
+    )
 }
 
 final case class GoogleResponse(items: List[GoogleVolume])
