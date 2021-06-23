@@ -2,32 +2,22 @@ package fin
 
 import scala.concurrent.ExecutionContext.global
 
-import caliban.CalibanError
-import caliban.GraphQL
-import caliban.Http4sAdapter
-import caliban.RootResolver
 import caliban.interop.cats.implicits._
-import cats.data.Kleisli
-import cats.data.OptionT
-import cats.effect.Blocker
-import cats.effect.ExitCode
-import cats.effect.IO
-import cats.effect.IOApp
+import caliban.{CalibanError, GraphQL, Http4sAdapter, RootResolver}
+import cats.data.{Kleisli, OptionT}
+import cats.effect.{Blocker, ExitCode, IO, IOApp}
 import cats.implicits._
 import fs2.text
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import org.http4s.HttpRoutes
-import org.http4s.Request
-import org.http4s.StaticFile
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.{HttpRoutes, Request, StaticFile}
 import zio.Runtime
 
-import fin.service.GoogleBookInfoService
-import fin.service.Queries
+import fin.service.{GoogleBookInfoService, Queries}
 
 object Main extends IOApp {
 
