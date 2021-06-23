@@ -14,8 +14,6 @@ import cats.effect.ExitCode
 import cats.effect.IO
 import cats.effect.IOApp
 import cats.implicits._
-import fin.service.GoogleBookInfoService
-import fin.service.Queries
 import fs2.text
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -27,6 +25,9 @@ import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
 import zio.Runtime
+
+import fin.service.GoogleBookInfoService
+import fin.service.Queries
 
 object Main extends IOApp {
 

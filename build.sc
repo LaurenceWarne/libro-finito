@@ -10,7 +10,6 @@ trait LibroFinitoModule
   def scalaVersion    = Deps.scalaVersion
   def scalafixIvyDeps = Agg(Deps.Scalafix.organizeImports)
   def scalacOptions   = Options.scalacOptions
-  //def scalacPluginIvyDeps = Agg(Deps.Compiler.semanticDb)
 }
 
 trait LibroFinitoTest
@@ -25,13 +24,13 @@ trait LibroFinitoTest
       ivy"com.disneystreaming::weaver-framework:0.4.3"
     )
   // https://github.com/disneystreaming/weaver-test
-  def testFrameworks = Seq("weaver.framework.TestFramework")
+  def testFramework = "weaver.framework.TestFramework"
 }
 
 object api extends LibroFinitoModule {
 
   def moduleDeps = Seq(core)
-  def forkArgs   = Seq("-Xmx100m")
+  //def forkArgs   = Seq("-Xmx100m")
 
   def scalacPluginIvyDeps =
     super.scalacPluginIvyDeps() ++ Agg(Deps.Compiler.betterMonadicFor)
