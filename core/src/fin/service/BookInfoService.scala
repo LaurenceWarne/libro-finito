@@ -1,5 +1,5 @@
-package fin.api
+package fin.service
 
-trait BookAPI[F[_]] {
+trait BookInfoService[F[_]] {
   def search(bookArgs: BookArgs): F[List[Book]]
 }

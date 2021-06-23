@@ -1,4 +1,4 @@
-package fin.api
+package fin.service
 
 final case class Book(
     title: String,

@@ -1,4 +1,4 @@
-package fin.api
+package fin.service
 
 import cats.MonadError
 import cats.effect.Sync
@@ -18,15 +18,15 @@ import io.circe.parser.decode
 import io.circe.generic.semiauto._
 
 /**
-  * A BookAPI implementation which uses the <a href='https://developers.google.com/books/docs/v1/using'>Google Books API</a>
+  * A BookInfoService implementation which uses the <a href='https://developers.google.com/books/docs/v1/using'>Google Books API</a>
   *
   * @param client http client
   */
-final case class GoogleBookAPI[F[_]: ConcurrentEffect: Logger](
+final case class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger](
     client: Client[F]
-) extends BookAPI[F] {
+) extends BookInfoService[F] {
 
-  import GoogleBookAPI._
+  import GoogleBookInfoService._
 
   private val emptyThumbnailUri =
     "https://user-images.githubusercontent.com/101482/29592647-40da86ca-875a-11e7-8bc3-941700b0a323.png"
@@ -65,7 +65,7 @@ final case class GoogleBookAPI[F[_]: ConcurrentEffect: Logger](
 /**
   * Utilities for decoding responses from the google books API
   */
-object GoogleBookAPI {
+object GoogleBookInfoService {
 
   implicit val googleIsbnInfoDecoder: Decoder[GoogleIsbnInfo] =
     deriveDecoder[GoogleIsbnInfo]

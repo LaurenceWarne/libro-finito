@@ -1,4 +1,4 @@
-package fin.poc
+package fin
 
 import cats.effect.IOApp
 import cats.effect.{ExitCode, IO}
@@ -13,6 +13,8 @@ import caliban.CalibanError
 import org.http4s.HttpRoutes
 import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import io.chrisdavenport.log4cats.Logger
 import scala.concurrent.ExecutionContext.global
 import org.http4s.server.Router
 import cats.data.Kleisli
@@ -26,9 +28,7 @@ import cats.data.OptionT
 import org.http4s.EntityDecoder
 import fs2.text
 
-import fin.api.{GoogleBookAPI, Queries}
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import io.chrisdavenport.log4cats.Logger
+import fin.service.{GoogleBookInfoService, Queries}
 
 object Main extends IOApp {
 
@@ -61,7 +61,7 @@ object Main extends IOApp {
         case (client, blocker) =>
           for {
             implicit0(logger: Logger[IO]) <- Slf4jLogger.create[IO]
-            bookAPI = GoogleBookAPI[IO](client)
+            bookAPI = GoogleBookInfoService[IO](client)
             queries = Queries[IO](bookArgs => bookAPI.search(bookArgs))
             api = GraphQL.graphQL(RootResolver(queries))
             interpreter <- api.interpreterAsync[IO]

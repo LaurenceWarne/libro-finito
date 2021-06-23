@@ -1,4 +1,4 @@
-package fin.api
+package fin.service
 
 import cats.Id
 import cats.effect._
@@ -10,7 +10,7 @@ import org.http4s.Response
 import fs2.Stream
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 
-object GoogleBookAPITest extends SimpleIOSuite {
+object GoogleBookInfoServiceTest extends SimpleIOSuite {
 
   implicit val logger = Slf4jLogger.unsafeCreate[IO]
 
@@ -27,7 +27,7 @@ object GoogleBookAPITest extends SimpleIOSuite {
     val description = "Not Harry Potter"
     val client: Client[IO] =
       mockedClient(Mocks.jsonResponse(title, author, description))
-    val bookAPI: BookAPI[IO] = GoogleBookAPI(client)
+    val bookAPI: BookInfoService[IO] = GoogleBookInfoService(client)
     for {
       result <- bookAPI.search(BookArgs("non-empty".some, None))
       book :: Nil = result
@@ -38,7 +38,7 @@ object GoogleBookAPITest extends SimpleIOSuite {
 
   pureTest("uriFromBookArgs returns correct uri") {
     val bookArgs = BookArgs("title".some, "some author".some)
-    val Right(uri) = GoogleBookAPI.uriFromArgs(bookArgs)
+    val Right(uri) = GoogleBookInfoService.uriFromArgs(bookArgs)
     expect(
       uri === uri"https://www.googleapis.com/books/v1/volumes?q=intitle%3Atitle%2Binauthor%3Asome%20author"
     )
@@ -46,17 +46,17 @@ object GoogleBookAPITest extends SimpleIOSuite {
 
   pureTest("uriFromBookArgs errors with empty strings") {
     val bookArgs = BookArgs("".some, "".some)
-    expect(GoogleBookAPI.uriFromArgs(bookArgs).isLeft)
+    expect(GoogleBookInfoService.uriFromArgs(bookArgs).isLeft)
   }
 
   pureTest("uriFromBookArgs errors with empty optionals") {
     val bookArgs = BookArgs(None, None)
-    expect(GoogleBookAPI.uriFromArgs(bookArgs).isLeft)
+    expect(GoogleBookInfoService.uriFromArgs(bookArgs).isLeft)
   }
 
   pureTest("uriFromBookArgs returns uri with no title with None for title") {
     val bookArgs = BookArgs(None, "author".some)
-    val Right(uri) = GoogleBookAPI.uriFromArgs(bookArgs)
+    val Right(uri) = GoogleBookInfoService.uriFromArgs(bookArgs)
     expect(
       uri === uri"https://www.googleapis.com/books/v1/volumes?q=inauthor%3Aauthor"
     )
@@ -64,7 +64,7 @@ object GoogleBookAPITest extends SimpleIOSuite {
 
   pureTest("uriFromBookArgs returns uri with no author with None for author") {
     val bookArgs = BookArgs("title".some, None)
-    val Right(uri) = GoogleBookAPI.uriFromArgs(bookArgs)
+    val Right(uri) = GoogleBookInfoService.uriFromArgs(bookArgs)
     expect(
       uri === uri"https://www.googleapis.com/books/v1/volumes?q=intitle%3Atitle"
     )
