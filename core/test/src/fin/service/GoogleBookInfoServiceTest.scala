@@ -1,14 +1,13 @@
 package fin.service
 
-import cats.Id
 import cats.effect._
 import cats.implicits._
-import weaver.SimpleIOSuite
-import org.http4s.client.Client
-import org.http4s.implicits._
-import org.http4s.Response
 import fs2.Stream
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.http4s.Response
+import org.http4s.client.Client
+import org.http4s.implicits._
+import weaver.SimpleIOSuite
 
 object GoogleBookInfoServiceTest extends SimpleIOSuite {
 
@@ -22,8 +21,8 @@ object GoogleBookInfoServiceTest extends SimpleIOSuite {
     )
 
   test("search parses title, author and description from json") {
-    val title = "The Casual Vacancy"
-    val author = "J K Rowling"
+    val title       = "The Casual Vacancy"
+    val author      = "J K Rowling"
     val description = "Not Harry Potter"
     val client: Client[IO] =
       mockedClient(Mocks.jsonResponse(title, author, description))
@@ -37,7 +36,7 @@ object GoogleBookInfoServiceTest extends SimpleIOSuite {
   }
 
   pureTest("uriFromBookArgs returns correct uri") {
-    val bookArgs = BookArgs("title".some, "some author".some)
+    val bookArgs   = BookArgs("title".some, "some author".some)
     val Right(uri) = GoogleBookInfoService.uriFromArgs(bookArgs)
     expect(
       uri === uri"https://www.googleapis.com/books/v1/volumes?q=intitle%3Atitle%2Binauthor%3Asome%20author"
@@ -55,7 +54,7 @@ object GoogleBookInfoServiceTest extends SimpleIOSuite {
   }
 
   pureTest("uriFromBookArgs returns uri with no title with None for title") {
-    val bookArgs = BookArgs(None, "author".some)
+    val bookArgs   = BookArgs(None, "author".some)
     val Right(uri) = GoogleBookInfoService.uriFromArgs(bookArgs)
     expect(
       uri === uri"https://www.googleapis.com/books/v1/volumes?q=inauthor%3Aauthor"
@@ -63,7 +62,7 @@ object GoogleBookInfoServiceTest extends SimpleIOSuite {
   }
 
   pureTest("uriFromBookArgs returns uri with no author with None for author") {
-    val bookArgs = BookArgs("title".some, None)
+    val bookArgs   = BookArgs("title".some, None)
     val Right(uri) = GoogleBookInfoService.uriFromArgs(bookArgs)
     expect(
       uri === uri"https://www.googleapis.com/books/v1/volumes?q=intitle%3Atitle"

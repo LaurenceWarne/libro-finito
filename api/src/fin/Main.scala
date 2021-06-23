@@ -1,34 +1,32 @@
 package fin
 
-import cats.effect.IOApp
-import cats.effect.{ExitCode, IO}
-import cats.implicits._
-import caliban.RootResolver
-import caliban.Http4sAdapter
-import caliban.interop.cats.implicits._
-import zio.Runtime
-import caliban.GraphQLInterpreter
-import caliban.GraphQL
-import caliban.CalibanError
-import org.http4s.HttpRoutes
-import org.http4s.implicits._
-import org.http4s.server.blaze.BlazeServerBuilder
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import io.chrisdavenport.log4cats.Logger
 import scala.concurrent.ExecutionContext.global
-import org.http4s.server.Router
-import cats.data.Kleisli
-import org.http4s.StaticFile
-import cats.effect.Blocker
-import org.http4s.client.blaze.BlazeClientBuilder
-import org.http4s.Header
-import org.http4s.Request
-import org.http4s.Status
-import cats.data.OptionT
-import org.http4s.EntityDecoder
-import fs2.text
 
-import fin.service.{GoogleBookInfoService, Queries}
+import caliban.CalibanError
+import caliban.GraphQL
+import caliban.Http4sAdapter
+import caliban.RootResolver
+import caliban.interop.cats.implicits._
+import cats.data.Kleisli
+import cats.data.OptionT
+import cats.effect.Blocker
+import cats.effect.ExitCode
+import cats.effect.IO
+import cats.effect.IOApp
+import cats.implicits._
+import fin.service.GoogleBookInfoService
+import fin.service.Queries
+import fs2.text
+import io.chrisdavenport.log4cats.Logger
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.http4s.HttpRoutes
+import org.http4s.Request
+import org.http4s.StaticFile
+import org.http4s.client.blaze.BlazeClientBuilder
+import org.http4s.implicits._
+import org.http4s.server.Router
+import org.http4s.server.blaze.BlazeServerBuilder
+import zio.Runtime
 
 object Main extends IOApp {
 
@@ -63,7 +61,7 @@ object Main extends IOApp {
             implicit0(logger: Logger[IO]) <- Slf4jLogger.create[IO]
             bookAPI = GoogleBookInfoService[IO](client)
             queries = Queries[IO](bookArgs => bookAPI.search(bookArgs))
-            api = GraphQL.graphQL(RootResolver(queries))
+            api     = GraphQL.graphQL(RootResolver(queries))
             interpreter <- api.interpreterAsync[IO]
             routes: HttpRoutes[IO] =
               Http4sAdapter.makeHttpServiceF[IO, CalibanError](interpreter)

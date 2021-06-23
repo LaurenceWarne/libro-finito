@@ -1,21 +1,15 @@
 package fin.service
 
 import cats.MonadError
-import cats.effect.Sync
-import cats.effect.syntax._
-import cats.implicits._
-import org.http4s.client.blaze._
-import org.http4s.client._
-import org.http4s.implicits._
-import org.http4s.Uri
-import org.http4s.QueryParam._
 import cats.effect.ConcurrentEffect
-import org.http4s.blaze.http.HttpClient
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import io.circe._
-import io.circe.parser.decode
 import io.circe.generic.semiauto._
+import io.circe.parser.decode
+import org.http4s.Uri
+import org.http4s.client._
+import org.http4s.implicits._
 
 /**
   * A BookInfoService implementation which uses the <a href='https://developers.google.com/books/docs/v1/using'>Google Books API</a>
@@ -28,13 +22,13 @@ final case class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger](
 
   import GoogleBookInfoService._
 
-  private val emptyThumbnailUri =
+  val emptyThumbnailUri =
     "https://user-images.githubusercontent.com/101482/29592647-40da86ca-875a-11e7-8bc3-941700b0a323.png"
 
   def search(bookArgs: BookArgs): F[List[Book]] = {
     for {
-      uri <- MonadError[F, Throwable].fromEither(uriFromArgs(bookArgs))
-      _ <- Logger[F].debug(uri.toString)
+      uri  <- MonadError[F, Throwable].fromEither(uriFromArgs(bookArgs))
+      _    <- Logger[F].debug(uri.toString)
       json <- client.expect[String](uri)
       // We would have to use implicitly[MonadError[F, Throwable]] without
       // import cats.effect.syntax._
@@ -45,10 +39,10 @@ final case class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger](
       case GoogleVolume(
             GoogleBookItem(
               title,
-              author :: otherAuthors,
+              author :: _,
               maybeDescription,
               Some(GoogleImageLinks(_, largeThumbnail)),
-              industryIdentifier :: otherIdentifiers
+              industryIdentifier :: _
             )
           ) =>
         Book(
