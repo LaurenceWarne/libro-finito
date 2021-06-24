@@ -60,6 +60,8 @@ object main extends LibroFinitoModule with BuildInfo {
     Agg(
       Deps.catsEffect,
       Deps.catsLogging,
+      Deps.catsLoggingCore,
+      Deps.logback,
       Deps.Caliban.core,
       Deps.Caliban.http4s,
       Deps.Caliban.cats,
@@ -106,9 +108,11 @@ object Options {
 }
 
 object Deps {
-  val scalaVersion = "2.13.6"
-  val catsEffect   = ivy"org.typelevel::cats-effect:2.5.0"
-  val catsLogging  = ivy"io.chrisdavenport::log4cats-slf4j:1.1.1"
+  val scalaVersion    = "2.13.6"
+  val catsEffect      = ivy"org.typelevel::cats-effect:2.5.0"
+  val catsLoggingCore = ivy"io.chrisdavenport::log4cats-core:1.1.1"
+  val catsLogging     = ivy"io.chrisdavenport::log4cats-slf4j:1.1.1"
+  val logback         = ivy"ch.qos.logback:logback-classic:1.1.3"
 
   object Compiler {
     val semanticDb       = ivy"org.scalameta::semanticdb-scalac:4.4.22"

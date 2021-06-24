@@ -28,21 +28,23 @@ final case class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger](
   def search(bookArgs: BookArgs): F[List[Book]] = {
     for {
       uri  <- MonadError[F, Throwable].fromEither(uriFromArgs(bookArgs))
-      _    <- Logger[F].debug(uri.toString)
+      _    <- Logger[F].info(uri.toString)
       json <- client.expect[String](uri)
+      _    <- Logger[F].info(decode[GoogleResponse](json).toString)
       // We would have to use implicitly[MonadError[F, Throwable]] without
       // import cats.effect.syntax._
       googleResponse <-
-        MonadError[F, Throwable].fromEither(decode[GoogleResponse](json))
+        MonadError[F, Throwable]
+          .fromEither(decode[GoogleResponse](json))
       _ <- Logger[F].debug("DECODED: " + decode[GoogleResponse](json))
     } yield googleResponse.items.collect {
       case GoogleVolume(
             GoogleBookItem(
               title,
-              author :: _,
+              Some(author :: _),
               maybeDescription,
               Some(GoogleImageLinks(_, largeThumbnail)),
-              industryIdentifier :: _
+              Some(industryIdentifier :: _)
             )
           ) =>
         Book(
@@ -99,10 +101,11 @@ final case class GoogleVolume(volumeInfo: GoogleBookItem)
 
 final case class GoogleBookItem(
     title: String,
-    authors: List[String],
+    // These are optional... because the API sometimes decides not to return them...
+    authors: Option[List[String]],
     description: Option[String],
     imageLinks: Option[GoogleImageLinks],
-    industryIdentifiers: List[GoogleIsbnInfo]
+    industryIdentifiers: Option[List[GoogleIsbnInfo]]
 )
 
 final case class GoogleImageLinks(

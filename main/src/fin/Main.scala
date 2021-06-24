@@ -29,7 +29,6 @@ object Main extends IOApp {
             queries = Queries[IO](bookArgs => bookAPI.search(bookArgs))
             api     = GraphQL.graphQL(RootResolver(queries))
             interpreter <- api.interpreterAsync[IO]
-            _ = println("Hi?????")
             server <-
               BlazeServerBuilder[IO](global)
                 .bindHttp(8080, "localhost")
