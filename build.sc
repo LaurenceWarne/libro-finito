@@ -1,7 +1,15 @@
 // build.sc
 import mill._, scalalib._, scalafmt._
+import mill.eval.Evaluator
 import $ivy.`com.goyeau::mill-scalafix:0.2.4`
+import $file.plugins.calibanSchemaGen
 import com.goyeau.mill.scalafix.ScalafixModule
+import calibanSchemaGen.SchemaGen
+
+def genSchema(ev: Evaluator, schemaPath: String, toPath: String) =
+  T.command {
+    SchemaGen.gen(ev, schemaPath, toPath)
+  }
 
 trait LibroFinitoModule
     extends ScalaModule

@@ -1,0 +1,15 @@
+schema {
+  query: Queries
+}
+
+type Book {
+  title: String!
+  author: String!
+  description: String!
+  isbn: String!
+  thumbnailUri: String!
+}
+
+type Queries {
+  books(titleKeywords: String, authorKeywords: String): [Book!]!
+}
