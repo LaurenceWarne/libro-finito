@@ -1,8 +1,10 @@
 // build.sc
-import mill._, scalalib._, scalafmt._
-import mill.eval.Evaluator
+import $ivy.`com.lihaoyi::mill-contrib-buildinfo:$MILL_VERSION`
 import $ivy.`com.goyeau::mill-scalafix:0.2.4`
 import $file.plugins.calibanSchemaGen
+import mill._, scalalib._, scalafmt._
+import mill.contrib.buildinfo.BuildInfo
+import mill.eval.Evaluator
 import com.goyeau.mill.scalafix.ScalafixModule
 import calibanSchemaGen.SchemaGen
 
@@ -35,7 +37,19 @@ trait LibroFinitoTest
   def testFramework = "weaver.framework.TestFramework"
 }
 
-object api extends LibroFinitoModule {
+object api extends LibroFinitoModule with BuildInfo {
+
+  def version = "0.0.1"
+
+  def buildInfoPackageName = Some("fin")
+
+  def buildInfoMembers: T[Map[String, String]] =
+    T {
+      Map(
+        "version"      -> version,
+        "scalaVersion" -> scalaVersion()
+      )
+    }
 
   def moduleDeps = Seq(core)
   //def forkArgs   = Seq("-Xmx100m")
