@@ -37,7 +37,7 @@ trait LibroFinitoTest
   def testFramework = "weaver.framework.TestFramework"
 }
 
-object api extends LibroFinitoModule with BuildInfo {
+object main extends LibroFinitoModule with BuildInfo {
 
   def version = "0.0.1"
 
@@ -51,7 +51,7 @@ object api extends LibroFinitoModule with BuildInfo {
       )
     }
 
-  def moduleDeps = Seq(core)
+  def moduleDeps = Seq(api, core)
   //def forkArgs   = Seq("-Xmx100m")
 
   def scalacPluginIvyDeps =
@@ -69,6 +69,15 @@ object api extends LibroFinitoModule with BuildInfo {
       Deps.Circe.core,
       Deps.Circe.generic,
       Deps.Circe.parser
+    )
+}
+
+object api extends LibroFinitoModule {
+  def ivyDeps =
+    Agg(
+      Deps.catsEffect,
+      Deps.Caliban.core,
+      Deps.Caliban.cats
     )
 }
 

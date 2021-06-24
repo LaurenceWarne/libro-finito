@@ -29,6 +29,7 @@ object Main extends IOApp {
             queries = Queries[IO](bookArgs => bookAPI.search(bookArgs))
             api     = GraphQL.graphQL(RootResolver(queries))
             interpreter <- api.interpreterAsync[IO]
+            _ = println("Hi?????")
             server <-
               BlazeServerBuilder[IO](global)
                 .bindHttp(8080, "localhost")
@@ -36,6 +37,25 @@ object Main extends IOApp {
                 .serve
                 .compile
                 .drain
+            _ <- logger.info("""
+ _________________
+< Server started! >
+ -----------------
+\                             .       .
+ \                           / `.   .' " 
+  \                  .---.  <    > <    >  .---.
+   \                 |    \  \ - ~ ~ - /  /    |
+         _____          ..-~             ~-..-~
+        |     |   \~~~\.'                    `./~~~/
+       ---------   \__/                        \__/
+      .'  O    \     /               /       \  " 
+     (_____,    `._.'               |         }  \/~~~/
+      `----.          /       }     |        /    \__/
+            `-.      |       /      |       /      `. ,~~|
+                ~-.__|      /_ - ~ ^|      /- _      `..-'   
+                     |     /        |     /     ~-.     `-. _  _  _
+                     |_____|        |_____|         ~ - . _ _ _ _ _>
+""")
           } yield server
       }
     server.as(ExitCode.Success)
