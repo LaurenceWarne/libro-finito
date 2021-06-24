@@ -13,7 +13,8 @@ import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import zio.Runtime
 
-import fin.service.{GoogleBookInfoService, Queries}
+import fin.service.GoogleBookInfoService
+import fin.Operations._
 
 object Main extends IOApp {
 
@@ -26,8 +27,11 @@ object Main extends IOApp {
           for {
             implicit0(logger: Logger[IO]) <- Slf4jLogger.create[IO]
             bookAPI = GoogleBookInfoService[IO](client)
-            queries = Queries[IO](bookArgs => bookAPI.search(bookArgs))
-            api     = GraphQL.graphQL(RootResolver(queries))
+            queries = Queries(
+              booksArgs => bookAPI.search(booksArgs),
+              _ => IO.raiseError(new NotImplementedError("Not implemented"))
+            )
+            api = GraphQL.graphQL(RootResolver(queries))
             interpreter <- api.interpreterAsync[IO]
             server <-
               BlazeServerBuilder[IO](global)

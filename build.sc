@@ -11,7 +11,7 @@ import calibanSchemaGen.SchemaGen
 def genSchema(
     ev: Evaluator,
     schemaPath: String = "schema.gql",
-    toPath: String = "main/src/fin/schema.scala",
+    toPath: String = "api/src/fin/schema.scala",
     packageName: String = "fin"
 ) =
   T.command {
@@ -94,6 +94,8 @@ object api extends LibroFinitoModule {
 }
 
 object core extends LibroFinitoModule {
+
+  def moduleDeps = Seq(api)
 
   def ivyDeps =
     Agg(

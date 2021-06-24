@@ -12,4 +12,5 @@ type Book {
 
 type Queries {
   books(titleKeywords: String, authorKeywords: String): [Book!]!
+  book(isbn: String!): Book!
 }

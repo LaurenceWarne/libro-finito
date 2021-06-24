@@ -9,6 +9,7 @@ object Types {
       titleKeywords: Option[String],
       authorKeywords: Option[String]
   )
+  case class QueriesBookArgs(isbn: String)
   case class Book(
       title: String,
       author: String,
@@ -22,7 +23,8 @@ object Types {
 object Operations {
 
   case class Queries(
-      books: QueriesBooksArgs => IO[List[Book]]
+      books: QueriesBooksArgs => IO[List[Book]],
+      book: QueriesBookArgs => IO[Book]
   )
 
 }

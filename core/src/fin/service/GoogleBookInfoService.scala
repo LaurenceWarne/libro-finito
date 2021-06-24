@@ -11,6 +11,8 @@ import org.http4s.Uri
 import org.http4s.client._
 import org.http4s.implicits._
 
+import fin.Types._
+
 /**
   * A BookInfoService implementation which uses the <a href='https://developers.google.com/books/docs/v1/using'>Google Books API</a>
   *
@@ -25,7 +27,7 @@ final case class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger](
   val emptyThumbnailUri =
     "https://user-images.githubusercontent.com/101482/29592647-40da86ca-875a-11e7-8bc3-941700b0a323.png"
 
-  def search(bookArgs: BookArgs): F[List[Book]] = {
+  def search(bookArgs: QueriesBooksArgs): F[List[Book]] = {
     for {
       uri  <- MonadError[F, Throwable].fromEither(uriFromArgs(bookArgs))
       _    <- Logger[F].info(uri.toString)
@@ -78,7 +80,7 @@ object GoogleBookInfoService {
   implicit val googleResponseDecoder: Decoder[GoogleResponse] =
     deriveDecoder[GoogleResponse]
 
-  def uriFromArgs(bookArgs: BookArgs): Either[Exception, Uri] =
+  def uriFromArgs(bookArgs: QueriesBooksArgs): Either[Exception, Uri] =
     Either.cond(
       bookArgs.authorKeywords
         .filterNot(_.isEmpty)
