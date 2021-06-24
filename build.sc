@@ -8,9 +8,19 @@ import mill.eval.Evaluator
 import com.goyeau.mill.scalafix.ScalafixModule
 import calibanSchemaGen.SchemaGen
 
-def genSchema(ev: Evaluator, schemaPath: String, toPath: String) =
+def genSchema(
+    ev: Evaluator,
+    schemaPath: String = "schema.gql",
+    toPath: String = "main/src/fin/schema.scala",
+    packageName: String = "fin"
+) =
   T.command {
-    SchemaGen.gen(ev, schemaPath, toPath)
+    SchemaGen.gen(
+      ev,
+      schemaPath = schemaPath,
+      toPath = toPath,
+      packageName = Some(packageName)
+    )
   }
 
 trait LibroFinitoModule
