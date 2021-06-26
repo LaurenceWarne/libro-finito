@@ -16,7 +16,7 @@ jobs:
           java-version: 8
       - name: Compile
         run: ./mill __.compile
-      - name: Check no schema updates
+      - name: Check for schema updates
         run: |
           ./mill genSchema
           git diff --exit-code

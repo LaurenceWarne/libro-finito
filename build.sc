@@ -1,9 +1,11 @@
 // build.sc
 import $ivy.`com.lihaoyi::mill-contrib-buildinfo:$MILL_VERSION`
+import $ivy.`com.lihaoyi::mill-contrib-scoverage:$MILL_VERSION`
 import $ivy.`com.goyeau::mill-scalafix:0.2.4`
 import $file.plugins.calibanSchemaGen
 import mill._, scalalib._, scalafmt._
 import mill.contrib.buildinfo.BuildInfo
+import mill.contrib.scoverage.ScoverageModule
 import mill.eval.Evaluator
 import com.goyeau.mill.scalafix.ScalafixModule
 import calibanSchemaGen.SchemaGen
@@ -23,13 +25,29 @@ def genSchema(
     )
   }
 
-trait LibroFinitoModule
+trait LibroFinitoModuleNoScalafix
     extends ScalaModule
     with ScalafmtModule
+    with ScoverageModule {
+  def scalaVersion     = Deps.scalaVersion
+  def scoverageVersion = Deps.scoverageVersion
+  def scalacOptions    = Options.scalacOptions
+
+  // Since compiler plugins are not backwards compatible with scala patches,
+  // the scoverage dep plugin is not published along scala minor versions
+  // but mill currently uses "::" instead of ":::" which grabs an out of
+  // date (and binary incompatible!) scoverage plugin version:
+  // org.scoverage:::scalac-scoverage-plugin_2.13, but we want:
+  // org.scoverage:::scalac-scoverage-plugin_.2.13.6
+  // https://github.com/com-lihaoyi/mill/pull/1309 should remove the need for this
+  def scoveragePluginDep =
+    ivy"org.scoverage:::scalac-scoverage-plugin:${scoverageVersion()}"
+}
+
+trait LibroFinitoModule
+    extends LibroFinitoModuleNoScalafix
     with ScalafixModule {
-  def scalaVersion    = Deps.scalaVersion
   def scalafixIvyDeps = Agg(Deps.Scalafix.organizeImports)
-  def scalacOptions   = Options.scalacOptions
 }
 
 trait LibroFinitoTest
@@ -84,7 +102,7 @@ object main extends LibroFinitoModule with BuildInfo {
     )
 }
 
-object api extends LibroFinitoModule {
+object api extends LibroFinitoModuleNoScalafix {
   def ivyDeps =
     Agg(
       Deps.catsEffect,
@@ -112,7 +130,7 @@ object core extends LibroFinitoModule {
       Deps.Circe.parser
     )
 
-  object test extends Tests with LibroFinitoTest
+  object test extends Tests with ScoverageTests with LibroFinitoTest
 }
 
 object Options {
@@ -120,11 +138,12 @@ object Options {
 }
 
 object Deps {
-  val scalaVersion    = "2.13.6"
-  val catsEffect      = ivy"org.typelevel::cats-effect:2.5.0"
-  val catsLoggingCore = ivy"io.chrisdavenport::log4cats-core:1.1.1"
-  val catsLogging     = ivy"io.chrisdavenport::log4cats-slf4j:1.1.1"
-  val logback         = ivy"ch.qos.logback:logback-classic:1.1.3"
+  val scalaVersion     = "2.13.6"
+  val scoverageVersion = "1.4.8"
+  val catsEffect       = ivy"org.typelevel::cats-effect:2.5.0"
+  val catsLoggingCore  = ivy"io.chrisdavenport::log4cats-core:1.1.1"
+  val catsLogging      = ivy"io.chrisdavenport::log4cats-slf4j:1.1.1"
+  val logback          = ivy"ch.qos.logback:logback-classic:1.1.3"
 
   object Compiler {
     val semanticDb       = ivy"org.scalameta::semanticdb-scalac:4.4.22"
