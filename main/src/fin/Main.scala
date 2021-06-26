@@ -13,8 +13,8 @@ import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import zio.Runtime
 
-import fin.service.GoogleBookInfoService
 import fin.Operations._
+import fin.service.GoogleBookInfoService
 
 object Main extends IOApp {
 
