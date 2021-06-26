@@ -57,7 +57,7 @@ trait LibroFinitoTest
 
   def ivyDeps = Agg(Deps.weaver)
   // https://github.com/disneystreaming/weaver-test
-  def testFramework = "weaver.framework.TestFramework"
+  def testFramework = "weaver.framework.CatsEffect"
 }
 
 object main extends LibroFinitoModule with BuildInfo {
@@ -139,7 +139,7 @@ object Deps {
   val catsLoggingCore  = ivy"io.chrisdavenport::log4cats-core:1.1.1"
   val catsLogging      = ivy"io.chrisdavenport::log4cats-slf4j:1.1.1"
   val logback          = ivy"ch.qos.logback:logback-classic:1.1.3"
-  val weaver           = ivy"com.disneystreaming::weaver-framework:0.6.4"
+  val weaver           = ivy"com.disneystreaming::weaver-cats:0.6.4"
 
   object Compiler {
     val semanticDb       = ivy"org.scalameta::semanticdb-scalac:4.4.22"

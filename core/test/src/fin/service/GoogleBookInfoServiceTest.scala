@@ -7,7 +7,7 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.Response
 import org.http4s.client.Client
 import org.http4s.implicits._
-import weaver.{Expectations, SimpleIOSuite}
+import weaver._
 
 import fin.Types._
 
