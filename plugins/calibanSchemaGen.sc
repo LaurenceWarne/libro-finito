@@ -16,8 +16,10 @@ object SchemaGen {
       packageName: Option[String] = None,
       genView: Option[Boolean] = None,
       effect: Option[String] = Some("IO"),
-      scalarMappings: Option[Map[String, String]] = None,
-      imports: Option[List[String]] = Some(List("cats.effect.IO"))
+      scalarMappings: Option[Map[String, String]] = Some(Map("ID" -> "UUID")),
+      imports: Option[List[String]] = Some(
+        List("java.util.UUID", "cats.effect.IO")
+      )
   ) =
     T.command {
       val options = Options(

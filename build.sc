@@ -25,41 +25,6 @@ def genSchema(
     )
   }
 
-trait LibroFinitoModuleNoLinting extends ScalaModule with ScoverageModule {
-  def scalaVersion     = Deps.scalaVersion
-  def scoverageVersion = Deps.scoverageVersion
-  def scalacOptions    = Options.scalacOptions
-
-  // Since compiler plugins are not backwards compatible with scala patches,
-  // the scoverage dep plugin is not published along scala minor versions
-  // but mill currently uses "::" instead of ":::" which grabs an out of
-  // date (and binary incompatible!) scoverage plugin version:
-  // org.scoverage:::scalac-scoverage-plugin_2.13, but we want:
-  // org.scoverage:::scalac-scoverage-plugin_.2.13.6
-  // https://github.com/com-lihaoyi/mill/pull/1309 should remove the need for this
-  def scoveragePluginDep =
-    ivy"org.scoverage:::scalac-scoverage-plugin:${scoverageVersion()}"
-}
-
-trait LibroFinitoModule
-    extends LibroFinitoModuleNoLinting
-    with ScalafmtModule
-    with ScalafixModule {
-  def scalafixIvyDeps = Agg(Deps.Scalafix.organizeImports)
-}
-
-trait LibroFinitoTest
-    extends TestModule
-    with ScalafmtModule
-    with ScalafixModule {
-  def scalafixIvyDeps = Agg(Deps.Scalafix.organizeImports)
-  def scalacOptions   = Options.scalacOptions
-
-  def ivyDeps = Agg(Deps.weaver)
-  // https://github.com/disneystreaming/weaver-test
-  def testFramework = "weaver.framework.CatsEffect"
-}
-
 object main extends LibroFinitoModule with BuildInfo {
 
   def version = "0.0.1"
@@ -108,21 +73,38 @@ object api extends LibroFinitoModuleNoLinting {
 
 object core extends LibroFinitoModule {
 
+  def moduleDeps = Seq(api, persistence)
+
+  def ivyDeps =
+    Agg(
+      Deps.Caliban.cats,
+      Deps.Caliban.core,
+      Deps.Caliban.http4s,
+      Deps.Circe.core,
+      Deps.Circe.generic,
+      Deps.Circe.parser,
+      Deps.Http4s.http4sBlazeClient,
+      Deps.Http4s.http4sBlazeServer,
+      Deps.Http4s.http4sDsl,
+      Deps.catsEffect,
+      Deps.catsLogging
+    )
+
+  object test extends Tests with ScoverageTests with LibroFinitoTest
+}
+
+object persistence extends LibroFinitoModule {
+
   def moduleDeps = Seq(api)
 
   def ivyDeps =
     Agg(
       Deps.catsEffect,
       Deps.catsLogging,
-      Deps.Caliban.core,
-      Deps.Caliban.http4s,
-      Deps.Caliban.cats,
-      Deps.Http4s.http4sDsl,
-      Deps.Http4s.http4sBlazeClient,
-      Deps.Http4s.http4sBlazeServer,
       Deps.Circe.core,
       Deps.Circe.generic,
-      Deps.Circe.parser
+      Deps.Circe.parser,
+      Deps.sqlite
     )
 
   object test extends Tests with ScoverageTests with LibroFinitoTest
@@ -133,6 +115,42 @@ object core extends LibroFinitoModule {
 //   def scalaVersion     = Deps.scalaVersion
 //   def scoverageVersion = Deps.scoverageVersion
 // }
+
+trait LibroFinitoModuleNoLinting extends ScalaModule with ScoverageModule {
+  def scalaVersion = Deps.scalaVersion
+  // https://github.com/com-lihaoyi/mill/blob/main/docs/antora/modules/ROOT/pages/Contrib_Modules.adoc#scoverage
+  def scoverageVersion = Deps.scoverageVersion
+  def scalacOptions    = Options.scalacOptions
+
+  // Since compiler plugins are not backwards compatible with scala patches,
+  // the scoverage dep plugin is not published along scala minor versions
+  // but mill currently uses "::" instead of ":::" which grabs an out of
+  // date (and binary incompatible!) scoverage plugin version:
+  // org.scoverage:::scalac-scoverage-plugin_2.13, but we want:
+  // org.scoverage:::scalac-scoverage-plugin_.2.13.6
+  // https://github.com/com-lihaoyi/mill/pull/1309 should remove the need for this
+  def scoveragePluginDep =
+    ivy"org.scoverage:::scalac-scoverage-plugin:${scoverageVersion()}"
+}
+
+trait LibroFinitoModule
+    extends LibroFinitoModuleNoLinting
+    with ScalafmtModule
+    with ScalafixModule {
+  def scalafixIvyDeps = Agg(Deps.Scalafix.organizeImports)
+}
+
+trait LibroFinitoTest
+    extends TestModule
+    with ScalafmtModule
+    with ScalafixModule {
+  def scalafixIvyDeps = Agg(Deps.Scalafix.organizeImports)
+  def scalacOptions   = Options.scalacOptions
+
+  def ivyDeps = Agg(Deps.weaver)
+  // https://github.com/disneystreaming/weaver-test
+  def testFramework = "weaver.framework.CatsEffect"
+}
 
 object Options {
   val scalacOptions = Seq("-Ywarn-unused", "-Xfatal-warnings")
@@ -146,6 +164,7 @@ object Deps {
   val catsLogging      = ivy"io.chrisdavenport::log4cats-slf4j:1.1.1"
   val logback          = ivy"ch.qos.logback:logback-classic:1.1.3"
   val weaver           = ivy"com.disneystreaming::weaver-cats:0.6.4"
+  val sqlite           = ivy"org.xerial:sqlite-jdbc:3.34.0"
 
   object Compiler {
     val semanticDb       = ivy"org.scalameta::semanticdb-scalac:4.4.22"

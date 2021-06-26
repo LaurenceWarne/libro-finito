@@ -1,5 +1,6 @@
 schema {
   query: Queries
+  mutation: Mutation
 }
 
 type Book {
@@ -10,7 +11,22 @@ type Book {
   thumbnailUri: String!
 }
 
+type Collection {
+  id: ID!
+  name: String!
+  books: [String!]!
+}
+
 type Queries {
   books(titleKeywords: String, authorKeywords: String, results: Int = 10): [Book!]!
   book(isbn: String!): Book!
+  collections: [Collection!]!
+  collection(id: ID!): Collection!
+}
+
+type Mutations {
+  createCollection(name: String!, books: [Book!]): Collection!
+  deleteCollection(id: ID!): Collection!
+  changeCollectionName(id: ID!, name: String!): Collection!
+  addBook(id: ID!, book: Book!): Collection!
 }

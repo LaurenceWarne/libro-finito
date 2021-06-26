@@ -14,6 +14,7 @@ import org.http4s.server.blaze.BlazeServerBuilder
 import zio.Runtime
 
 import fin.Operations._
+import fin.Types._
 import fin.service.GoogleBookInfoService
 
 object Main extends IOApp {
@@ -29,9 +30,17 @@ object Main extends IOApp {
             bookAPI = GoogleBookInfoService[IO](client)
             queries = Queries(
               booksArgs => bookAPI.search(booksArgs),
-              bookArgs => bookAPI.fromIsbn(bookArgs)
+              bookArgs => bookAPI.fromIsbn(bookArgs),
+              ???,
+              _ => ???
             )
-            api = GraphQL.graphQL(RootResolver(queries))
+            mutations = Mutations(
+              _ => ???,
+              _ => ???,
+              _ => ???,
+              _ => ???
+            )
+            api = GraphQL.graphQL(RootResolver(queries, mutations))
             interpreter <- api.interpreterAsync[IO]
             server <-
               BlazeServerBuilder[IO](global)
