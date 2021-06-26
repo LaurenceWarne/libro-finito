@@ -7,7 +7,8 @@ import cats.effect.IO
 object Types {
   case class QueriesBooksArgs(
       titleKeywords: Option[String],
-      authorKeywords: Option[String]
+      authorKeywords: Option[String],
+      results: Option[Int]
   )
   case class QueriesBookArgs(isbn: String)
   case class Book(

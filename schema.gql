@@ -11,6 +11,6 @@ type Book {
 }
 
 type Queries {
-  books(titleKeywords: String, authorKeywords: String): [Book!]!
+  books(titleKeywords: String, authorKeywords: String, results: Int = 10): [Book!]!
   book(isbn: String!): Book!
 }

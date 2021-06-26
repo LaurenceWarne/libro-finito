@@ -29,7 +29,7 @@ object Main extends IOApp {
             bookAPI = GoogleBookInfoService[IO](client)
             queries = Queries(
               booksArgs => bookAPI.search(booksArgs),
-              _ => IO.raiseError(new NotImplementedError("Not implemented"))
+              bookArgs => bookAPI.fromIsbn(bookArgs)
             )
             api = GraphQL.graphQL(RootResolver(queries))
             interpreter <- api.interpreterAsync[IO]

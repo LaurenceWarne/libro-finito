@@ -26,25 +26,10 @@
 *** TODO Import Calbire collections (what are they called??)
 
 ** Smaller Things
-*** TODO Add a logging framework
-*** TODO Log when decoding fails (ie with title: hi, author: there)
-*** TODO Sort out logging middleware
-*** TODO Add scalafix (for imports, etc)
+*** DONE Add a logging framework
+*** DONE Log when decoding fails (ie with title: hi, author: there)
+*** DONE Sort out logging middleware
+*** DONE Add scalafix (for imports, etc)
 *** TODO Decrease/investigate memory usage
-
-* Emacs Client
-
-** Transient
-
-   Main menu:
-   - *Search*"
-     With variables matching the google search keywords
-   - *My shelves*
-
-** Book List buffer
-
-   Style should be similar to ~steam.el~, with thumbnails follow by meta
-   information (can we use org in some kind of ro mode for this?). Key input
-   would be replaced by commands operating on the book section the cursor is
-   currently on. For example, ~a~ lists books by the current author, ~s~ saves
-   the book to a given shelf.
+*** TODO Get better errors than "Effect Failure"
+*** TODO Caching middleware?

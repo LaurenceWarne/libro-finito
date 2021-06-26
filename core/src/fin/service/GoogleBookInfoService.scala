@@ -27,10 +27,27 @@ final case class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger](
   val emptyThumbnailUri =
     "https://user-images.githubusercontent.com/101482/29592647-40da86ca-875a-11e7-8bc3-941700b0a323.png"
 
-  def search(bookArgs: QueriesBooksArgs): F[List[Book]] = {
+  def search(booksArgs: QueriesBooksArgs): F[List[Book]] =
     for {
-      uri  <- MonadError[F, Throwable].fromEither(uriFromArgs(bookArgs))
-      _    <- Logger[F].info(uri.toString)
+      uri   <- MonadError[F, Throwable].fromEither(uriFromBooksArgs(booksArgs))
+      _     <- Logger[F].info(uri.toString)
+      books <- booksFromUri(uri)
+    } yield books
+
+  def fromIsbn(bookArgs: QueriesBookArgs): F[Book] = {
+    val uri = uriFromBookArgs(bookArgs)
+    for {
+      _     <- Logger[F].info(uri.toString)
+      books <- booksFromUri(uri)
+      book <- MonadError[F, Throwable].fromOption(
+        books.headOption,
+        new Exception(show"No books found for isbn: ${bookArgs.isbn}")
+      )
+    } yield book
+
+  }
+  private def booksFromUri(uri: Uri): F[List[Book]] = {
+    for {
       json <- client.expect[String](uri)
       _    <- Logger[F].info(decode[GoogleResponse](json).toString)
       // We would have to use implicitly[MonadError[F, Throwable]] without
@@ -80,21 +97,26 @@ object GoogleBookInfoService {
   implicit val googleResponseDecoder: Decoder[GoogleResponse] =
     deriveDecoder[GoogleResponse]
 
-  def uriFromArgs(bookArgs: QueriesBooksArgs): Either[Exception, Uri] =
+  private val baseUri = uri"https://www.googleapis.com/books/v1/volumes"
+
+  def uriFromBooksArgs(booksArgs: QueriesBooksArgs): Either[Exception, Uri] =
     Either.cond(
-      bookArgs.authorKeywords
+      booksArgs.authorKeywords
         .filterNot(_.isEmpty)
-        .nonEmpty || bookArgs.titleKeywords.filterNot(_.isEmpty).nonEmpty,
-      uri"https://www.googleapis.com/books/v1/volumes" +? (
+        .nonEmpty || booksArgs.titleKeywords.filterNot(_.isEmpty).nonEmpty,
+      baseUri +? (
         "q",
-        (bookArgs.titleKeywords.filterNot(_.isEmpty).map("intitle:" + _) ++
-          bookArgs.authorKeywords.map("inauthor:" + _))
+        (booksArgs.titleKeywords.filterNot(_.isEmpty).map("intitle:" + _) ++
+          booksArgs.authorKeywords.map("inauthor:" + _))
           .mkString("+")
-      ),
+      ) +?? ("maxResults", booksArgs.results),
       new Exception(
         "At least one of author keywords and title keywords must be specified"
       )
     )
+
+  def uriFromBookArgs(bookArgs: QueriesBookArgs): Uri =
+    baseUri +? ("q", "isbn:" + bookArgs.isbn)
 }
 
 final case class GoogleResponse(items: List[GoogleVolume])
