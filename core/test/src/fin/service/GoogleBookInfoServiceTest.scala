@@ -23,7 +23,7 @@ object GoogleBookInfoServiceTest extends SimpleIOSuite {
       )
     )
 
-  test("books search parses title, author and description from json") {
+  test("search parses title, author and description from json") {
     val title       = "The Casual Vacancy"
     val author      = "J K Rowling"
     val description = "Not Harry Potter"
@@ -38,7 +38,7 @@ object GoogleBookInfoServiceTest extends SimpleIOSuite {
       expect(book.description === description)
   }
 
-  test("isbn search parses title, author and description from json") {
+  test("fromIsbn parses title, author and description from json") {
     val isbn                         = "1568658079"
     val client: Client[IO]           = mockedClient(Mocks.isbnResponse(isbn))
     val bookAPI: BookInfoService[IO] = GoogleBookInfoService(client)
@@ -46,6 +46,15 @@ object GoogleBookInfoServiceTest extends SimpleIOSuite {
       book <- bookAPI.fromIsbn(QueriesBookArgs(isbn))
       // TODO why do I need the type hint here?
     } yield expect(book.isbn === "978" + isbn): Expectations
+  }
+
+  test("fromIsbn returns error when no items in response") {
+    val client: Client[IO]           = mockedClient(Mocks.emptyResponse)
+    val bookAPI: BookInfoService[IO] = GoogleBookInfoService(client)
+    for {
+      response <- bookAPI.fromIsbn(QueriesBookArgs("arandomisbn")).attempt
+      // TODO why do I need the type hint here?
+    } yield expect(response.isLeft): Expectations
   }
 
   pureTest("uriFromQueriesBooksArgs returns correct uri") {
@@ -206,6 +215,12 @@ object Mocks {
       }
     }
   ]
+}
+"""
+
+  def emptyResponse = """{
+  "kind": "books#volumes",
+  "totalItems": 0,
 }
 """
 

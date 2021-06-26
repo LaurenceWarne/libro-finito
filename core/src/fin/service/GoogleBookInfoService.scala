@@ -41,8 +41,8 @@ final case class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger](
         new Exception(show"No books found for isbn: ${bookArgs.isbn}")
       )
     } yield book
-
   }
+
   private def booksFromUri(
       uri: Uri,
       pf: PartialFunction[GoogleVolume, Book]
