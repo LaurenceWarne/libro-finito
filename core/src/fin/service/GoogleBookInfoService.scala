@@ -24,21 +24,18 @@ final case class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger](
 
   import GoogleBookInfoService._
 
-  val emptyThumbnailUri =
-    "https://user-images.githubusercontent.com/101482/29592647-40da86ca-875a-11e7-8bc3-941700b0a323.png"
-
   def search(booksArgs: QueriesBooksArgs): F[List[Book]] =
     for {
       uri   <- MonadError[F, Throwable].fromEither(uriFromBooksArgs(booksArgs))
       _     <- Logger[F].info(uri.toString)
-      books <- booksFromUri(uri)
+      books <- booksFromUri(uri, searchPartialFn)
     } yield books
 
   def fromIsbn(bookArgs: QueriesBookArgs): F[Book] = {
     val uri = uriFromBookArgs(bookArgs)
     for {
       _     <- Logger[F].info(uri.toString)
-      books <- booksFromUri(uri)
+      books <- booksFromUri(uri, isbnPartialFn)
       book <- MonadError[F, Throwable].fromOption(
         books.headOption,
         new Exception(show"No books found for isbn: ${bookArgs.isbn}")
@@ -46,7 +43,10 @@ final case class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger](
     } yield book
 
   }
-  private def booksFromUri(uri: Uri): F[List[Book]] = {
+  private def booksFromUri(
+      uri: Uri,
+      pf: PartialFunction[GoogleVolume, Book]
+  ): F[List[Book]] = {
     for {
       json <- client.expect[String](uri)
       _    <- Logger[F].info(decode[GoogleResponse](json).toString)
@@ -55,25 +55,8 @@ final case class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger](
       googleResponse <-
         MonadError[F, Throwable]
           .fromEither(decode[GoogleResponse](json))
-      _ <- Logger[F].debug("DECODED: " + decode[GoogleResponse](json))
-    } yield googleResponse.items.collect {
-      case GoogleVolume(
-            GoogleBookItem(
-              title,
-              Some(author :: _),
-              maybeDescription,
-              Some(GoogleImageLinks(_, largeThumbnail)),
-              Some(industryIdentifier :: _)
-            )
-          ) =>
-        Book(
-          title,
-          author,
-          maybeDescription.getOrElse("No Description!"),
-          industryIdentifier.getIsbn13,
-          largeThumbnail
-        )
-    }
+      _ <- Logger[F].debug("DECODED: " + googleResponse)
+    } yield googleResponse.items.collect(pf)
   }
 }
 
@@ -96,6 +79,42 @@ object GoogleBookInfoService {
 
   implicit val googleResponseDecoder: Decoder[GoogleResponse] =
     deriveDecoder[GoogleResponse]
+
+  val searchPartialFn: PartialFunction[GoogleVolume, Book] = {
+    case GoogleVolume(
+          GoogleBookItem(
+            title,
+            Some(author :: _),
+            maybeDescription,
+            Some(GoogleImageLinks(_, largeThumbnail)),
+            Some(industryIdentifier :: _)
+          )
+        ) =>
+      Book(
+        title,
+        author,
+        maybeDescription.getOrElse("No Description!"),
+        industryIdentifier.getIsbn13,
+        largeThumbnail
+      )
+  }
+
+  private val emptyThumbnailUri =
+    "https://user-images.githubusercontent.com/101482/29592647-40da86ca-875a-11e7-8bc3-941700b0a323.png"
+
+  val isbnPartialFn: PartialFunction[GoogleVolume, Book] = {
+    case GoogleVolume(bookItem) =>
+      Book(
+        bookItem.title,
+        bookItem.authors.getOrElse(Nil).headOption.getOrElse("???"),
+        bookItem.description.getOrElse("No Description!"),
+        bookItem.industryIdentifiers
+          .getOrElse(Nil)
+          .headOption
+          .fold("???")(_.getIsbn13),
+        bookItem.imageLinks.fold(emptyThumbnailUri)(_.thumbnail)
+      )
+  }
 
   private val baseUri = uri"https://www.googleapis.com/books/v1/volumes"
 

@@ -7,6 +7,7 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.Response
 import org.http4s.client.Client
 import org.http4s.implicits._
+import weaver.Expectations
 import weaver.SimpleIOSuite
 
 import fin.Types._
@@ -22,12 +23,12 @@ object GoogleBookInfoServiceTest extends SimpleIOSuite {
       )
     )
 
-  test("search parses title, author and description from json") {
+  test("books search parses title, author and description from json") {
     val title       = "The Casual Vacancy"
     val author      = "J K Rowling"
     val description = "Not Harry Potter"
     val client: Client[IO] =
-      mockedClient(Mocks.jsonResponse(title, author, description))
+      mockedClient(Mocks.booksResponse(title, author, description))
     val bookAPI: BookInfoService[IO] = GoogleBookInfoService(client)
     for {
       result <- bookAPI.search(QueriesBooksArgs("non-empty".some, None, None))
@@ -35,6 +36,16 @@ object GoogleBookInfoServiceTest extends SimpleIOSuite {
     } yield expect(book.title === title) and
       expect(book.author === author) and
       expect(book.description === description)
+  }
+
+  test("isbn search parses title, author and description from json") {
+    val isbn                         = "1568658079"
+    val client: Client[IO]           = mockedClient(Mocks.isbnResponse(isbn))
+    val bookAPI: BookInfoService[IO] = GoogleBookInfoService(client)
+    for {
+      book <- bookAPI.fromIsbn(QueriesBookArgs(isbn))
+      // TODO why do I need the type hint here?
+    } yield expect(book.isbn === "978" + isbn): Expectations
   }
 
   pureTest("uriFromQueriesBooksArgs returns correct uri") {
@@ -76,18 +87,22 @@ object GoogleBookInfoServiceTest extends SimpleIOSuite {
   }
 
   pureTest("uriFromQueriesBookArgs returns correct uri") {
-    val bookArgs = QueriesBookArgs("123456")
+    val bookArgs = QueriesBookArgs("1568658079")
     val uri      = GoogleBookInfoService.uriFromBookArgs(bookArgs)
     println(uri)
     expect(
-      uri === uri"https://www.googleapis.com/books/v1/volumes?q=isbn%3A123456"
+      uri === uri"https://www.googleapis.com/books/v1/volumes?q=isbn%3A1568658079"
     )
   }
 }
 
 object Mocks {
-  def jsonResponse(title: String, author: String, description: String): String =
-    s"""{
+  def booksResponse(
+      title: String,
+      author: String,
+      description: String
+  ): String =
+    show"""{
   "kind": "books#volumes",
   "totalItems": 210,
   "items": [
@@ -193,4 +208,79 @@ object Mocks {
   ]
 }
 """
+
+  def isbnResponse(isbn: String) =
+    show"""{
+  "kind": "books#volumes",
+  "totalItems": 1,
+  "items": [
+    {
+      "kind": "books#volume",
+      "id": "RuAcAAAACAAJ",
+      "etag": "lMAxu0DYzVs",
+      "selfLink": "https://www.googleapis.com/books/v1/volumes/RuAcAAAACAAJ",
+      "volumeInfo": {
+        "title": "The Book of the New Sun",
+        "subtitle": "The Shadow of the Torturer ; The Claw of the Conciliator ; The Sword of the Lictor ; The Citadel of the Autarch",
+        "authors": [
+          "Gene Wolfe"
+        ],
+        "publishedDate": "1998",
+        "description": "Shadow of the torturer.; Claw of the conciliator.; Sword of the lictor.; Citadel of the autarch.",
+        "industryIdentifiers": [
+          {
+            "type": "ISBN_10",
+            "identifier": "$isbn"
+          },
+          {
+            "type": "ISBN_13",
+            "identifier": "9781568658070"
+          }
+        ],
+        "readingModes": {
+          "text": false,
+          "image": false
+        },
+        "pageCount": 950,
+        "printType": "BOOK",
+        "categories": [
+          "Fantasy fiction, American"
+        ],
+        "averageRating": 4,
+        "ratingsCount": 5,
+        "maturityRating": "NOT_MATURE",
+        "allowAnonLogging": false,
+        "contentVersion": "preview-1.0.0",
+        "language": "un",
+        "previewLink": "http://books.google.co.uk/books?id=RuAcAAAACAAJ&dq=isbn:1568658079&hl=&cd=1&source=gbs_api",
+        "infoLink": "http://books.google.co.uk/books?id=RuAcAAAACAAJ&dq=isbn:1568658079&hl=&source=gbs_api",
+        "canonicalVolumeLink": "https://books.google.com/books/about/The_Book_of_the_New_Sun.html?hl=&id=RuAcAAAACAAJ"
+      },
+      "saleInfo": {
+        "country": "GB",
+        "saleability": "NOT_FOR_SALE",
+        "isEbook": false
+      },
+      "accessInfo": {
+        "country": "GB",
+        "viewability": "NO_PAGES",
+        "embeddable": false,
+        "publicDomain": false,
+        "textToSpeechPermission": "ALLOWED",
+        "epub": {
+          "isAvailable": false
+        },
+        "pdf": {
+          "isAvailable": false
+        },
+        "webReaderLink": "http://play.google.com/books/reader?id=RuAcAAAACAAJ&hl=&printsec=frontcover&source=gbs_api",
+        "accessViewStatus": "NONE",
+        "quoteSharingAllowed": false
+      },
+      "searchInfo": {
+        "textSnippet": "Shadow of the torturer.; Claw of the conciliator.; Sword of the lictor.; Citadel of the autarch."
+      }
+    }
+  ]
+}"""
 }
