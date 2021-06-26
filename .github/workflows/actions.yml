@@ -7,7 +7,7 @@ on:
       - master
 
 jobs:
-  test:
+  run:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -34,6 +34,7 @@ jobs:
       - name: Send Coverage Reports
         uses: codecov/codecov-action@v1
         with:
-          files: ./out/core/scoverage/xmlReport/dest/scoverage.xml,./out/main/scoverage/xmlReport/dest/scoverage.xml # optional
+          # TODO do for all modules automatically
+          files: ./out/core/scoverage/xmlReport/dest/scoverage.xml #,./out/main/scoverage/xmlReport/dest/scoverage.xml # optional
           flags: unittests # optional
           fail_ci_if_error: true # optional (default = false)
