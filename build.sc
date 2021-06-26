@@ -5,7 +5,7 @@ import $ivy.`com.goyeau::mill-scalafix:0.2.4`
 import $file.plugins.calibanSchemaGen
 import mill._, scalalib._, scalafmt._
 import mill.contrib.buildinfo.BuildInfo
-import mill.contrib.scoverage.ScoverageModule
+import mill.contrib.scoverage.{ScoverageModule, ScoverageReport}
 import mill.eval.Evaluator
 import com.goyeau.mill.scalafix.ScalafixModule
 import calibanSchemaGen.SchemaGen
@@ -127,6 +127,12 @@ object core extends LibroFinitoModule {
 
   object test extends Tests with ScoverageTests with LibroFinitoTest
 }
+
+// TODO use this when https://github.com/com-lihaoyi/mill/pull/1309 is merged
+// object scoverage extends ScoverageReport {
+//   def scalaVersion     = Deps.scalaVersion
+//   def scoverageVersion = Deps.scoverageVersion
+// }
 
 object Options {
   val scalacOptions = Seq("-Ywarn-unused", "-Xfatal-warnings")

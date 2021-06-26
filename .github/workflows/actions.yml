@@ -16,7 +16,7 @@ jobs:
           java-version: 8
       - name: Compile
         run: ./mill __.compile
-      - name: Formatting
+      - name: Check Formatting
         run: ./mill __.checkFormat
       - name: Check for schema updates
         run: |
@@ -26,3 +26,14 @@ jobs:
         run: ./mill __.fix --check
       - name: Run tests
         run: ./mill __.test
+      ##################
+      # Coverage Stuff #
+      ##################
+      - name: Generate Coverage Reports
+        run: ./mill __.scoverage.xmlReport
+      - name: Send Coverage Reports
+        uses: codecov/codecov-action@v1
+        with:
+          files: ./out/core/scoverage/xmlReport/dest/scoverage.xml,./out/main/scoverage/xmlReport/dest/scoverage.xml # optional
+          flags: unittests # optional
+          fail_ci_if_error: true # optional (default = false)
