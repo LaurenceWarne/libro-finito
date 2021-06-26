@@ -25,10 +25,7 @@ def genSchema(
     )
   }
 
-trait LibroFinitoModuleNoScalafix
-    extends ScalaModule
-    with ScalafmtModule
-    with ScoverageModule {
+trait LibroFinitoModuleNoLinting extends ScalaModule with ScoverageModule {
   def scalaVersion     = Deps.scalaVersion
   def scoverageVersion = Deps.scoverageVersion
   def scalacOptions    = Options.scalacOptions
@@ -45,7 +42,8 @@ trait LibroFinitoModuleNoScalafix
 }
 
 trait LibroFinitoModule
-    extends LibroFinitoModuleNoScalafix
+    extends LibroFinitoModuleNoLinting
+    with ScalafmtModule
     with ScalafixModule {
   def scalafixIvyDeps = Agg(Deps.Scalafix.organizeImports)
 }
@@ -57,10 +55,7 @@ trait LibroFinitoTest
   def scalafixIvyDeps = Agg(Deps.Scalafix.organizeImports)
   def scalacOptions   = Options.scalacOptions
 
-  def ivyDeps =
-    Agg(
-      ivy"com.disneystreaming::weaver-framework:0.4.3"
-    )
+  def ivyDeps = Agg(Deps.weaver)
   // https://github.com/disneystreaming/weaver-test
   def testFramework = "weaver.framework.TestFramework"
 }
@@ -102,7 +97,7 @@ object main extends LibroFinitoModule with BuildInfo {
     )
 }
 
-object api extends LibroFinitoModuleNoScalafix {
+object api extends LibroFinitoModuleNoLinting {
   def ivyDeps =
     Agg(
       Deps.catsEffect,
@@ -144,6 +139,7 @@ object Deps {
   val catsLoggingCore  = ivy"io.chrisdavenport::log4cats-core:1.1.1"
   val catsLogging      = ivy"io.chrisdavenport::log4cats-slf4j:1.1.1"
   val logback          = ivy"ch.qos.logback:logback-classic:1.1.3"
+  val weaver           = ivy"com.disneystreaming::weaver-framework:0.6.4"
 
   object Compiler {
     val semanticDb       = ivy"org.scalameta::semanticdb-scalac:4.4.22"
