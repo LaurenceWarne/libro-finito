@@ -46,28 +46,29 @@ object main extends LibroFinitoModule with BuildInfo {
     super.scalacPluginIvyDeps() ++ Agg(Deps.Compiler.betterMonadicFor)
   def ivyDeps =
     Agg(
+      Deps.Caliban.cats,
+      Deps.Caliban.core,
+      Deps.Caliban.http4s,
+      Deps.Circe.core,
+      Deps.Circe.generic,
+      Deps.Circe.parser,
+      Deps.Doobie.core,
+      Deps.Http4s.http4sBlazeClient,
+      Deps.Http4s.http4sBlazeServer,
+      Deps.Http4s.http4sDsl,
       Deps.catsEffect,
       Deps.catsLogging,
       Deps.catsLoggingCore,
-      Deps.logback,
-      Deps.Caliban.core,
-      Deps.Caliban.http4s,
-      Deps.Caliban.cats,
-      Deps.Http4s.http4sDsl,
-      Deps.Http4s.http4sBlazeClient,
-      Deps.Http4s.http4sBlazeServer,
-      Deps.Circe.core,
-      Deps.Circe.generic,
-      Deps.Circe.parser
+      Deps.logback
     )
 }
 
 object api extends LibroFinitoModuleNoLinting {
   def ivyDeps =
     Agg(
-      Deps.catsEffect,
       Deps.Caliban.core,
-      Deps.Caliban.cats
+      Deps.Caliban.cats,
+      Deps.catsEffect
     )
 }
 
@@ -104,6 +105,7 @@ object persistence extends LibroFinitoModule {
       Deps.Circe.core,
       Deps.Circe.generic,
       Deps.Circe.parser,
+      Deps.Doobie.core,
       Deps.sqlite
     )
 
@@ -180,6 +182,11 @@ object Deps {
     val core    = ivy"com.github.ghostdogpr::caliban:$version"
     val http4s  = ivy"com.github.ghostdogpr::caliban-http4s:$version"
     val cats    = ivy"com.github.ghostdogpr::caliban-cats:$version"
+  }
+
+  object Doobie {
+    val version = "0.12.1"
+    val core    = ivy"org.tpolecat::doobie-core:$version"
   }
 
   object Http4s {

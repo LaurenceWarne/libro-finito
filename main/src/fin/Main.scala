@@ -6,6 +6,7 @@ import caliban.interop.cats.implicits._
 import caliban.{GraphQL, RootResolver}
 import cats.effect.{Blocker, ExitCode, IO, IOApp}
 import cats.implicits._
+import doobie._
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.client.blaze.BlazeClientBuilder
@@ -27,6 +28,12 @@ object Main extends IOApp {
         case (client, blocker) =>
           for {
             implicit0(logger: Logger[IO]) <- Slf4jLogger.create[IO]
+            _ = Transactor.fromDriverManager[IO](
+              "org.sqlite.JDBC",
+              "jdbc:sqlite::memory:",
+              "",
+              ""
+            )
             bookAPI = GoogleBookInfoService[IO](client)
             queries = Queries(
               booksArgs => bookAPI.search(booksArgs),
