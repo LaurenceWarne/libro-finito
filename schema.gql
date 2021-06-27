@@ -18,7 +18,7 @@ type Collection {
 }
 
 type Queries {
-  books(titleKeywords: String, authorKeywords: String, results: Int! = 10): [Book!]!
+  books(titleKeywords: String, authorKeywords: String, results: Int = 10): [Book!]!
   book(isbn: String!): Book!
   collections: [Collection!]!
   collection(id: ID!): Collection!
