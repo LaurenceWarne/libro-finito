@@ -84,7 +84,7 @@ object GoogleBookInfoService {
     case GoogleVolume(
           GoogleBookItem(
             title,
-            Some(author :: _),
+            Some(authors),
             maybeDescription,
             Some(GoogleImageLinks(_, largeThumbnail)),
             Some(industryIdentifier :: _)
@@ -92,7 +92,7 @@ object GoogleBookInfoService {
         ) =>
       Book(
         title,
-        author,
+        authors,
         maybeDescription.getOrElse("No Description!"),
         industryIdentifier.getIsbn13,
         largeThumbnail
@@ -106,7 +106,7 @@ object GoogleBookInfoService {
     case GoogleVolume(bookItem) =>
       Book(
         bookItem.title,
-        bookItem.authors.getOrElse(Nil).headOption.getOrElse("???"),
+        bookItem.authors.getOrElse(List("???")),
         bookItem.description.getOrElse("No Description!"),
         bookItem.industryIdentifiers
           .getOrElse(Nil)
@@ -128,7 +128,7 @@ object GoogleBookInfoService {
         (booksArgs.titleKeywords.filterNot(_.isEmpty).map("intitle:" + _) ++
           booksArgs.authorKeywords.map("inauthor:" + _))
           .mkString("+")
-      ) +?? ("maxResults", booksArgs.results),
+      ) +? ("maxResults", booksArgs.results),
       new Exception(
         "At least one of author keywords and title keywords must be specified"
       )

@@ -2,14 +2,14 @@ package fin
 
 import Types._
 
-import cats.effect.IO
 import java.util.UUID
+import cats.effect.IO
 
 object Types {
   case class QueriesBooksArgs(
       titleKeywords: Option[String],
       authorKeywords: Option[String],
-      results: Option[Int]
+      results: Int
   )
   case class QueriesBookArgs(isbn: String)
   case class QueriesCollectionArgs(id: UUID)
@@ -22,7 +22,7 @@ object Types {
   case class MutationsAddBookArgs(id: UUID, book: Book)
   case class Book(
       title: String,
-      author: String,
+      authors: List[String],
       description: String,
       isbn: String,
       thumbnailUri: String

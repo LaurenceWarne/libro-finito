@@ -31,7 +31,7 @@ object Main extends IOApp {
             queries = Queries(
               booksArgs => bookAPI.search(booksArgs),
               bookArgs => bookAPI.fromIsbn(bookArgs),
-              ???,
+              List.empty[Collection].pure[IO],
               _ => ???
             )
             mutations = Mutations(
