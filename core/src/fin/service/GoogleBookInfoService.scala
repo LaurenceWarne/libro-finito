@@ -24,13 +24,14 @@ final case class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger](
 
   import GoogleBookInfoService._
 
-  def search(booksArgs: QueriesBooksArgs): F[List[Book]] =
+  def search(booksArgs: QueriesBooksArgs): F[List[Book]] = {
+    val uri = uriFromBooksArgs(booksArgs)
     for {
-      uri   <- MonadError[F, Throwable].fromEither(uriFromBooksArgs(booksArgs))
       _     <- Logger[F].info(uri.toString)
       books <- booksFromUri(uri, searchPartialFn)
     } yield books
 
+  }
   def fromIsbn(bookArgs: QueriesBookArgs): F[Book] = {
     val uri = uriFromBookArgs(bookArgs)
     for {
@@ -118,21 +119,17 @@ object GoogleBookInfoService {
 
   private val baseUri = uri"https://www.googleapis.com/books/v1/volumes"
 
-  def uriFromBooksArgs(booksArgs: QueriesBooksArgs): Either[Exception, Uri] =
-    Either.cond(
-      booksArgs.authorKeywords
-        .filterNot(_.isEmpty)
-        .nonEmpty || booksArgs.titleKeywords.filterNot(_.isEmpty).nonEmpty,
-      baseUri +? (
-        "q",
-        (booksArgs.titleKeywords.filterNot(_.isEmpty).map("intitle:" + _) ++
-          booksArgs.authorKeywords.map("inauthor:" + _))
-          .mkString("+")
-      ) +?? ("maxResults", booksArgs.results),
-      new Exception(
-        "At least one of author keywords and title keywords must be specified"
-      )
-    )
+  def uriFromBooksArgs(booksArgs: QueriesBooksArgs): Uri = {
+    import SearchFilter._
+    (booksArgs.searchFilter match {
+      case AuthorKeywords(keywords) =>
+        baseUri +? ("q", "inauthor:" + keywords)
+      case TitleKeywords(keywords) =>
+        baseUri +? ("q", "intitle:" + keywords)
+      case Keywords(titleKeywords, authorKeywords) =>
+        baseUri +? ("q", "intitle:" + titleKeywords + "+inauthor:" + authorKeywords)
+    }) +?? ("maxResults", booksArgs.results)
+  }
 
   def uriFromBookArgs(bookArgs: QueriesBookArgs): Uri =
     baseUri +? ("q", "isbn:" + bookArgs.isbn)

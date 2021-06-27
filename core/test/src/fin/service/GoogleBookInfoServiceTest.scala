@@ -10,6 +10,7 @@ import org.http4s.implicits._
 import weaver._
 
 import fin.Types._
+import SearchFilter._
 
 object GoogleBookInfoServiceTest extends SimpleIOSuite {
 
@@ -30,7 +31,9 @@ object GoogleBookInfoServiceTest extends SimpleIOSuite {
       mockedClient(Mocks.booksResponse(title, author, description))
     val bookAPI: BookInfoService[IO] = GoogleBookInfoService(client)
     for {
-      result <- bookAPI.search(QueriesBooksArgs("non-empty".some, None, None))
+      result <- bookAPI.search(
+        QueriesBooksArgs(AuthorKeywords("non-empty"), None)
+      )
       book :: Nil = result
     } yield expect(book.title === title) and
       expect(book.authors === List(author)) and
@@ -57,38 +60,28 @@ object GoogleBookInfoServiceTest extends SimpleIOSuite {
   }
 
   pureTest("uriFromQueriesBooksArgs returns correct uri") {
-    val bookArgs   = QueriesBooksArgs("title".some, "some author".some, 5.some)
-    val Right(uri) = GoogleBookInfoService.uriFromBooksArgs(bookArgs)
+    val bookArgs = QueriesBooksArgs(Keywords("title", "some author"), 5.some)
+    val uri      = GoogleBookInfoService.uriFromBooksArgs(bookArgs)
     expect(
       uri === uri"https://www.googleapis.com/books/v1/volumes?q=intitle%3Atitle%2Binauthor%3Asome%20author&maxResults=5"
     )
   }
 
-  pureTest("uriFromQueriesBooksArgs errors with empty strings") {
-    val bookArgs = QueriesBooksArgs("".some, "".some, None)
-    expect(GoogleBookInfoService.uriFromBooksArgs(bookArgs).isLeft)
-  }
-
-  pureTest("uriFromQueriesBooksArgs errors with empty optionals") {
-    val bookArgs = QueriesBooksArgs(None, None, None)
-    expect(GoogleBookInfoService.uriFromBooksArgs(bookArgs).isLeft)
-  }
-
   pureTest(
-    "uriFromQueriesBooksArgs returns uri with no title with None for title"
+    "uriFromQueriesBooksArgs returns uri with no title for author keywords"
   ) {
-    val bookArgs   = QueriesBooksArgs(None, "author".some, None)
-    val Right(uri) = GoogleBookInfoService.uriFromBooksArgs(bookArgs)
+    val bookArgs = QueriesBooksArgs(AuthorKeywords("author"), None)
+    val uri      = GoogleBookInfoService.uriFromBooksArgs(bookArgs)
     expect(
       uri === uri"https://www.googleapis.com/books/v1/volumes?q=inauthor%3Aauthor"
     )
   }
 
   pureTest(
-    "uriFromQueriesBooksArgs returns uri with no author with None for author"
+    "uriFromQueriesBooksArgs returns uri with no author for title keywords"
   ) {
-    val bookArgs   = QueriesBooksArgs("title".some, None, None)
-    val Right(uri) = GoogleBookInfoService.uriFromBooksArgs(bookArgs)
+    val bookArgs = QueriesBooksArgs(TitleKeywords("title"), None)
+    val uri      = GoogleBookInfoService.uriFromBooksArgs(bookArgs)
     expect(
       uri === uri"https://www.googleapis.com/books/v1/volumes?q=intitle%3Atitle"
     )

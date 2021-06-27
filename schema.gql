@@ -17,8 +17,23 @@ type Collection {
   books: [String!]!
 }
 
+type TitleKeywords {
+  keywords: String!
+}
+
+type AuthorKeywords {
+  keywords: String!
+}
+
+type Keywords {
+  titleKeywords: String!
+  authorKeywords: String!
+}
+
+union SearchFilter = Keywords | AuthorKeywords | TitleKeywords
+
 type Queries {
-  books(titleKeywords: String, authorKeywords: String, results: Int = 10): [Book!]!
+  books(searchFilter: SearchFilter!, results: Int = 10): [Book!]!
   book(isbn: String!): Book!
   collections: [Collection!]!
   collection(id: ID!): Collection!
