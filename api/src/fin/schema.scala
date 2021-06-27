@@ -6,7 +6,11 @@ import java.util.UUID
 import cats.effect.IO
 
 object Types {
-  case class QueriesBooksArgs(searchFilter: SearchFilter, results: Option[Int])
+  case class QueriesBooksArgs(
+      titleKeywords: Option[String],
+      authorKeywords: Option[String],
+      results: Option[Int]
+  )
   case class QueriesBookArgs(isbn: String)
   case class QueriesCollectionArgs(id: UUID)
   case class MutationsCreateCollectionArgs(
@@ -30,15 +34,6 @@ object Types {
       changeCollectionName: MutationsChangeCollectionNameArgs => Collection,
       addBook: MutationsAddBookArgs => Collection
   )
-
-  sealed trait SearchFilter extends scala.Product with scala.Serializable
-
-  object SearchFilter {
-    case class Keywords(titleKeywords: String, authorKeywords: String)
-        extends SearchFilter
-    case class AuthorKeywords(keywords: String) extends SearchFilter
-    case class TitleKeywords(keywords: String)  extends SearchFilter
-  }
 
 }
 
