@@ -9,7 +9,7 @@ object Types {
   case class QueriesBooksArgs(
       titleKeywords: Option[String],
       authorKeywords: Option[String],
-      results: Option[Int]
+      maxResults: Option[Int]
   )
   case class QueriesBookArgs(isbn: String)
   case class QueriesCollectionArgs(id: UUID)

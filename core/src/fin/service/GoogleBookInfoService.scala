@@ -128,7 +128,7 @@ object GoogleBookInfoService {
         (booksArgs.titleKeywords.filterNot(_.isEmpty).map("intitle:" + _) ++
           booksArgs.authorKeywords.map("inauthor:" + _))
           .mkString("+")
-      ) +?? ("maxResults", booksArgs.results),
+      ) +?? ("maxResults", booksArgs.maxResults),
       new Exception(
         "At least one of author keywords and title keywords must be specified"
       )
