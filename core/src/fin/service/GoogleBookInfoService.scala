@@ -60,6 +60,11 @@ final case class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger](
   }
 }
 
+case object NoKeywordsSpecified extends Throwable {
+  override def getMessage: String =
+    "At least one of 'author keywords' and 'title keywords' must be specified."
+}
+
 /**
   * Utilities for decoding responses from the google books API
   */
@@ -118,7 +123,7 @@ object GoogleBookInfoService {
 
   private val baseUri = uri"https://www.googleapis.com/books/v1/volumes"
 
-  def uriFromBooksArgs(booksArgs: QueriesBooksArgs): Either[Exception, Uri] =
+  def uriFromBooksArgs(booksArgs: QueriesBooksArgs): Either[Throwable, Uri] =
     Either.cond(
       booksArgs.authorKeywords
         .filterNot(_.isEmpty)
@@ -129,9 +134,7 @@ object GoogleBookInfoService {
           booksArgs.authorKeywords.map("inauthor:" + _))
           .mkString("+")
       ) +?? ("maxResults", booksArgs.maxResults),
-      new Exception(
-        "At least one of author keywords and title keywords must be specified"
-      )
+      NoKeywordsSpecified
     )
 
   def uriFromBookArgs(bookArgs: QueriesBookArgs): Uri =

@@ -2,8 +2,6 @@ package fin
 
 import scala.concurrent.ExecutionContext.global
 
-import caliban.interop.cats.implicits._
-import caliban.{GraphQL, RootResolver}
 import cats.effect.{Blocker, ExitCode, IO, IOApp}
 import cats.implicits._
 import doobie._
@@ -14,8 +12,6 @@ import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import zio.Runtime
 
-import fin.Operations._
-import fin.Types._
 import fin.service.GoogleBookInfoService
 
 object Main extends IOApp {
@@ -34,21 +30,8 @@ object Main extends IOApp {
               "",
               ""
             )
-            bookAPI = GoogleBookInfoService[IO](client)
-            queries = Queries(
-              booksArgs => bookAPI.search(booksArgs),
-              bookArgs => bookAPI.fromIsbn(bookArgs),
-              List.empty[Collection].pure[IO],
-              _ => ???
-            )
-            mutations = Mutations(
-              _ => ???,
-              _ => ???,
-              _ => ???,
-              _ => ???
-            )
-            api = GraphQL.graphQL(RootResolver(queries, mutations))
-            interpreter <- api.interpreterAsync[IO]
+            bookInfoService = GoogleBookInfoService[IO](client)
+            interpreter <- CalibanSetup.interpreter(bookInfoService)
             server <-
               BlazeServerBuilder[IO](global)
                 .bindHttp(8080, "localhost")
