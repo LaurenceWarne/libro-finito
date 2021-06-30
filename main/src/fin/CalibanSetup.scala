@@ -7,13 +7,15 @@ import cats.effect.IO
 import cats.implicits._
 
 import fin.Operations._
+import fin.persistence.CollectionRepository
 import fin.Types._
 import fin.service.BookInfoService
 
 object CalibanSetup {
 
   def interpreter(
-      bookInfoService: BookInfoService[IO]
+      bookInfoService: BookInfoService[IO],
+      collectionRepo: CollectionRepository[IO]
   )(implicit
       runtime: zio.Runtime[Any]
   ): IO[GraphQLInterpreter[Any, CalibanError]] = {
@@ -24,7 +26,7 @@ object CalibanSetup {
       _ => ???
     )
     val mutations = Mutations(
-      _ => ???,
+      args => collectionRepo.createCollection(args.name),
       _ => ???,
       _ => ???,
       _ => ???

@@ -1,6 +1,6 @@
 schema {
   query: Queries
-  mutation: Mutation
+  mutation: Mutations
 }
 
 type Book {
@@ -12,7 +12,7 @@ type Book {
 }
 
 type Collection {
-  id: ID!
+  id: String!
   name: String!
   books: [Book!]!
 }
@@ -26,7 +26,7 @@ type Queries {
 
 type Mutations {
   createCollection(name: String!, books: [Book!]): Collection!
-  deleteCollection(id: ID!): Collection!
-  changeCollectionName(id: ID!, name: String!): Collection!
-  addBook(id: ID!, book: Book!): Collection!
+  deleteCollection(id: String!): Collection!
+  changeCollectionName(id: String!, name: String!): Collection!
+  addBook(id: String!, book: Book!): Collection!
 }

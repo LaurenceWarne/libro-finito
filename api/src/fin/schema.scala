@@ -17,9 +17,9 @@ object Types {
       name: String,
       books: Option[List[Book]]
   )
-  case class MutationsDeleteCollectionArgs(id: UUID)
-  case class MutationsChangeCollectionNameArgs(id: UUID, name: String)
-  case class MutationsAddBookArgs(id: UUID, book: Book)
+  case class MutationsDeleteCollectionArgs(id: String)
+  case class MutationsChangeCollectionNameArgs(id: String, name: String)
+  case class MutationsAddBookArgs(id: String, book: Book)
   case class Book(
       title: String,
       authors: List[String],
@@ -27,13 +27,7 @@ object Types {
       isbn: String,
       thumbnailUri: String
   )
-  case class Collection(id: UUID, name: String, books: List[Book])
-  case class Mutations(
-      createCollection: MutationsCreateCollectionArgs => Collection,
-      deleteCollection: MutationsDeleteCollectionArgs => Collection,
-      changeCollectionName: MutationsChangeCollectionNameArgs => Collection,
-      addBook: MutationsAddBookArgs => Collection
-  )
+  case class Collection(id: String, name: String, books: List[Book])
 
 }
 
@@ -44,6 +38,13 @@ object Operations {
       book: QueriesBookArgs => IO[Book],
       collections: IO[List[Collection]],
       collection: QueriesCollectionArgs => IO[Collection]
+  )
+
+  case class Mutations(
+      createCollection: MutationsCreateCollectionArgs => IO[Collection],
+      deleteCollection: MutationsDeleteCollectionArgs => IO[Collection],
+      changeCollectionName: MutationsChangeCollectionNameArgs => IO[Collection],
+      addBook: MutationsAddBookArgs => IO[Collection]
   )
 
 }

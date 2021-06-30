@@ -9,20 +9,27 @@ import fin.Types._
 
 class SqliteCollectionRepository[F[_]: Sync](xa: Transactor[F])
     extends CollectionRepository[F] {
-  def addBookToCollection(collection: UUID, book: Book): F[Collection] =
+  def addBookToCollection(collection: String, book: Book): F[Collection] =
     ???
 
-  def changeCollectionName(id: UUID, name: String): F[Collection] = ???
+  def changeCollectionName(id: String, name: String): F[Collection] = ???
 
-  def collection(id: UUID): F[Collection] = ???
+  def collection(id: String): F[Collection] = ???
 
-  def collections: F[List[Collection]] = ???
+  def collections: F[List[Collection]] =
+    fr"SELECT id, name FROM collections"
+      .query[(String, String)]
+      .to[List]
+      .transact(xa)
+      .nested
+      .map(tup => Collection(tup._1, tup._2, Nil))
+      .value
 
   def createCollection(name: String): F[Collection] = {
     for {
-      id <- Sync[F].delay(UUID.randomUUID())
+      id <- Sync[F].delay(UUID.randomUUID().toString)
       _ <-
-        fr"INSERT INTO collections VALUES (${id.toString}, $name)".update.run
+        fr"INSERT INTO collections VALUES ($id, $name)".update.run
           .transact(xa)
     } yield Collection(id, name, List.empty[Book])
   }
