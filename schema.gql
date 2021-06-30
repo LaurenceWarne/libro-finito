@@ -14,7 +14,7 @@ type Book {
 type Collection {
   id: ID!
   name: String!
-  books: [String!]!
+  books: [Book!]!
 }
 
 type Queries {

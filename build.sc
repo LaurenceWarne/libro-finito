@@ -39,7 +39,8 @@ object main extends LibroFinitoModule with BuildInfo {
       )
     }
 
-  def moduleDeps = Seq(api, core)
+  def moduleDeps = Seq(api, core, persistence)
+
   //def forkArgs   = Seq("-Xmx100m")
 
   def scalacPluginIvyDeps =
@@ -59,6 +60,7 @@ object main extends LibroFinitoModule with BuildInfo {
       Deps.catsEffect,
       Deps.catsLogging,
       Deps.catsLoggingCore,
+      Deps.flyway,
       Deps.logback
     )
 }
@@ -106,6 +108,7 @@ object persistence extends LibroFinitoModule {
       Deps.Circe.generic,
       Deps.Circe.parser,
       Deps.Doobie.core,
+      Deps.flyway,
       Deps.sqlite
     )
 
@@ -167,6 +170,7 @@ object Deps {
   val logback          = ivy"ch.qos.logback:logback-classic:1.1.3"
   val weaver           = ivy"com.disneystreaming::weaver-cats:0.6.4"
   val sqlite           = ivy"org.xerial:sqlite-jdbc:3.34.0"
+  val flyway           = ivy"org.flywaydb:flyway-core:7.10.0"
 
   object Compiler {
     val semanticDb       = ivy"org.scalameta::semanticdb-scalac:4.4.22"

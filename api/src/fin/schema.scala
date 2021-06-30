@@ -27,7 +27,7 @@ object Types {
       isbn: String,
       thumbnailUri: String
   )
-  case class Collection(id: UUID, name: String, books: List[String])
+  case class Collection(id: UUID, name: String, books: List[Book])
   case class Mutations(
       createCollection: MutationsCreateCollectionArgs => Collection,
       deleteCollection: MutationsDeleteCollectionArgs => Collection,

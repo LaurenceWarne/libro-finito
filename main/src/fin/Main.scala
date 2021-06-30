@@ -12,6 +12,7 @@ import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import zio.Runtime
 
+import fin.persistence.SqliteCollectionRepository
 import fin.service.GoogleBookInfoService
 
 object Main extends IOApp {
@@ -22,14 +23,18 @@ object Main extends IOApp {
     val server =
       (BlazeClientBuilder[IO](global).resource, Blocker[IO]).tupled.use {
         case (client, blocker) =>
+          // "jdbc:sqlite::memory:" for in memory
+          val (uri, user, password) = ("jdbc:sqlite:test.db", "", "")
+          val xa = Transactor.fromDriverManager[IO](
+            "org.sqlite.JDBC",
+            uri,
+            user,
+            password
+          )
           for {
+            _ <- FlywaySetup.init[IO](uri, user, password)
+            collectionRepo = new SqliteCollectionRepository[IO](xa)
             implicit0(logger: Logger[IO]) <- Slf4jLogger.create[IO]
-            _ = Transactor.fromDriverManager[IO](
-              "org.sqlite.JDBC",
-              "jdbc:sqlite::memory:",
-              "",
-              ""
-            )
             bookInfoService = GoogleBookInfoService[IO](client)
             interpreter <- CalibanSetup.interpreter(bookInfoService)
             server <-

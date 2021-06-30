@@ -33,6 +33,8 @@ object CalibanSetup {
     api.interpreterAsync[IO].map(withErrors(_))
   }
 
+  // 'Effect failure' is from this line:
+  // https://github.com/ghostdogpr/caliban/blob/2e4d6ec571ca15a1b66f6e4f8a0ef0c94c80513d/core/src/main/scala/caliban/execution/Executor.scala#L224
   private def withErrors[R](
       interpreter: GraphQLInterpreter[R, CalibanError]
   ): GraphQLInterpreter[R, CalibanError] =
