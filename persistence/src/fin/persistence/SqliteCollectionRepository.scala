@@ -1,10 +1,12 @@
 package fin.persistence
 
+import java.util.UUID
+
 import cats.effect.Sync
 import cats.implicits._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
-import java.util.UUID
+
 import fin.Types._
 
 class SqliteCollectionRepository[F[_]: Sync](xa: Transactor[F])

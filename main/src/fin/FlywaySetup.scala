@@ -1,7 +1,7 @@
 package fin
 
-import cats.implicits._
 import cats.effect.Sync
+import cats.implicits._
 import org.flywaydb.core.Flyway
 
 object FlywaySetup {

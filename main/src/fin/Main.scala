@@ -36,7 +36,8 @@ object Main extends IOApp {
             collectionRepo = new SqliteCollectionRepository[IO](xa)
             implicit0(logger: Logger[IO]) <- Slf4jLogger.create[IO]
             bookInfoService = GoogleBookInfoService[IO](client)
-            interpreter <- CalibanSetup.interpreter(bookInfoService)
+            interpreter <-
+              CalibanSetup.interpreter(bookInfoService, collectionRepo)
             server <-
               BlazeServerBuilder[IO](global)
                 .bindHttp(8080, "localhost")

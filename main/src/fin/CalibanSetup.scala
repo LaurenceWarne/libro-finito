@@ -1,14 +1,12 @@
 package fin
 
-import caliban.interop.cats.implicits._
 import caliban.CalibanError.ExecutionError
 import caliban._
+import caliban.interop.cats.implicits._
 import cats.effect.IO
-import cats.implicits._
 
 import fin.Operations._
 import fin.persistence.CollectionRepository
-import fin.Types._
 import fin.service.BookInfoService
 
 object CalibanSetup {
@@ -22,7 +20,7 @@ object CalibanSetup {
     val queries = Queries(
       booksArgs => bookInfoService.search(booksArgs),
       bookArgs => bookInfoService.fromIsbn(bookArgs),
-      List.empty[Collection].pure[IO],
+      collectionRepo.collections,
       _ => ???
     )
     val mutations = Mutations(
