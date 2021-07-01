@@ -18,7 +18,7 @@ import fin.Types._
   *
   * @param client http client
   */
-final case class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger](
+class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger] private (
     client: Client[F]
 ) extends BookInfoService[F] {
 
@@ -122,6 +122,9 @@ object GoogleBookInfoService {
   }
 
   private val baseUri = uri"https://www.googleapis.com/books/v1/volumes"
+
+  def apply[F[_]: ConcurrentEffect: Logger](client: Client[F]) =
+    new GoogleBookInfoService[F](client)
 
   def uriFromBooksArgs(booksArgs: QueriesBooksArgs): Either[Throwable, Uri] =
     Either.cond(

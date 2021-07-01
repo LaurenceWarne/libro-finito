@@ -1,4 +1,4 @@
-package fin
+package fin.persistence
 
 import cats.effect.Sync
 import cats.implicits._

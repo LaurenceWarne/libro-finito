@@ -158,7 +158,7 @@ trait LibroFinitoTest
 }
 
 object Options {
-  val scalacOptions = Seq("-Ywarn-unused", "-Xfatal-warnings")
+  val scalacOptions = Seq("-deprecation", "-Ywarn-unused", "-Xfatal-warnings")
 }
 
 object Deps {

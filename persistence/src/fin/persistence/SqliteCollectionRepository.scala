@@ -9,7 +9,7 @@ import doobie.util.transactor.Transactor
 
 import fin.Types._
 
-class SqliteCollectionRepository[F[_]: Sync](xa: Transactor[F])
+class SqliteCollectionRepository[F[_]: Sync] private (xa: Transactor[F])
     extends CollectionRepository[F] {
   def addBookToCollection(collection: String, book: Book): F[Collection] =
     ???
@@ -37,4 +37,10 @@ class SqliteCollectionRepository[F[_]: Sync](xa: Transactor[F])
   }
 
   def deleteCollection(name: String): F[Unit] = ???
+}
+
+object SqliteCollectionRepository {
+
+  def apply[F[_]: Sync](xa: Transactor[F]) =
+    new SqliteCollectionRepository[F](xa)
 }
