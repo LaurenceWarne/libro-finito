@@ -1,18 +1,16 @@
 package fin.persistence
 
-import weaver._
-import doobie.implicits._
-import doobie.util.transactor.Transactor
-import cats.effect.IO
+import java.io.File
+
+import cats.effect.{IO, Resource}
 import cats.implicits._
-import cats.effect.Resource
-import doobie.util.fragment.Fragment
+import doobie.util.transactor.Transactor
+import weaver._
 
 object SqliteCollectionRepositoryTest extends IOSuite {
 
-  // See https://sqlite.org/forum/draft2/forumpost/cf7424bc7b4f37e1
-  // or https://www.sqlite.org/inmemorydb.html
-  val (uri, user, password) = ("jdbc:sqlite::memory:?cache=shared", "", "")
+  val filename              = "tmp.db"
+  val (uri, user, password) = (show"jdbc:sqlite:$filename", "", "")
   val xa = Transactor.fromDriverManager[IO](
     "org.sqlite.JDBC",
     uri,
@@ -21,21 +19,12 @@ object SqliteCollectionRepositoryTest extends IOSuite {
   )
 
   val repo = SqliteCollectionRepository(xa)
-  // FIXME According to the link: 'The database is automatically
-  // deleted and memory is reclaimed when the last connection to the database
-  // closes.' but this doesn't seem to be the case
-  val dropTables =
-    for {
-      tables <-
-        fr"SELECT name FROM sqlite_master WHERE type='table';"
-          .query[String]
-          .to[List]
-          .transact(xa)
-      _ <- tables.traverse(name => {
-        fr"DROP TABLE IF EXISTS ${Fragment.const(name)};".update.run
-          .transact(xa)
-      })
-    } yield ()
+  // We can't use the in memory db since that is killed whenever no connections
+  // exist
+  val deleteDb: IO[Unit] = for {
+    file <- IO(new File(filename))
+    _    <- IO(file.delete())
+  } yield ()
 
   override type Res = Unit
   override def sharedResource: Resource[IO, Res] =
@@ -45,7 +34,7 @@ object SqliteCollectionRepositoryTest extends IOSuite {
         user,
         password
       )
-    )(_ => dropTables)
+    )(_ => deleteDb)
 
   test("createCollection creates collection with correct attributes") { _ =>
     val name = "my collection"
@@ -54,13 +43,13 @@ object SqliteCollectionRepositoryTest extends IOSuite {
     } yield expect(collection.name == name)
   }
 
-  test("collections retrieves all created collections") { _ =>
+  test("collections retrieves created collections") { _ =>
     for {
       c1                   <- repo.createCollection("collection1")
       c2                   <- repo.createCollection("collection2")
       c3                   <- repo.createCollection("collection3")
       retrievedCollections <- repo.collections
-    } yield expect(retrievedCollections.toSet == Set(c1, c2, c3))
+    } yield expect(Set(c1, c2, c3).subsetOf(retrievedCollections.toSet))
   }
 
 }
