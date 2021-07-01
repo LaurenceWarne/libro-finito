@@ -2,7 +2,7 @@ package fin
 
 import scala.concurrent.ExecutionContext.global
 
-import cats.effect.{Blocker, ExitCode, IO, IOApp}
+import cats.effect._
 import cats.implicits._
 import doobie._
 import io.chrisdavenport.log4cats.Logger
@@ -32,7 +32,8 @@ object Main extends IOApp {
           )
           for {
             _ <- FlywaySetup.init[IO](uri, user, password)
-            collectionRepo = SqliteCollectionRepository[IO](xa)
+            clock          = Clock[IO]
+            collectionRepo = SqliteCollectionRepository[IO](xa, clock)
             implicit0(logger: Logger[IO]) <- Slf4jLogger.create[IO]
             bookInfoService = GoogleBookInfoService[IO](client)
             interpreter <-

@@ -31,5 +31,5 @@
 *** DONE Sort out logging middleware
 *** DONE Add scalafix (for imports, etc)
 *** TODO Decrease/investigate memory usage
-*** TODO Get better errors than "Effect Failure"
+*** DONE Get better errors than "Effect Failure"
 *** TODO Caching middleware?

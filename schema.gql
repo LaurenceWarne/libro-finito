@@ -12,7 +12,6 @@ type Book {
 }
 
 type Collection {
-  id: String!
   name: String!
   books: [Book!]!
 }
@@ -21,12 +20,12 @@ type Queries {
   books(titleKeywords: String, authorKeywords: String, maxResults: Int = 10): [Book!]!
   book(isbn: String!): Book!
   collections: [Collection!]!
-  collection(id: ID!): Collection!
+  collection(id: String!): Collection!
 }
 
 type Mutations {
   createCollection(name: String!, books: [Book!]): Collection!
   deleteCollection(id: String!): Collection!
-  changeCollectionName(id: String!, name: String!): Collection!
+  changeCollectionName(currentName: String!, newName: String!): Collection!
   addBook(id: String!, book: Book!): Collection!
 }

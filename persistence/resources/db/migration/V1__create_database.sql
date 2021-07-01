@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS books(
   isbn TEXT NOT NULL PRIMARY KEY,
+  title TEXT NOT NULL,
   authors TEXT NOT NULL,
   description TEXT NOT NULL,
   thumbnail_uri TEXT NOT NULL,
@@ -7,16 +8,15 @@ CREATE TABLE IF NOT EXISTS books(
 );
 
 CREATE TABLE IF NOT EXISTS collections(
-  id TEXT NOT NULL PRIMARY KEY,
-  name TEXT UNIQUE NOT NULL
+  name TEXT NOT NULL PRIMARY KEY
 );
 
 CREATE TABLE IF NOT EXISTS collection_books(
-  collection_id TEXT NOT NULL,
+  collection_name TEXT NOT NULL,
   isbn TEXT NOT NULL,
-  FOREIGN KEY(collection_id) REFERENCES collections(id),
+  FOREIGN KEY(collection_name) REFERENCES collections(name),
   FOREIGN KEY(isbn) REFERENCES books(isbn),
-  PRIMARY KEY(collection_id, isbn)
+  PRIMARY KEY(collection_name, isbn)
 );
 
 CREATE TABLE IF NOT EXISTS read_books(

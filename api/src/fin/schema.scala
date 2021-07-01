@@ -2,7 +2,6 @@ package fin
 
 import Types._
 
-import java.util.UUID
 import cats.effect.IO
 
 object Types {
@@ -12,13 +11,16 @@ object Types {
       maxResults: Option[Int]
   )
   case class QueriesBookArgs(isbn: String)
-  case class QueriesCollectionArgs(id: UUID)
+  case class QueriesCollectionArgs(id: String)
   case class MutationsCreateCollectionArgs(
       name: String,
       books: Option[List[Book]]
   )
   case class MutationsDeleteCollectionArgs(id: String)
-  case class MutationsChangeCollectionNameArgs(id: String, name: String)
+  case class MutationsChangeCollectionNameArgs(
+      currentName: String,
+      newName: String
+  )
   case class MutationsAddBookArgs(id: String, book: Book)
   case class Book(
       title: String,
@@ -27,7 +29,7 @@ object Types {
       isbn: String,
       thumbnailUri: String
   )
-  case class Collection(id: String, name: String, books: List[Book])
+  case class Collection(name: String, books: List[Book])
 
 }
 
