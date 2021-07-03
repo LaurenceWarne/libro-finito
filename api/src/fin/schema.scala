@@ -11,17 +11,17 @@ object Types {
       maxResults: Option[Int]
   )
   case class QueriesBookArgs(isbn: String)
-  case class QueriesCollectionArgs(id: String)
+  case class QueriesCollectionArgs(name: String)
   case class MutationsCreateCollectionArgs(
       name: String,
       books: Option[List[Book]]
   )
-  case class MutationsDeleteCollectionArgs(id: String)
+  case class MutationsDeleteCollectionArgs(name: String)
   case class MutationsChangeCollectionNameArgs(
       currentName: String,
       newName: String
   )
-  case class MutationsAddBookArgs(id: String, book: Book)
+  case class MutationsAddBookArgs(name: String, book: Book)
   case class Book(
       title: String,
       authors: List[String],
@@ -44,7 +44,7 @@ object Operations {
 
   case class Mutations(
       createCollection: MutationsCreateCollectionArgs => IO[Collection],
-      deleteCollection: MutationsDeleteCollectionArgs => IO[Collection],
+      deleteCollection: MutationsDeleteCollectionArgs => IO[Option[Boolean]],
       changeCollectionName: MutationsChangeCollectionNameArgs => IO[Collection],
       addBook: MutationsAddBookArgs => IO[Collection]
   )

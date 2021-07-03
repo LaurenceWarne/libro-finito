@@ -4,6 +4,7 @@ import caliban.CalibanError.ExecutionError
 import caliban._
 import caliban.interop.cats.implicits._
 import cats.effect.IO
+import cats.implicits._
 
 import fin.Operations._
 import fin.persistence.CollectionRepository
@@ -21,13 +22,22 @@ object CalibanSetup {
       booksArgs => bookInfoService.search(booksArgs),
       bookArgs => bookInfoService.fromIsbn(bookArgs),
       collectionRepo.collections,
-      _ => ???
+      collectionArgs =>
+        collectionRepo.collection(collectionArgs.name).flatMap {
+          maybeResponse =>
+            IO.fromOption(maybeResponse)(
+              new Exception(
+                show"Collection '${collectionArgs.name}' does not exist"
+              )
+            )
+        }
     )
     val mutations = Mutations(
       args => collectionRepo.createCollection(args.name),
-      _ => ???,
-      _ => ???,
-      _ => ???
+      args => collectionRepo.deleteCollection(args.name).map(_ => None),
+      args =>
+        collectionRepo.changeCollectionName(args.currentName, args.newName),
+      args => collectionRepo.addBookToCollection(args.name, args.book)
     )
     val api = GraphQL.graphQL(RootResolver(queries, mutations))
     api.interpreterAsync[IO].map(withErrors(_))
