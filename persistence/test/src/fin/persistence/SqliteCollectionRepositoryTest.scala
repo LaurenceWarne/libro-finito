@@ -39,6 +39,10 @@ object SqliteCollectionRepositoryTest extends IOSuite {
       )
     )(_ => deleteDb)
 
+  // See https://www.sqlite.org/faq.html#q5 of why generally it's a bad idea
+  // to run sqlite writes in parallel
+  override def maxParallelism = 1
+
   test("createCollection creates collection with correct attributes") { _ =>
     val name = "my collection"
     for {
@@ -95,5 +99,55 @@ object SqliteCollectionRepositoryTest extends IOSuite {
     for {
       response <- repo.changeCollectionName(name, "???").attempt
     } yield expect(response.isLeft)
+  }
+
+  test("AddToCollection adds book not already added") {
+    val name = "collection with books"
+    val book = Book("title", List("author"), "cool description", "???", "uri")
+    for {
+      _          <- repo.createCollection(name)
+      collection <- repo.addBookToCollection(name, book)
+    } yield expect(collection === Collection(name, List(book)))
+  }
+
+  test("AddToCollection adds in another collection") {
+    val name1 = "collection with books 1"
+    val name2 = "collection with books 2"
+    val book  = Book("title", List("author"), "cool description", "isbn", "uri")
+    for {
+      _          <- repo.createCollection(name1)
+      _          <- repo.createCollection(name2)
+      _          <- repo.addBookToCollection(name1, book)
+      collection <- repo.addBookToCollection(name2, book)
+    } yield expect(collection === Collection(name2, List(book)))
+  }
+
+  test("AddToCollection fails if collection does not exist") {
+    val name = "inexistant collection #2"
+    val book = Book("title", List("author"), "cool description", "isbn", "uri")
+    for {
+      response <- repo.addBookToCollection(name, book).attempt
+    } yield expect(response.isLeft)
+  }
+
+  test("deleteCollection successful with collection with no books") {
+    val name = "collection to delete"
+    for {
+      _               <- repo.createCollection(name)
+      _               <- repo.deleteCollection(name)
+      maybeCollection <- repo.collection(name)
+    } yield expect(maybeCollection.isEmpty)
+  }
+
+  test("deleteCollection successful with collection with one book") {
+    val name = "collection to delete with books"
+    val book =
+      Book("title", List("author"), "cool description", "isbn-d", "uri")
+    for {
+      _               <- repo.createCollection(name)
+      _               <- repo.addBookToCollection(name, book)
+      _               <- repo.deleteCollection(name)
+      maybeCollection <- repo.collection(name)
+    } yield expect(maybeCollection.isEmpty)
   }
 }

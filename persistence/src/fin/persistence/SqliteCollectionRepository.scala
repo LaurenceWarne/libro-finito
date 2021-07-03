@@ -133,7 +133,7 @@ object Fragments {
     fr"DELETE FROM collections WHERE name = $name"
 
   def deleteReferences(name: String): Fragment =
-    fr"DELETE FROM collection_books WHERE name = $name"
+    fr"DELETE FROM collection_books WHERE collection_name = $name"
 
   def update(currentName: String, newName: String): Fragment =
     fr"UPDATE collections SET name = $newName WHERE name = $currentName"
