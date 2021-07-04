@@ -13,7 +13,7 @@ object CollectionServiceImplTest extends IOSuite {
   override type Res = CollectionService[IO]
   override def sharedResource: Resource[IO, CollectionService[IO]] =
     Resource.eval(Ref.of[IO, List[Collection]](List.empty).map { ref =>
-      new CollectionServiceImpl(new InMemoryCollectionRepository[IO](ref))
+      CollectionServiceImpl(new InMemoryCollectionRepository[IO](ref))
     })
 
   test("createCollection creates collection") { collectionService =>

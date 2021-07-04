@@ -14,6 +14,7 @@ import zio.Runtime
 
 import fin.persistence.{FlywaySetup, SqliteCollectionRepository}
 import fin.service.GoogleBookInfoService
+import fin.service.CollectionServiceImpl
 
 object Main extends IOApp {
 
@@ -35,9 +36,10 @@ object Main extends IOApp {
             clock          = Clock[IO]
             collectionRepo = SqliteCollectionRepository[IO](xa, clock)
             implicit0(logger: Logger[IO]) <- Slf4jLogger.create[IO]
-            bookInfoService = GoogleBookInfoService[IO](client)
+            bookInfoService   = GoogleBookInfoService[IO](client)
+            collectionService = CollectionServiceImpl(collectionRepo)
             interpreter <-
-              CalibanSetup.interpreter(bookInfoService, collectionRepo)
+              CalibanSetup.interpreter(bookInfoService, collectionService)
             server <-
               BlazeServerBuilder[IO](global)
                 .bindHttp(8080, "localhost")

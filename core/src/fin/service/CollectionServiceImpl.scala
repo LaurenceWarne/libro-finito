@@ -7,8 +7,9 @@ import fin.Types._
 import fin.implicits._
 import fin.persistence.CollectionRepository
 
-class CollectionServiceImpl[F[_]: Sync](collectionRepo: CollectionRepository[F])
-    extends CollectionService[F] {
+class CollectionServiceImpl[F[_]: Sync] private (
+    collectionRepo: CollectionRepository[F]
+) extends CollectionService[F] {
 
   override def collections: F[List[Collection]] = collectionRepo.collections
 
@@ -69,4 +70,9 @@ class CollectionServiceImpl[F[_]: Sync](collectionRepo: CollectionRepository[F])
         new Exception(show"Collection '$collection' does not exist!")
       )
     } yield collection
+}
+
+object CollectionServiceImpl {
+  def apply[F[_]: Sync](collectionRepo: CollectionRepository[F]) =
+    new CollectionServiceImpl[F](collectionRepo)
 }
