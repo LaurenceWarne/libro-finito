@@ -3,7 +3,7 @@ package fin.service
 import cats.effect.Sync
 import cats.implicits._
 
-import fin.Implicits._
+import fin.implicits._
 import fin.Types._
 import fin.persistence.CollectionRepository
 

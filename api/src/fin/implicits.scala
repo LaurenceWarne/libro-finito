@@ -5,7 +5,7 @@ import cats.Show
 
 import fin.Types._
 
-object Implicits {
+object implicits {
   implicit val CollectionEq: Eq[Collection]     = Eq.fromUniversalEquals
   implicit val BookEq: Eq[Book]                 = Eq.fromUniversalEquals
   implicit val CollectionShow: Show[Collection] = Show.fromToString
