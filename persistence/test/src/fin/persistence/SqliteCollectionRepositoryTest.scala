@@ -7,8 +7,8 @@ import cats.implicits._
 import doobie.util.transactor.Transactor
 import weaver._
 
-import fin.implicits._
 import fin.Types._
+import fin.implicits._
 
 object SqliteCollectionRepositoryTest extends IOSuite {
 

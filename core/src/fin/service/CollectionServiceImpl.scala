@@ -3,8 +3,8 @@ package fin.service
 import cats.effect.Sync
 import cats.implicits._
 
-import fin.implicits._
 import fin.Types._
+import fin.implicits._
 import fin.persistence.CollectionRepository
 
 class CollectionServiceImpl[F[_]: Sync](collectionRepo: CollectionRepository[F])

@@ -1,13 +1,12 @@
 package fin.service
 
+import cats.MonadError
 import cats.effect.concurrent.Ref
 import cats.implicits._
-import cats.MonadError
 
-import fin.persistence.CollectionRepository
-
-import fin.implicits._
 import fin.Types._
+import fin.implicits._
+import fin.persistence.CollectionRepository
 
 class InMemoryCollectionRepository[F[_]](
     collectionsRef: Ref[F, List[Collection]]
