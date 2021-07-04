@@ -90,6 +90,17 @@ class SqliteCollectionRepository[F[_]: Sync] private (
       .update
       .run).transact(xa).void
 
+  override def removeBookFromCollection(
+      collectionName: String,
+      book: Book
+  ): F[Unit] =
+    Fragments
+      .deleteReference(collectionName, book.isbn)
+      .update
+      .run
+      .transact(xa)
+      .void
+
   private def toCollections(rows: List[CollectionBookRow]): List[Collection] = {
     rows
       .groupMapReduce(_.name)(_.asBook.toList)(_ ++ _)
@@ -134,6 +145,12 @@ object Fragments {
 
   def deleteReferences(name: String): Fragment =
     fr"DELETE FROM collection_books WHERE collection_name = $name"
+
+  def deleteReference(name: String, isbn: String): Fragment =
+    fr"""
+       |DELETE FROM collection_books
+       |WHERE collection_name = $name
+       |AND isbn = $isbn""".stripMargin
 
   def update(currentName: String, newName: String): Fragment =
     fr"UPDATE collections SET name = $newName WHERE name = $currentName"

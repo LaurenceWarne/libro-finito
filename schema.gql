@@ -27,5 +27,6 @@ type Mutations {
   createCollection(name: String!, books: [Book!]): Collection!
   deleteCollection(name: String!): Boolean
   changeCollectionName(currentName: String!, newName: String!): Collection!
-  addBook(name: String!, book: Book!): Collection!
+  addBook(collection: String!, book: Book!): Collection!
+  removeBook(collection: String!, book: Book!): Boolean
 }

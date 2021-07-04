@@ -150,4 +150,16 @@ object SqliteCollectionRepositoryTest extends IOSuite {
       maybeCollection <- repo.collection(name)
     } yield expect(maybeCollection.isEmpty)
   }
+
+  test("removeBookFromCollection successful with collection with one book") {
+    val name = "collection with book to delete"
+    val book =
+      Book("title", List("author"), "cool description", "isbn-d", "uri")
+    for {
+      _               <- repo.createCollection(name)
+      _               <- repo.addBookToCollection(name, book)
+      _               <- repo.removeBookFromCollection(name, book)
+      maybeCollection <- repo.collection(name)
+    } yield expect(maybeCollection.exists(_.books.isEmpty))
+  }
 }

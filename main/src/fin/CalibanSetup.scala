@@ -37,7 +37,11 @@ object CalibanSetup {
       args => collectionRepo.deleteCollection(args.name).map(_ => None),
       args =>
         collectionRepo.changeCollectionName(args.currentName, args.newName),
-      args => collectionRepo.addBookToCollection(args.name, args.book)
+      args => collectionRepo.addBookToCollection(args.collection, args.book),
+      args =>
+        collectionRepo
+          .removeBookFromCollection(args.collection, args.book)
+          .map(_ => None)
     )
     val api = GraphQL.graphQL(RootResolver(queries, mutations))
     api.interpreterAsync[IO].map(withErrors(_))

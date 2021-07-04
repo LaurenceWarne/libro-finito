@@ -21,7 +21,8 @@ object Types {
       currentName: String,
       newName: String
   )
-  case class MutationsAddBookArgs(name: String, book: Book)
+  case class MutationsAddBookArgs(collection: String, book: Book)
+  case class MutationsRemoveBookArgs(collection: String, book: Book)
   case class Book(
       title: String,
       authors: List[String],
@@ -46,7 +47,8 @@ object Operations {
       createCollection: MutationsCreateCollectionArgs => IO[Collection],
       deleteCollection: MutationsDeleteCollectionArgs => IO[Option[Boolean]],
       changeCollectionName: MutationsChangeCollectionNameArgs => IO[Collection],
-      addBook: MutationsAddBookArgs => IO[Collection]
+      addBook: MutationsAddBookArgs => IO[Collection],
+      removeBook: MutationsRemoveBookArgs => IO[Option[Boolean]]
   )
 
 }
