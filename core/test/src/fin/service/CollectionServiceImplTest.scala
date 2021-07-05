@@ -25,6 +25,22 @@ object CollectionServiceImplTest extends IOSuite {
     } yield expect(collection.name === name)
   }
 
+  test("createCollection errors if collection already exists") {
+    collectionService =>
+      val name = "already existing"
+      for {
+        _ <- collectionService.createCollection(
+          MutationsCreateCollectionArgs(name, None)
+        )
+        response <-
+          collectionService
+            .createCollection(
+              MutationsCreateCollectionArgs(name, None)
+            )
+            .attempt
+      } yield expect(response.isLeft)
+  }
+
   test("collection returns created collection") { collectionService =>
     val name = "name to retrieve"
     for {
@@ -58,6 +74,76 @@ object CollectionServiceImplTest extends IOSuite {
     } yield expect(
       Set(name1, name2).subsetOf(retrievedCollection.map(_.name).toSet)
     )
+  }
+
+  test("deleteCollection deletes collection") { collectionService =>
+    val name = "collection to delete"
+    for {
+      _ <- collectionService.createCollection(
+        MutationsCreateCollectionArgs(name, None)
+      )
+      _ <-
+        collectionService
+          .deleteCollection(MutationsDeleteCollectionArgs(name))
+      collections <- collectionService.collections
+    } yield expect(!collections.map(_.name).contains(name))
+  }
+
+  test("deleteCollection does not error on inexistant collection") {
+    collectionService =>
+      val name = "inexistant collection"
+      for {
+        response <-
+          collectionService
+            .deleteCollection(MutationsDeleteCollectionArgs(name))
+            .attempt
+      } yield expect(response.isRight)
+  }
+
+  test("updateCollectionName udpates collection name") { collectionService =>
+    val (oldName, newName) = ("old name", "new name")
+    for {
+      _ <-
+        collectionService
+          .createCollection(MutationsCreateCollectionArgs(oldName, None))
+      collection <- collectionService.changeCollectionName(
+        MutationsChangeCollectionNameArgs(oldName, newName)
+      )
+    } yield expect(collection.name === newName)
+  }
+
+  test("updateCollectionName errors on inexistant collection") {
+    collectionService =>
+      for {
+        response <-
+          collectionService
+            .changeCollectionName(
+              MutationsChangeCollectionNameArgs(
+                "inexistant collection",
+                "new name"
+              )
+            )
+            .attempt
+      } yield expect(response.isLeft)
+  }
+
+  test("updateCollectionName errors if new name already exists") {
+    collectionService =>
+      val (oldName, newName) = ("another old name", "existing new name")
+      for {
+        _ <-
+          collectionService
+            .createCollection(MutationsCreateCollectionArgs(oldName, None))
+        _ <-
+          collectionService
+            .createCollection(MutationsCreateCollectionArgs(newName, None))
+        response <-
+          collectionService
+            .changeCollectionName(
+              MutationsChangeCollectionNameArgs(oldName, newName)
+            )
+            .attempt
+      } yield expect(response.isLeft)
   }
 
   test("addBookToCollection adds book to collection") { collectionService =>

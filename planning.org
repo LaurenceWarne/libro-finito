@@ -21,7 +21,7 @@
 *** DONE Add test framework to sbt
 *** TODO Add docker build (with docker-compose)
 *** TODO Integrate with GH Actions
-*** TODO db backend
+*** DONE db backend
 *** TODO Import Goodreads shelves
 *** TODO Import Calbire collections (what are they called??)
 
@@ -33,3 +33,4 @@
 *** TODO Decrease/investigate memory usage
 *** DONE Get better errors than "Effect Failure"
 *** TODO Caching middleware?
+*** TODO Add error classes for better testing than ~isLeft~

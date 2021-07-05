@@ -39,8 +39,16 @@ class CollectionServiceImpl[F[_]: Sync] private (
       args: MutationsChangeCollectionNameArgs
   ): F[Collection] =
     for {
-      collection <- collectionOrError(args.currentName)
-      _          <- collectionRepo.changeCollectionName(args.currentName, args.newName)
+      collection              <- collectionOrError(args.currentName)
+      maybeExistingCollection <- collectionRepo.collection(args.newName)
+      _ <- Sync[F].whenA(maybeExistingCollection.nonEmpty)(
+        Sync[F].raiseError(
+          new Exception(
+            show"A collection with the name '${args.newName}' already exists!"
+          )
+        )
+      )
+      _ <- collectionRepo.changeCollectionName(args.currentName, args.newName)
     } yield Collection(args.newName, collection.books)
 
   override def addBookToCollection(
