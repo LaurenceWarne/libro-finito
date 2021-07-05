@@ -24,7 +24,7 @@ class SqliteCollectionRepository[F[_]: Sync] private (
   override def addBookToCollection(
       collectionName: String,
       book: Book
-  ): F[Collection] = {
+  ): F[Unit] = {
     val transaction: Date => ConnectionIO[Unit] = date =>
       for {
         exists <- BookFragments.retrieveByIsbn(book.isbn).query[String].option
@@ -38,26 +38,20 @@ class SqliteCollectionRepository[F[_]: Sync] private (
         clock
           .monotonic(DAYS)
           .map(t => Date.valueOf(LocalDate.ofEpochDay(t)))
-      _               <- transaction(date).transact(xa)
-      maybeCollection <- collection(collectionName)
-      collection <- Sync[F].fromOption(
-        maybeCollection,
-        new Exception(show"Collection '$collectionName' was deleted!")
-      )
-    } yield collection
+      _ <- transaction(date).transact(xa)
+    } yield ()
   }
 
   override def changeCollectionName(
       currentName: String,
       newName: String
-  ): F[Collection] = {
-    val transaction: ConnectionIO[String] = for {
-      _          <- Fragments.update(currentName, newName).update.run
-      collection <- Fragments.fromName(newName).query[String].unique
-    } yield collection
-    transaction
+  ): F[Unit] = {
+    Fragments
+      .update(currentName, newName)
+      .update
+      .run
       .transact(xa)
-      .map(s => Collection(s, Nil))
+      .void
   }
 
   override def collection(name: String): F[Option[Collection]] =
@@ -75,13 +69,13 @@ class SqliteCollectionRepository[F[_]: Sync] private (
       .transact(xa)
       .map(toCollections(_))
 
-  override def createCollection(name: String): F[Collection] = {
+  override def createCollection(name: String): F[Unit] = {
     Fragments
       .create(name)
       .update
       .run
       .transact(xa)
-      .map(_ => Collection(name, List.empty[Book]))
+      .void
   }
 
   override def deleteCollection(name: String): F[Unit] =

@@ -17,8 +17,7 @@ object SqliteCollectionRepositoryTest extends IOSuite {
   val xa = Transactor.fromDriverManager[IO](
     "org.sqlite.JDBC",
     uri,
-    user,
-    password
+    DbProperties.properties
   )
 
   val repo = SqliteCollectionRepository(xa, Clock[IO])
@@ -43,11 +42,14 @@ object SqliteCollectionRepositoryTest extends IOSuite {
   // to run sqlite writes in parallel
   override def maxParallelism = 1
 
-  test("createCollection creates collection with correct attributes") { _ =>
-    val name = "my collection"
+  test("collection retrieves created collection") {
+    val name = "retrieve_collection"
     for {
-      collection <- repo.createCollection(name)
-    } yield expect(collection === Collection(name, List.empty[Book]))
+      _                   <- repo.createCollection(name)
+      retrievedCollection <- repo.collection(name)
+    } yield expect(
+      retrievedCollection.exists(_ === Collection(name, List.empty))
+    )
   }
 
   test("createCollection fails when name already exists") {
@@ -58,33 +60,29 @@ object SqliteCollectionRepositoryTest extends IOSuite {
     } yield expect(response.isLeft)
   }
 
-  test("collection retrieves created collection") {
-    val name = "retrieve_collection"
-    for {
-      persistedCollection <- repo.createCollection(name)
-      retrievedCollection <- repo.collection(name)
-    } yield expect(retrievedCollection.exists(_ === persistedCollection))
-  }
-
   test("collections retrieves created collections") {
+    val (name1, name2, name3) = ("collection1", "collection2", "collection3")
     for {
-      c1                   <- repo.createCollection("collection1")
-      c2                   <- repo.createCollection("collection2")
-      c3                   <- repo.createCollection("collection3")
+      _                    <- repo.createCollection(name1)
+      _                    <- repo.createCollection(name2)
+      _                    <- repo.createCollection(name3)
       retrievedCollections <- repo.collections
-    } yield expect(Set(c1, c2, c3).subsetOf(retrievedCollections.toSet))
+    } yield expect(
+      Set(name1, name2, name3).subsetOf(retrievedCollections.map(_.name).toSet)
+    )
   }
 
   test("changeCollectionName changes collection name") {
     val oldName = "old_name"
     val newName = "new_name"
     for {
-      _          <- repo.createCollection(oldName)
-      collection <- repo.changeCollectionName(oldName, newName)
-    } yield expect(collection.name === newName)
+      _                   <- repo.createCollection(oldName)
+      _                   <- repo.changeCollectionName(oldName, newName)
+      retrievedCollection <- repo.collection(newName)
+    } yield expect(retrievedCollection.exists(_.name === newName))
   }
 
-  test("changeCollectionName fails if name already exists") {
+  test("changeCollectionName errors if name already exists") {
     val oldName = "old_name_"
     val newName = "new_name_"
     for {
@@ -94,20 +92,25 @@ object SqliteCollectionRepositoryTest extends IOSuite {
     } yield expect(response.isLeft)
   }
 
-  test("changeCollectionName fails if no experiment exists with name") {
+  test(
+    "changeCollectionName does not error if no experiment exists with name"
+  ) {
     val name = "inexistant name"
     for {
       response <- repo.changeCollectionName(name, "???").attempt
-    } yield expect(response.isLeft)
+    } yield expect(response.isRight)
   }
 
   test("AddToCollection adds book not already added") {
     val name = "collection with books"
     val book = Book("title", List("author"), "cool description", "???", "uri")
     for {
-      _          <- repo.createCollection(name)
-      collection <- repo.addBookToCollection(name, book)
-    } yield expect(collection === Collection(name, List(book)))
+      _                   <- repo.createCollection(name)
+      _                   <- repo.addBookToCollection(name, book)
+      retrievedCollection <- repo.collection(name)
+    } yield expect(
+      retrievedCollection.exists(_ === Collection(name, List(book)))
+    )
   }
 
   test("AddToCollection adds in another collection") {
@@ -115,14 +118,17 @@ object SqliteCollectionRepositoryTest extends IOSuite {
     val name2 = "collection with books 2"
     val book  = Book("title", List("author"), "cool description", "isbn", "uri")
     for {
-      _          <- repo.createCollection(name1)
-      _          <- repo.createCollection(name2)
-      _          <- repo.addBookToCollection(name1, book)
-      collection <- repo.addBookToCollection(name2, book)
-    } yield expect(collection === Collection(name2, List(book)))
+      _                   <- repo.createCollection(name1)
+      _                   <- repo.createCollection(name2)
+      _                   <- repo.addBookToCollection(name1, book)
+      _                   <- repo.addBookToCollection(name2, book)
+      retrievedCollection <- repo.collection(name2)
+    } yield expect(
+      retrievedCollection.exists(_ === Collection(name2, List(book)))
+    )
   }
 
-  test("AddToCollection fails if collection does not exist") {
+  test("AddToCollection errors if collection does not exist") {
     val name = "inexistant collection #2"
     val book = Book("title", List("author"), "cool description", "isbn", "uri")
     for {
@@ -151,6 +157,12 @@ object SqliteCollectionRepositoryTest extends IOSuite {
     } yield expect(maybeCollection.isEmpty)
   }
 
+  test("deleteCollection does not error when collection does not exist") {
+    for {
+      response <- repo.deleteCollection("inexistant collection").attempt
+    } yield expect(response.isRight)
+  }
+
   test("removeBookFromCollection successful with collection with one book") {
     val name = "collection with book to delete"
     val book =
@@ -161,5 +173,14 @@ object SqliteCollectionRepositoryTest extends IOSuite {
       _               <- repo.removeBookFromCollection(name, book)
       maybeCollection <- repo.collection(name)
     } yield expect(maybeCollection.exists(_.books.isEmpty))
+  }
+
+  test("removeBookFromCollection successful when collection does not exist") {
+    val book =
+      Book("title", List("author"), "cool description", "isbn-d", "uri")
+    for {
+      response <-
+        repo.removeBookFromCollection("inexistant collection", book).attempt
+    } yield expect(response.isRight)
   }
 }

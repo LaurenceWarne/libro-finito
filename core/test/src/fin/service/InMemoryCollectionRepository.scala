@@ -15,9 +15,9 @@ class InMemoryCollectionRepository[F[_]](
 
   override def collections: F[List[Collection]] = collectionsRef.get
 
-  override def createCollection(name: String): F[Collection] = {
+  override def createCollection(name: String): F[Unit] = {
     val collection = Collection(name, List.empty)
-    collectionsRef.getAndUpdate(collection :: _).map(_ => collection)
+    collectionsRef.getAndUpdate(collection :: _).void
   }
 
   override def collection(name: String): F[Option[Collection]] =
@@ -29,20 +29,20 @@ class InMemoryCollectionRepository[F[_]](
   override def changeCollectionName(
       currentName: String,
       newName: String
-  ): F[Collection] = {
+  ): F[Unit] = {
     for {
       retrievedCollection <- collectionOrError(currentName)
       newCollection = Collection(newName, retrievedCollection.books)
       _ <- collectionsRef.getAndUpdate(_.map { col =>
         if (col === retrievedCollection) newCollection else col
       })
-    } yield newCollection
+    } yield ()
   }
 
   override def addBookToCollection(
       collectionName: String,
       book: Book
-  ): F[Collection] =
+  ): F[Unit] =
     for {
       retrievedCollection <- collectionOrError(collectionName)
       newCollection =
@@ -50,7 +50,7 @@ class InMemoryCollectionRepository[F[_]](
       _ <- collectionsRef.getAndUpdate(_.map { col =>
         if (col === retrievedCollection) newCollection else col
       })
-    } yield newCollection
+    } yield ()
 
   override def removeBookFromCollection(
       collectionName: String,

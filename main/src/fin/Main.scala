@@ -12,7 +12,7 @@ import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import zio.Runtime
 
-import fin.persistence.{FlywaySetup, SqliteCollectionRepository}
+import fin.persistence.{DbProperties, FlywaySetup, SqliteCollectionRepository}
 import fin.service.GoogleBookInfoService
 import fin.service.CollectionServiceImpl
 
@@ -28,8 +28,7 @@ object Main extends IOApp {
           val xa = Transactor.fromDriverManager[IO](
             "org.sqlite.JDBC",
             uri,
-            user,
-            password
+            DbProperties.properties
           )
           for {
             _ <- FlywaySetup.init[IO](uri, user, password)
