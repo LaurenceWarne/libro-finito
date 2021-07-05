@@ -13,8 +13,7 @@ import org.http4s.server.blaze.BlazeServerBuilder
 import zio.Runtime
 
 import fin.persistence.{DbProperties, FlywaySetup, SqliteCollectionRepository}
-import fin.service.GoogleBookInfoService
-import fin.service.CollectionServiceImpl
+import fin.service.{CollectionServiceImpl, GoogleBookInfoService}
 
 object Main extends IOApp {
 

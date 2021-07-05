@@ -71,4 +71,64 @@ object CollectionServiceImplTest extends IOSuite {
         collectionService.addBookToCollection(MutationsAddBookArgs(name, book))
     } yield expect(collection === Collection(name, List(book)))
   }
+
+  test("addBookToCollection errors on inexistant collection") {
+    collectionService =>
+      val name = "inexistant collection"
+      val book = Book("title", List("author"), "cool description", "???", "uri")
+      for {
+        response <-
+          collectionService
+            .addBookToCollection(
+              MutationsAddBookArgs(name, book)
+            )
+            .attempt
+      } yield expect(response.isLeft)
+  }
+
+  test("removeBookFromCollection removes book") { collectionService =>
+    val name = "collection with books to remove"
+    val book = Book("title", List("author"), "cool description", "???", "uri")
+    for {
+      _ <- collectionService.createCollection(
+        MutationsCreateCollectionArgs(name, None)
+      )
+      _ <-
+        collectionService.addBookToCollection(MutationsAddBookArgs(name, book))
+      collection <- collectionService.removeBookFromCollection(
+        MutationsRemoveBookArgs(name, book)
+      )
+    } yield expect(collection === Collection(name, List.empty))
+  }
+
+  test("removeBookFromCollection errors on inexistant collection") {
+    collectionService =>
+      val name = "inexistant collection"
+      val book = Book("title", List("author"), "cool description", "???", "uri")
+      for {
+        response <-
+          collectionService
+            .removeBookFromCollection(
+              MutationsRemoveBookArgs(name, book)
+            )
+            .attempt
+      } yield expect(response.isLeft)
+  }
+
+  test("removeBookFromCollection does not error when book not in collection") {
+    collectionService =>
+      val name = "empty collection"
+      val book = Book("title", List("author"), "cool description", "???", "uri")
+      for {
+        _ <- collectionService.createCollection(
+          MutationsCreateCollectionArgs(name, None)
+        )
+        response <-
+          collectionService
+            .removeBookFromCollection(
+              MutationsRemoveBookArgs(name, book)
+            )
+            .attempt
+      } yield expect(response.isRight)
+  }
 }

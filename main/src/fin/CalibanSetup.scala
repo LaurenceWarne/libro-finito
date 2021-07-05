@@ -6,8 +6,7 @@ import caliban.interop.cats.implicits._
 import cats.effect.IO
 
 import fin.Operations._
-import fin.service.BookInfoService
-import fin.service.CollectionService
+import fin.service.{BookInfoService, CollectionService}
 
 object CalibanSetup {
 

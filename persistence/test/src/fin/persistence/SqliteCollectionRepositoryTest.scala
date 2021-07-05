@@ -183,4 +183,14 @@ object SqliteCollectionRepositoryTest extends IOSuite {
         repo.removeBookFromCollection("inexistant collection", book).attempt
     } yield expect(response.isRight)
   }
+
+  test("removeBookFromCollection successful when connection does not exist") {
+    val name = "collection with no book"
+    val book =
+      Book("title", List("author"), "cool description", "isbn-d", "uri")
+    for {
+      _        <- repo.createCollection(name)
+      response <- repo.removeBookFromCollection(name, book).attempt
+    } yield expect(response.isRight)
+  }
 }
