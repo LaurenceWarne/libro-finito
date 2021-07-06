@@ -34,18 +34,28 @@ object Main extends IOApp {
             clock          = Clock[IO]
             collectionRepo = SqliteCollectionRepository[IO](xa, clock)
             implicit0(logger: Logger[IO]) <- Slf4jLogger.create[IO]
+            _                             <- logger.debug("Creating services...")
             bookInfoService   = GoogleBookInfoService[IO](client)
             collectionService = CollectionServiceImpl(collectionRepo)
+            _ <- logger.debug("Bootstrapping caliban...")
             interpreter <-
               CalibanSetup.interpreter(bookInfoService, collectionService)
             server <-
               BlazeServerBuilder[IO](global)
+                .withBanner(Seq(Banner.value))
                 .bindHttp(8080, "localhost")
                 .withHttpApp(Routes.routes(interpreter, blocker).orNotFound)
                 .serve
                 .compile
                 .drain
-            _ <- logger.info("""
+          } yield server
+      }
+    server.as(ExitCode.Success)
+  }
+}
+
+object Banner {
+  val value: String = """
  _________________
 < Server started! >
  -----------------
@@ -63,9 +73,5 @@ object Main extends IOApp {
                 ~-.__|      /_ - ~ ^|      /- _      `..-'   
                      |     /        |     /     ~-.     `-. _  _  _
                      |_____|        |_____|         ~ - . _ _ _ _ _>
-""")
-          } yield server
-      }
-    server.as(ExitCode.Success)
-  }
+"""
 }

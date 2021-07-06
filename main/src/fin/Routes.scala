@@ -2,53 +2,38 @@ package fin
 
 import caliban.{CalibanError, GraphQLInterpreter, Http4sAdapter}
 import cats.data.{Kleisli, OptionT}
-import cats.effect.{Blocker, ContextShift, IO}
-import cats.implicits._
-import fs2.{Stream, text}
-import io.chrisdavenport.log4cats.Logger
+import cats.effect.{Blocker, Clock, ContextShift, IO}
+import fs2.Stream
 import org.http4s.server.Router
-import org.http4s.{HttpRoutes, Request, Response, StaticFile}
+import org.http4s.{HttpRoutes, Response, StaticFile}
+import org.http4s.server.middleware.{Logger, Metrics}
+import org.http4s.metrics.dropwizard.Dropwizard
+import com.codahale.metrics.SharedMetricRegistries
 
 object Routes {
-
-  private def loggingMiddleware(
-      service: HttpRoutes[IO]
-  )(implicit logger: Logger[IO]): HttpRoutes[IO] =
-    Kleisli { req: Request[IO] =>
-      OptionT.liftF(
-        logger.info(
-          "REQUEST:  " + req + req.body
-            .through(text.utf8Decode)
-            .compile
-            .toList
-            .unsafeRunSync()
-        )
-      ) *>
-        service(req)
-          .onError(e => OptionT.liftF(logger.error("ERROR:    " + e)))
-          .flatMap { response =>
-            OptionT.liftF(logger.info("RESPONSE:   " + response)) *>
-              OptionT.liftF(IO(response))
-          }
-    }
 
   def routes(
       interpreter: GraphQLInterpreter[Any, CalibanError],
       blocker: Blocker
   )(implicit
-      logger: Logger[IO],
       runtime: zio.Runtime[Any],
-      cs: ContextShift[IO]
+      cs: ContextShift[IO],
+      clock: Clock[IO]
   ): HttpRoutes[IO] = {
     val serviceRoutes =
       Http4sAdapter.makeHttpServiceF[IO, CalibanError](interpreter)
+    val loggedRoutes =
+      Logger.httpRoutes(logHeaders = true, logBody = true)(serviceRoutes)
+    val registry = SharedMetricRegistries.getOrCreate("default")
+    val meteredRoutes =
+      Metrics[IO](Dropwizard(registry, "server"))(loggedRoutes)
     Router[IO](
       "/version" -> Kleisli.liftF(
         OptionT.pure[IO](
           Response[IO](body = Stream.emits(BuildInfo.version.getBytes("UTF-8")))
         )
       ),
-      "/api/graphql" -> loggingMiddleware(serviceRoutes),
+      "/api/graphql" -> meteredRoutes,
       "/graphiql" -> Kleisli.liftF(
         StaticFile
           .fromResource("/graphql-playground.html", blocker, None)
