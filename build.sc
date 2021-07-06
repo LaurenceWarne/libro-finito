@@ -56,13 +56,13 @@ object main extends LibroFinitoModule with BuildInfo {
       Deps.Doobie.core,
       Deps.Http4s.http4sBlazeClient,
       Deps.Http4s.http4sBlazeServer,
-      Deps.Http4s.http4sDropwizard,
       Deps.Http4s.http4sDsl,
       Deps.catsEffect,
       Deps.catsLogging,
       Deps.catsLoggingCore,
       Deps.flyway,
-      Deps.logback
+      Deps.logback,
+      Deps.Metrics.jvm
     )
 }
 
@@ -199,7 +199,6 @@ object Deps {
     val http4sDsl         = ivy"org.http4s::http4s-dsl:$version"
     val http4sBlazeServer = ivy"org.http4s::http4s-blaze-server:$version"
     val http4sBlazeClient = ivy"org.http4s::http4s-blaze-client:$version"
-    val http4sDropwizard  = ivy"org.http4s::http4s-dropwizard-metrics:$version"
   }
 
   object Circe {
