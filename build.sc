@@ -61,8 +61,7 @@ object main extends LibroFinitoModule with BuildInfo {
       Deps.catsLogging,
       Deps.catsLoggingCore,
       Deps.flyway,
-      Deps.logback,
-      Deps.Metrics.jvm
+      Deps.logback
     )
 }
 
