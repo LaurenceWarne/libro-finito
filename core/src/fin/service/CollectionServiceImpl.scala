@@ -64,10 +64,13 @@ class CollectionServiceImpl[F[_]: Sync] private (
   ): F[Unit] =
     for {
       collection <- collectionOrError(args.collection)
-      _          <- collectionRepo.removeBookFromCollection(args.collection, args.book)
+      _ <- collectionRepo.removeBookFromCollection(
+        args.collection,
+        args.isbn
+      )
     } yield Collection(
       args.collection,
-      collection.books.filterNot(_ === args.book)
+      collection.books.filterNot(_.isbn === args.isbn)
     )
 
   private def collectionOrError(collection: String): F[Collection] =

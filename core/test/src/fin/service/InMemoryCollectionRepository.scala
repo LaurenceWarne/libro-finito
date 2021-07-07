@@ -54,13 +54,13 @@ class InMemoryCollectionRepository[F[_]](
 
   override def removeBookFromCollection(
       collectionName: String,
-      book: Book
+      isbn: String
   ): F[Unit] =
     for {
       retrievedCollection <- collectionOrError(collectionName)
       newCollection = Collection(
         collectionName,
-        retrievedCollection.books.filterNot(_ === book)
+        retrievedCollection.books.filterNot(_.isbn === isbn)
       )
       _ <- collectionsRef.getAndUpdate(_.map { col =>
         if (col === retrievedCollection) newCollection else col

@@ -11,6 +11,6 @@ trait CollectionRepository[F[_]] {
   def addBookToCollection(collectionName: String, book: Book): F[Unit]
   def removeBookFromCollection(
       collectionName: String,
-      book: Book
+      isbn: String
   ): F[Unit]
 }

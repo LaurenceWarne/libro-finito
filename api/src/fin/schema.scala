@@ -22,7 +22,7 @@ object Types {
       newName: String
   )
   case class MutationsAddBookArgs(collection: String, book: Book)
-  case class MutationsRemoveBookArgs(collection: String, book: Book)
+  case class MutationsRemoveBookArgs(collection: String, isbn: String)
   case class Book(
       title: String,
       authors: List[String],

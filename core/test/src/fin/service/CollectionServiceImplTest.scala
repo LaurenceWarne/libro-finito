@@ -182,7 +182,7 @@ object CollectionServiceImplTest extends IOSuite {
       _ <-
         collectionService.addBookToCollection(MutationsAddBookArgs(name, book))
       collection <- collectionService.removeBookFromCollection(
-        MutationsRemoveBookArgs(name, book)
+        MutationsRemoveBookArgs(name, book.isbn)
       )
     } yield expect(collection === Collection(name, List.empty))
   }
@@ -190,12 +190,12 @@ object CollectionServiceImplTest extends IOSuite {
   test("removeBookFromCollection errors on inexistant collection") {
     collectionService =>
       val name = "inexistant collection"
-      val book = Book("title", List("author"), "cool description", "???", "uri")
+      val isbn = "???"
       for {
         response <-
           collectionService
             .removeBookFromCollection(
-              MutationsRemoveBookArgs(name, book)
+              MutationsRemoveBookArgs(name, isbn)
             )
             .attempt
       } yield expect(response.isLeft)
@@ -212,7 +212,7 @@ object CollectionServiceImplTest extends IOSuite {
         response <-
           collectionService
             .removeBookFromCollection(
-              MutationsRemoveBookArgs(name, book)
+              MutationsRemoveBookArgs(name, book.isbn)
             )
             .attempt
       } yield expect(response.isRight)
