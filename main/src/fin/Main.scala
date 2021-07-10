@@ -12,13 +12,13 @@ import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
 import pureconfig._
-import pureconfig.generic.auto._
 import zio.Runtime
 
 import fin.persistence.{DbProperties, FlywaySetup, SqliteCollectionRepository}
 import fin.service._
 
 import File._
+import ServiceConfig._
 
 object Main extends IOApp {
 
@@ -53,13 +53,6 @@ object Main extends IOApp {
             _                             <- logger.debug("Creating services...")
             bookInfoService   = GoogleBookInfoService[IO](client)
             collectionService = CollectionServiceImpl(collectionRepo)
-            defaultCollectionService = DefaultCollectionServiceImpl(
-              conf.defaultCollectionName,
-              collectionRepo
-            )
-            _ <- IO.whenA(conf.enableDefaultCollection)(
-              defaultCollectionService.createDefaultCollection
-            )
             _ <- logger.debug("Bootstrapping caliban...")
             interpreter <-
               CalibanSetup.interpreter(bookInfoService, collectionService)

@@ -8,6 +8,7 @@ import mill.contrib.buildinfo.BuildInfo
 import mill.contrib.scoverage.{ScoverageModule, ScoverageReport}
 import mill.eval.Evaluator
 import com.goyeau.mill.scalafix.ScalafixModule
+import coursier.maven.MavenRepository
 import calibanSchemaGen.SchemaGen
 
 def genSchema(
@@ -92,7 +93,8 @@ object core extends LibroFinitoModule {
       Deps.Http4s.http4sBlazeServer,
       Deps.Http4s.http4sDsl,
       Deps.catsEffect,
-      Deps.catsLogging
+      Deps.catsLogging,
+      Deps.luaj
     )
 
   object test extends Tests with ScoverageTests with LibroFinitoTest
@@ -138,6 +140,11 @@ trait LibroFinitoModuleNoLinting extends ScalaModule with ScoverageModule {
   // https://github.com/com-lihaoyi/mill/pull/1309 should remove the need for this
   def scoveragePluginDep =
     ivy"org.scoverage:::scalac-scoverage-plugin:${scoverageVersion()}"
+
+  def repositories =
+    super.repositories ++ Seq(
+      MavenRepository("https://jitpack.io")
+    )
 }
 
 trait LibroFinitoModule
@@ -175,6 +182,8 @@ object Deps {
   val flyway           = ivy"org.flywaydb:flyway-core:7.10.0"
   val pureconfig       = ivy"com.github.pureconfig::pureconfig:0.16.0"
   val betterFiles      = ivy"com.github.pathikrit::better-files:3.9.1"
+  // https://github.com/luaj/luaj/issues/91 ):
+  val luaj = ivy"com.github.luaj:luaj:3.0.1"
 
   object Compiler {
     val semanticDb       = ivy"org.scalameta::semanticdb-scalac:4.4.22"

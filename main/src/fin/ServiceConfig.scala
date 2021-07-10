@@ -2,24 +2,59 @@ package fin
 
 import cats.implicits._
 import pureconfig._
+import pureconfig.generic.semiauto._
 
 case class ServiceConfig(
     databasePath: String,
     port: Int,
-    enableDefaultCollection: Boolean,
-    defaultCollectionName: String,
-    addAllBooksToDefaultCollection: Boolean
+    defaultCollection: Option[String],
+    specialCollections: List[SpecialCollection]
+)
+
+case class SpecialCollection(
+    name: String,
+    `lazy`: Option[String],
+    addHook: Option[String],
+    readingHook: Option[String],
+    readHook: Option[String],
+    rateHook: Option[String]
 )
 
 object ServiceConfig {
+  implicit val collectionReader: ConfigReader[SpecialCollection] =
+    deriveReader[SpecialCollection]
+  implicit val confReader: ConfigReader[ServiceConfig] =
+    deriveReader[ServiceConfig]
+
   def default(configDirectory: String) =
     ConfigSource.string(
       show"""{
           |  database-path = $configDirectory/db.sqlite,
           |  port = 8080,
-          |  enable-default-collection = true,
           |  default-collection-name = My Books,
-          |  add-all-books-to-default-collection = true
+          |  special-collections = [
+          |    {
+          |      name = My Books,
+          |      lazy = false,
+          |      add-hook = \"\"\"add = true\"\"\"
+          |    },
+          |    {
+          |      name = Currently Reading,
+          |      reading-hook = \"\"\"add = true\"\"\",
+          |      read-hook = \"\"\"remove = true\"\"\"
+          |    },
+          |    {
+          |      name = Favourites,
+          |      rate-hook = \"\"\"
+          |        if(rating == 5) then
+          |          add = true
+          |        else
+          |          remove = true
+          |        end
+          |      \"\"\"
+          |    }
+          |  ]
           |}""".stripMargin
     )
+
 }
