@@ -89,6 +89,7 @@ object core extends LibroFinitoModule {
       Deps.Circe.core,
       Deps.Circe.generic,
       Deps.Circe.parser,
+      Deps.enumeratum,
       Deps.Http4s.http4sBlazeClient,
       Deps.Http4s.http4sBlazeServer,
       Deps.Http4s.http4sDsl,
@@ -182,8 +183,9 @@ object Deps {
   val flyway           = ivy"org.flywaydb:flyway-core:7.10.0"
   val pureconfig       = ivy"com.github.pureconfig::pureconfig:0.16.0"
   val betterFiles      = ivy"com.github.pathikrit::better-files:3.9.1"
+  val enumeratum       = ivy"com.beachape::enumeratum:1.7.0"
   // https://github.com/luaj/luaj/issues/91 ):
-  val luaj = ivy"com.github.luaj:luaj:3.0.1"
+  val luaj = ivy"org.luaj:luaj-jse:3.0.1"
 
   object Compiler {
     val semanticDb       = ivy"org.scalameta::semanticdb-scalac:4.4.22"

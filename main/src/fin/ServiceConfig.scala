@@ -15,8 +15,8 @@ case class SpecialCollection(
     name: String,
     `lazy`: Option[String],
     addHook: Option[String],
-    readingHook: Option[String],
-    readHook: Option[String],
+    readStartedHook: Option[String],
+    readCompletedHook: Option[String],
     rateHook: Option[String]
 )
 
@@ -40,8 +40,8 @@ object ServiceConfig {
           |    },
           |    {
           |      name = Currently Reading,
-          |      reading-hook = \"\"\"add = true\"\"\",
-          |      read-hook = \"\"\"remove = true\"\"\"
+          |      read-begun-hook = \"\"\"add = true\"\"\",
+          |      read-complete-hook = \"\"\"remove = true\"\"\"
           |    },
           |    {
           |      name = Favourites,
