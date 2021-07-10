@@ -47,6 +47,7 @@ object main extends LibroFinitoModule with BuildInfo {
     super.scalacPluginIvyDeps() ++ Agg(Deps.Compiler.betterMonadicFor)
   def ivyDeps =
     Agg(
+      Deps.betterFiles,
       Deps.Caliban.cats,
       Deps.Caliban.core,
       Deps.Caliban.http4s,
@@ -61,7 +62,8 @@ object main extends LibroFinitoModule with BuildInfo {
       Deps.catsLogging,
       Deps.catsLoggingCore,
       Deps.flyway,
-      Deps.logback
+      Deps.logback,
+      Deps.pureconfig
     )
 }
 
@@ -171,6 +173,8 @@ object Deps {
   val weaver           = ivy"com.disneystreaming::weaver-cats:0.6.4"
   val sqlite           = ivy"org.xerial:sqlite-jdbc:3.34.0"
   val flyway           = ivy"org.flywaydb:flyway-core:7.10.0"
+  val pureconfig       = ivy"com.github.pureconfig::pureconfig:0.16.0"
+  val betterFiles      = ivy"com.github.pathikrit::better-files:3.9.1"
 
   object Compiler {
     val semanticDb       = ivy"org.scalameta::semanticdb-scalac:4.4.22"

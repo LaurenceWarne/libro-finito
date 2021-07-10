@@ -2,6 +2,7 @@ package fin
 
 import scala.concurrent.ExecutionContext.global
 
+import better.files._
 import cats.effect._
 import cats.implicits._
 import doobie._
@@ -10,10 +11,14 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
+import pureconfig._
+import pureconfig.generic.auto._
 import zio.Runtime
 
 import fin.persistence.{DbProperties, FlywaySetup, SqliteCollectionRepository}
 import fin.service.{CollectionServiceImpl, GoogleBookInfoService}
+
+import File._
 
 object Main extends IOApp {
 
@@ -23,13 +28,25 @@ object Main extends IOApp {
     val server =
       (BlazeClientBuilder[IO](global).resource, Blocker[IO]).tupled.use {
         case (client, blocker) =>
-          val (uri, user, password) = ("jdbc:sqlite:test.db", "", "")
-          val xa = Transactor.fromDriverManager[IO](
-            "org.sqlite.JDBC",
-            uri,
-            DbProperties.properties
-          )
           for {
+            configDirectory <- configDirectory
+            _               <- initializeConfigLocation(configDirectory)
+            confResponse =
+              ConfigSource
+                .file((configDirectory / "service.conf").toString)
+                .optional
+                .withFallback(ServiceConfig.default(configDirectory.toString))
+                .load[ServiceConfig]
+                .leftMap(err => new Exception(err.toString))
+            conf <- IO.fromEither(confResponse)
+            _ = println("DATABASEPATH:   " + conf.databasePath)
+            (uri, user, password) =
+              (show"jdbc:sqlite:${conf.databasePath}", "", "")
+            xa = Transactor.fromDriverManager[IO](
+              "org.sqlite.JDBC",
+              uri,
+              DbProperties.properties
+            )
             _ <- FlywaySetup.init[IO](uri, user, password)
             clock          = Clock[IO]
             collectionRepo = SqliteCollectionRepository[IO](xa, clock)
@@ -52,6 +69,11 @@ object Main extends IOApp {
       }
     server.as(ExitCode.Success)
   }
+
+  def initializeConfigLocation(configDirectory: File): IO[Unit] =
+    IO(configDirectory.createDirectoryIfNotExists())
+
+  def configDirectory: IO[File] = IO(home / ".config" / "libro-finito")
 }
 
 object Banner {
