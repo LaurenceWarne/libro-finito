@@ -5,7 +5,8 @@ import pureconfig._
 
 case class ServiceConfig(
     databasePath: String,
-    port: Int
+    port: Int,
+    defaultCollectionName: String
 )
 
 object ServiceConfig {
@@ -13,7 +14,8 @@ object ServiceConfig {
     ConfigSource.string(
       show"""{
           |  database-path = $configDirectory/db.sqlite,
-          |  port = 8080
+          |  port = 8080,
+          |  default-collection-name = My Books
           |}""".stripMargin
     )
 }

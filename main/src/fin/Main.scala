@@ -39,7 +39,6 @@ object Main extends IOApp {
                 .load[ServiceConfig]
                 .leftMap(err => new Exception(err.toString))
             conf <- IO.fromEither(confResponse)
-            _ = println("DATABASEPATH:   " + conf.databasePath)
             (uri, user, password) =
               (show"jdbc:sqlite:${conf.databasePath}", "", "")
             xa = Transactor.fromDriverManager[IO](
@@ -60,7 +59,7 @@ object Main extends IOApp {
             server <-
               BlazeServerBuilder[IO](global)
                 .withBanner(Seq(Banner.value))
-                .bindHttp(8080, "localhost")
+                .bindHttp(conf.port, "localhost")
                 .withHttpApp(Routes.routes(interpreter, blocker).orNotFound)
                 .serve
                 .compile
