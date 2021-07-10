@@ -16,7 +16,7 @@ import pureconfig.generic.auto._
 import zio.Runtime
 
 import fin.persistence.{DbProperties, FlywaySetup, SqliteCollectionRepository}
-import fin.service.{CollectionServiceImpl, GoogleBookInfoService}
+import fin.service._
 
 import File._
 
@@ -53,6 +53,13 @@ object Main extends IOApp {
             _                             <- logger.debug("Creating services...")
             bookInfoService   = GoogleBookInfoService[IO](client)
             collectionService = CollectionServiceImpl(collectionRepo)
+            defaultCollectionService = DefaultCollectionServiceImpl(
+              conf.defaultCollectionName,
+              collectionRepo
+            )
+            _ <- IO.whenA(conf.enableDefaultCollection)(
+              defaultCollectionService.createDefaultCollection
+            )
             _ <- logger.debug("Bootstrapping caliban...")
             interpreter <-
               CalibanSetup.interpreter(bookInfoService, collectionService)

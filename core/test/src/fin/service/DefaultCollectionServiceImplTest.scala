@@ -1,12 +1,12 @@
 package fin.service
 
-import cats.effect.concurrent.Ref
 import cats.effect._
+import cats.effect.concurrent.Ref
+import io.chrisdavenport.log4cats.Logger
+import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import weaver._
 
 import fin.Types._
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import io.chrisdavenport.log4cats.Logger
 import fin.persistence.CollectionRepository
 
 object DefaultCollectionServiceImplTest extends IOSuite {

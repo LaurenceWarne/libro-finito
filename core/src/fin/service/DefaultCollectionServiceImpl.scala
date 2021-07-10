@@ -1,9 +1,10 @@
 package fin.service
 
-import fin.persistence.CollectionRepository
 import cats.MonadError
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
+
+import fin.persistence.CollectionRepository
 
 class DefaultCollectionServiceImpl[F[_]: Logger](
     collectionName: String,

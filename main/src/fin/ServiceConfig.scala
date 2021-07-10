@@ -6,7 +6,9 @@ import pureconfig._
 case class ServiceConfig(
     databasePath: String,
     port: Int,
-    defaultCollectionName: String
+    enableDefaultCollection: Boolean,
+    defaultCollectionName: String,
+    addAllBooksToDefaultCollection: Boolean
 )
 
 object ServiceConfig {
@@ -15,7 +17,9 @@ object ServiceConfig {
       show"""{
           |  database-path = $configDirectory/db.sqlite,
           |  port = 8080,
-          |  default-collection-name = My Books
+          |  enable-default-collection = true,
+          |  default-collection-name = My Books,
+          |  add-all-books-to-default-collection = true
           |}""".stripMargin
     )
 }
