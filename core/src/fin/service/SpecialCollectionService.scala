@@ -4,7 +4,7 @@ import scala.util.Try
 
 import cats.effect.Sync
 import cats.implicits._
-import javax.script.{Bindings, ScriptEngine, ScriptEngineManager, SimpleBindings}
+import javax.script._
 
 import fin.Types._
 
