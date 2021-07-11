@@ -3,26 +3,27 @@ package fin
 import caliban.CalibanError.ExecutionError
 import caliban._
 import caliban.interop.cats.implicits._
-import cats.effect.IO
+import cats.effect.Effect
+import cats.implicits._
 
 import fin.Operations._
 import fin.service.{BookInfoService, CollectionService}
 
 object CalibanSetup {
 
-  def interpreter(
-      bookInfoService: BookInfoService[IO],
-      collectionService: CollectionService[IO]
+  def interpreter[F[_]: Effect](
+      bookInfoService: BookInfoService[F],
+      collectionService: CollectionService[F]
   )(implicit
       runtime: zio.Runtime[Any]
-  ): IO[GraphQLInterpreter[Any, CalibanError]] = {
-    val queries = Queries(
+  ): F[GraphQLInterpreter[Any, CalibanError]] = {
+    val queries = Queries[F](
       booksArgs => bookInfoService.search(booksArgs),
       bookArgs => bookInfoService.fromIsbn(bookArgs),
       collectionService.collections,
       collectionArgs => collectionService.collection(collectionArgs)
     )
-    val mutations = Mutations(
+    val mutations = Mutations[F](
       args => collectionService.createCollection(args),
       args => collectionService.deleteCollection(args).map(_ => None),
       args => collectionService.changeCollectionName(args),
@@ -30,7 +31,7 @@ object CalibanSetup {
       args => collectionService.removeBookFromCollection(args).map(_ => None)
     )
     val api = GraphQL.graphQL(RootResolver(queries, mutations))
-    api.interpreterAsync[IO].map(withErrors(_))
+    api.interpreterAsync[F].map(withErrors(_))
   }
 
   // 'Effect failure' is from this line:

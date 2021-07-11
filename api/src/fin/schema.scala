@@ -2,8 +2,6 @@ package fin
 
 import Types._
 
-import cats.effect.IO
-
 object Types {
   case class QueriesBooksArgs(
       titleKeywords: Option[String],
@@ -36,19 +34,19 @@ object Types {
 
 object Operations {
 
-  case class Queries(
-      books: QueriesBooksArgs => IO[List[Book]],
-      book: QueriesBookArgs => IO[Book],
-      collections: IO[List[Collection]],
-      collection: QueriesCollectionArgs => IO[Collection]
+  case class Queries[F[_]](
+      books: QueriesBooksArgs => F[List[Book]],
+      book: QueriesBookArgs => F[Book],
+      collections: F[List[Collection]],
+      collection: QueriesCollectionArgs => F[Collection]
   )
 
-  case class Mutations(
-      createCollection: MutationsCreateCollectionArgs => IO[Collection],
-      deleteCollection: MutationsDeleteCollectionArgs => IO[Option[Boolean]],
-      changeCollectionName: MutationsChangeCollectionNameArgs => IO[Collection],
-      addBook: MutationsAddBookArgs => IO[Collection],
-      removeBook: MutationsRemoveBookArgs => IO[Option[Boolean]]
+  case class Mutations[F[_]](
+      createCollection: MutationsCreateCollectionArgs => F[Collection],
+      deleteCollection: MutationsDeleteCollectionArgs => F[Option[Boolean]],
+      changeCollectionName: MutationsChangeCollectionNameArgs => F[Collection],
+      addBook: MutationsAddBookArgs => F[Collection],
+      removeBook: MutationsRemoveBookArgs => F[Option[Boolean]]
   )
 
 }

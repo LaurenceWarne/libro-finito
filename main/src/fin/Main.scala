@@ -55,7 +55,7 @@ object Main extends IOApp {
             collectionService = CollectionServiceImpl(collectionRepo)
             _ <- logger.debug("Bootstrapping caliban...")
             interpreter <-
-              CalibanSetup.interpreter(bookInfoService, collectionService)
+              CalibanSetup.interpreter[IO](bookInfoService, collectionService)
             server <-
               BlazeServerBuilder[IO](global)
                 .withBanner(Seq(Banner.value))

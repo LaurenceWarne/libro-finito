@@ -1,4 +1,4 @@
-import $ivy.`com.github.ghostdogpr::caliban-tools:1.0.1`
+import $ivy.`com.github.ghostdogpr::caliban-tools:1.1.0`
 import caliban.tools.Codegen.GenType
 import caliban.tools._
 import mill._
@@ -15,9 +15,10 @@ object SchemaGen {
       headers: Option[List[Options.Header]] = None,
       packageName: Option[String] = None,
       genView: Option[Boolean] = None,
-      effect: Option[String] = Some("IO"),
+      effect: Option[String] = None,
       scalarMappings: Option[Map[String, String]] = None,
-      imports: Option[List[String]] = Some(List("cats.effect.IO"))
+      imports: Option[List[String]] = None,
+      abstractEffectType: Option[Boolean] = Some(true)
   ) =
     T.command {
       val options = Options(
@@ -29,7 +30,8 @@ object SchemaGen {
         genView,
         effect,
         scalarMappings,
-        imports
+        imports,
+        abstractEffectType
       )
       println("Options: " + options.toString)
       Runtime.default.unsafeRun(
