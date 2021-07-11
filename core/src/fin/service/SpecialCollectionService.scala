@@ -4,13 +4,15 @@ import scala.util.Try
 
 import cats.effect.Sync
 import cats.implicits._
+import io.chrisdavenport.log4cats.Logger
 import javax.script._
+import org.luaj.vm2.LuaBoolean
 
 import fin.Types._
 
 import ProcessResult._
 
-class SpecialCollectionService[F[_]: Sync](
+class SpecialCollectionService[F[_]: Sync: Logger](
     wrappedService: CollectionService[F],
     collectionHooks: List[CollectionHook],
     scriptEngineManager: ScriptEngineManager
@@ -68,6 +70,13 @@ class SpecialCollectionService[F[_]: Sync](
         MutationsAddBookArgs(hook.collection, book)
       )
       .void
+      .handleErrorWith(err =>
+        Logger[F].error(
+          show"""
+               |Unable to add book to special collection '${hook.collection}',
+               |reason: ${err.getMessage}""".stripMargin.replace("\n", " ")
+        )
+      )
   }
 
   private def removeHookCollection(
@@ -79,6 +88,14 @@ class SpecialCollectionService[F[_]: Sync](
         MutationsRemoveBookArgs(hook.collection, book.isbn)
       )
       .void
+      .handleErrorWith(err =>
+        Logger[F].error(
+          show"""
+               |Unable to remove book from special collection
+               |'${hook.collection}', reason: ${err.getMessage}""".stripMargin
+            .replace("\n", " ")
+        )
+      )
   }
 
   private def bindings(collection: String, book: Book): F[Bindings] = {
@@ -98,13 +115,30 @@ class SpecialCollectionService[F[_]: Sync](
   ): F[Option[ProcessResult]] =
     for {
       _      <- Sync[F].delay(engine.eval(hook.code, bindings))
-      addStr <- Sync[F].delay(engine.get("add"))
-      rmStr  <- Sync[F].delay(engine.get("remove"))
-      maybeAdd    = Try(Option(addStr.asInstanceOf[Boolean])).toOption.flatten
-      maybeRemove = Try(Option(rmStr.asInstanceOf[Boolean])).toOption.flatten
+      addStr <- Sync[F].delay(bindings.get("add"))
+      rmStr  <- Sync[F].delay(bindings.get("remove"))
+      maybeAdd = Try(
+        Option(addStr.asInstanceOf[LuaBoolean])
+      ).toOption.flatten.map(_.booleanValue)
+      maybeRemove = Try(
+        Option(rmStr.asInstanceOf[LuaBoolean])
+      ).toOption.flatten.map(_.booleanValue)
     } yield maybeAdd
       .collect { case true => Add }
       .orElse(maybeRemove.collect { case true => Remove })
+}
+
+object SpecialCollectionService {
+  def apply[F[_]: Sync: Logger](
+      wrappedService: CollectionService[F],
+      collectionHooks: List[CollectionHook],
+      scriptEngineManager: ScriptEngineManager
+  ) =
+    new SpecialCollectionService[F](
+      wrappedService,
+      collectionHooks,
+      scriptEngineManager
+    )
 }
 
 sealed trait ProcessResult
