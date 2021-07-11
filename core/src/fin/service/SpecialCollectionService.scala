@@ -50,21 +50,9 @@ class SpecialCollectionService[F[_]: Sync](
             for {
               bindings     <- bindings(args.collection, args.book)
               hookResponse <- processHook(hook, engine, bindings)
-              _ <- hookResponse.traverse { response =>
-                response match {
-                  case Add =>
-                    wrappedService
-                      .addBookToCollection(
-                        MutationsAddBookArgs(hook.collection, args.book)
-                      )
-                      .void
-                  case Remove =>
-                    wrappedService
-                      .removeBookFromCollection(
-                        MutationsRemoveBookArgs(hook.collection, args.book.isbn)
-                      )
-                      .void
-                }
+              _ <- hookResponse.traverse {
+                case Add    => addHookCollection(hook, args.book)
+                case Remove => removeHookCollection(hook, args.book)
               }
             } yield ()
           })
@@ -72,7 +60,26 @@ class SpecialCollectionService[F[_]: Sync](
 
   override def removeBookFromCollection(
       args: MutationsRemoveBookArgs
-  ): F[Unit] = ???
+  ): F[Unit] = wrappedService.removeBookFromCollection(args)
+
+  private def addHookCollection(hook: CollectionHook, book: Book): F[Unit] = {
+    wrappedService
+      .addBookToCollection(
+        MutationsAddBookArgs(hook.collection, book)
+      )
+      .void
+  }
+
+  private def removeHookCollection(
+      hook: CollectionHook,
+      book: Book
+  ): F[Unit] = {
+    wrappedService
+      .removeBookFromCollection(
+        MutationsRemoveBookArgs(hook.collection, book.isbn)
+      )
+      .void
+  }
 
   private def bindings(collection: String, book: Book): F[Bindings] = {
     for {
