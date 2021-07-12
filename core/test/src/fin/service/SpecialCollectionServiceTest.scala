@@ -12,11 +12,13 @@ import fin.Types._
 
 object SpecialCollectionServiceTest extends IOSuite {
 
-  val scriptEngineManager = new ScriptEngineManager
-  val otherCollection     = "other collection"
-  val hook1Collection     = "default"
-  val hook2Collection     = "cool"
-  val hook3Collection     = "my ratings"
+  val scriptEngineManager       = new ScriptEngineManager
+  val otherCollection           = "other collection"
+  val hook1Collection           = "default"
+  val hook2Collection           = "cool"
+  val hook3Collection           = "my ratings"
+  val hookNotCreatedCollection  = "uncreated"
+  val hookAlwaysFalseCollection = "always false"
   val collectionHooks = List(
     CollectionHook(hook1Collection, HookType.Add, "add = true"),
     CollectionHook(
@@ -24,7 +26,17 @@ object SpecialCollectionServiceTest extends IOSuite {
       HookType.Add,
       "if string.find(title, \"cool\") then add = true else remove = true end"
     ),
-    CollectionHook(hook3Collection, HookType.Rate, "add = true")
+    CollectionHook(hook3Collection, HookType.Rate, "add = true"),
+    CollectionHook(
+      hookNotCreatedCollection,
+      HookType.Add,
+      "if title == \"special\" then add = true end"
+    ),
+    CollectionHook(
+      hookAlwaysFalseCollection,
+      HookType.Add,
+      "add = false"
+    )
   )
   val baseBook =
     Book("title", List("auth"), "description", "isbn", "thumbnail uri")
@@ -104,5 +116,35 @@ object SpecialCollectionServiceTest extends IOSuite {
       hook3Response <-
         collectionService.collection(QueriesCollectionArgs(hook3Collection))
     } yield expect(!hook3Response.books.contains(book))
+  }
+
+  test("addBookToCollection does not create special collection if add false") {
+    collectionService =>
+      val book     = baseBook.copy(isbn = "isbn4")
+      val argsBook = MutationsAddBookArgs(otherCollection, book)
+      for {
+        _ <- collectionService.addBookToCollection(argsBook)
+        hookResponse <-
+          collectionService
+            .collection(
+              QueriesCollectionArgs(hookAlwaysFalseCollection)
+            )
+            .attempt
+      } yield expect(hookResponse.isLeft)
+  }
+
+  test("addBookToCollection creates special collection if not exists") {
+    collectionService =>
+      val book     = baseBook.copy(title = "special", isbn = "isbn5")
+      val argsBook = MutationsAddBookArgs(otherCollection, book)
+      for {
+        _ <- collectionService.addBookToCollection(argsBook)
+        hookResponse <-
+          collectionService
+            .collection(
+              QueriesCollectionArgs(hookNotCreatedCollection)
+            )
+            .attempt
+      } yield expect(hookResponse.isRight)
   }
 }

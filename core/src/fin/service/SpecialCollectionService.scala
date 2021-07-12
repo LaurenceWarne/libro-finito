@@ -8,6 +8,7 @@ import io.chrisdavenport.log4cats.Logger
 import javax.script._
 import org.luaj.vm2.LuaBoolean
 
+import fin.implicits._
 import fin.Types._
 
 import ProcessResult._
@@ -64,38 +65,49 @@ class SpecialCollectionService[F[_]: Sync: Logger](
       args: MutationsRemoveBookArgs
   ): F[Unit] = wrappedService.removeBookFromCollection(args)
 
+  private def createCollectionIfNotExists(collection: String): F[Unit] =
+    createCollection(MutationsCreateCollectionArgs(collection, None)).void
+      .handleError(_ => ())
+
   private def addHookCollection(hook: CollectionHook, book: Book): F[Unit] = {
-    wrappedService
-      .addBookToCollection(
-        MutationsAddBookArgs(hook.collection, book)
-      )
-      .void
-      .handleErrorWith(err =>
-        Logger[F].error(
-          show"""
+    Logger[F].info(
+      show"Adding $book to special collection '${hook.collection}'"
+    ) *>
+      createCollectionIfNotExists(hook.collection) *>
+      wrappedService
+        .addBookToCollection(
+          MutationsAddBookArgs(hook.collection, book)
+        )
+        .void
+        .handleErrorWith(err =>
+          Logger[F].error(
+            show"""
                |Unable to add book to special collection '${hook.collection}',
                |reason: ${err.getMessage}""".stripMargin.replace("\n", " ")
+          )
         )
-      )
   }
 
   private def removeHookCollection(
       hook: CollectionHook,
       book: Book
   ): F[Unit] = {
-    wrappedService
-      .removeBookFromCollection(
-        MutationsRemoveBookArgs(hook.collection, book.isbn)
-      )
-      .void
-      .handleErrorWith(err =>
-        Logger[F].error(
-          show"""
+    Logger[F].info(
+      show"Removing $book from special collection '${hook.collection}'"
+    ) *>
+      wrappedService
+        .removeBookFromCollection(
+          MutationsRemoveBookArgs(hook.collection, book.isbn)
+        )
+        .void
+        .handleErrorWith(err =>
+          Logger[F].error(
+            show"""
                |Unable to remove book from special collection
                |'${hook.collection}', reason: ${err.getMessage}""".stripMargin
-            .replace("\n", " ")
+              .replace("\n", " ")
+          )
         )
-      )
   }
 
   private def bindings(collection: String, book: Book): F[Bindings] = {

@@ -40,9 +40,15 @@ object Main extends IOApp {
             _                             <- logger.debug("Creating services...")
             bookInfoService   = GoogleBookInfoService[IO](client)
             collectionService = CollectionServiceImpl(collectionRepo)
+            wrappedCollectionService <- SpecialCollectionSetup.setup(
+              collectionService,
+              config.specialCollections
+            )
             _ <- logger.debug("Bootstrapping caliban...")
-            interpreter <-
-              CalibanSetup.interpreter[IO](bookInfoService, collectionService)
+            interpreter <- CalibanSetup.interpreter[IO](
+              bookInfoService,
+              wrappedCollectionService
+            )
             server <-
               BlazeServerBuilder[IO](global)
                 .withBanner(Seq(Banner.value))
