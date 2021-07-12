@@ -2,7 +2,6 @@ package fin
 
 import scala.concurrent.ExecutionContext.global
 
-import better.files._
 import cats.effect._
 import cats.implicits._
 import doobie._
@@ -11,14 +10,11 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
-import pureconfig._
 import zio.Runtime
 
+import fin.config._
 import fin.persistence.{DbProperties, FlywaySetup, SqliteCollectionRepository}
 import fin.service._
-
-import File._
-import ServiceConfig._
 
 object Main extends IOApp {
 
@@ -29,18 +25,9 @@ object Main extends IOApp {
       (BlazeClientBuilder[IO](global).resource, Blocker[IO]).tupled.use {
         case (client, blocker) =>
           for {
-            configDirectory <- configDirectory
-            _               <- initializeConfigLocation(configDirectory)
-            confResponse =
-              ConfigSource
-                .file((configDirectory / "service.conf").toString)
-                .optional
-                .withFallback(ServiceConfig.default(configDirectory.toString))
-                .load[ServiceConfig]
-                .leftMap(err => new Exception(err.toString))
-            conf <- IO.fromEither(confResponse)
+            config <- Config.get[IO]
             (uri, user, password) =
-              (show"jdbc:sqlite:${conf.databasePath}", "", "")
+              (show"jdbc:sqlite:${config.databasePath}", "", "")
             xa = Transactor.fromDriverManager[IO](
               "org.sqlite.JDBC",
               uri,
@@ -59,7 +46,7 @@ object Main extends IOApp {
             server <-
               BlazeServerBuilder[IO](global)
                 .withBanner(Seq(Banner.value))
-                .bindHttp(conf.port, "localhost")
+                .bindHttp(config.port, "localhost")
                 .withHttpApp(Routes.routes(interpreter, blocker).orNotFound)
                 .serve
                 .compile
@@ -68,11 +55,6 @@ object Main extends IOApp {
       }
     server.as(ExitCode.Success)
   }
-
-  def initializeConfigLocation(configDirectory: File): IO[Unit] =
-    IO(configDirectory.createDirectoryIfNotExists())
-
-  def configDirectory: IO[File] = IO(home / ".config" / "libro-finito")
 }
 
 object Banner {

@@ -1,8 +1,10 @@
-package fin
+package fin.config
 
 import cats.implicits._
 import pureconfig._
 import pureconfig.generic.semiauto._
+
+import fin.service.{CollectionHook, HookType}
 
 case class ServiceConfig(
     databasePath: String,
@@ -13,12 +15,18 @@ case class ServiceConfig(
 
 case class SpecialCollection(
     name: String,
-    `lazy`: Option[String],
+    `lazy`: Option[Boolean],
     addHook: Option[String],
     readStartedHook: Option[String],
     readCompletedHook: Option[String],
     rateHook: Option[String]
-)
+) {
+  def toCollectionHooks: List[CollectionHook] =
+    (addHook.map(CollectionHook(name, HookType.Add, _)) ++
+      readStartedHook.map(CollectionHook(name, HookType.ReadStarted, _)) ++
+      readCompletedHook.map(CollectionHook(name, HookType.ReadCompleted, _)) ++
+      rateHook.map(CollectionHook(name, HookType.Rate, _))).toList
+}
 
 object ServiceConfig {
   implicit val collectionReader: ConfigReader[SpecialCollection] =
