@@ -9,22 +9,7 @@ import mill.contrib.scoverage.{ScoverageModule, ScoverageReport}
 import mill.eval.Evaluator
 import com.goyeau.mill.scalafix.ScalafixModule
 import coursier.maven.MavenRepository
-import calibanSchemaGen.SchemaGen
-
-def genSchema(
-    ev: Evaluator,
-    schemaPath: String = "schema.gql",
-    toPath: String = "api/src/fin/schema.scala",
-    packageName: String = "fin"
-) =
-  T.command {
-    SchemaGen.gen(
-      ev,
-      schemaPath = schemaPath,
-      toPath = toPath,
-      packageName = Some(packageName)
-    )
-  }
+import calibanSchemaGen.CalibanSchemaModule
 
 object main extends LibroFinitoModule with BuildInfo {
 
@@ -68,7 +53,12 @@ object main extends LibroFinitoModule with BuildInfo {
     )
 }
 
-object api extends LibroFinitoModuleNoLinting {
+object api extends LibroFinitoModuleNoLinting with CalibanSchemaModule {
+
+  def schemaPath         = "schema.gql"
+  def packageName        = "fin"
+  def abstractEffectType = true
+
   def ivyDeps =
     Agg(
       Deps.Caliban.core,

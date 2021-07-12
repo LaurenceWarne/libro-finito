@@ -1,41 +1,47 @@
 import $ivy.`com.github.ghostdogpr::caliban-tools:1.1.0`
 import caliban.tools.Codegen.GenType
 import caliban.tools._
-import mill._
-import mill.eval.Evaluator
+import mill._, scalalib._, scalafmt._
+import mill.api.PathRef
 import zio.Runtime
 
-object SchemaGen {
+trait CalibanSchemaModule extends ScalaModule {
 
-  def gen(
-      ev: Evaluator,
-      schemaPath: String,
-      toPath: String,
-      fmtPath: Option[String] = None,
-      headers: Option[List[Options.Header]] = None,
-      packageName: Option[String] = None,
-      genView: Option[Boolean] = None,
-      effect: Option[String] = None,
-      scalarMappings: Option[Map[String, String]] = None,
-      imports: Option[List[String]] = None,
-      abstractEffectType: Option[Boolean] = Some(true)
-  ) =
-    T.command {
+  def schemaPath: String
+  def schemaOutputFileName          = "Schema.scala"
+  def fmtPath: String               = ".scalafmt.conf"
+  def headers: List[Options.Header] = List.empty
+  def packageName: String
+  def genView: Boolean                    = false
+  def effect: String                      = if (abstractEffectType) "F" else "zio.UIO"
+  def scalarMappings: Map[String, String] = Map.empty
+  def imports: List[String]               = List.empty
+  def abstractEffectType: Boolean         = false
+
+  override def generatedSources =
+    T {
+      val schemaPathRef = schema()
+      super.generatedSources() :+ schemaPathRef
+    }
+
+  def schema: T[PathRef] =
+    T {
+      val outputPath = T.dest / schemaOutputFileName
       val options = Options(
         schemaPath,
-        toPath,
-        fmtPath,
-        headers,
-        packageName,
-        genView,
-        effect,
-        scalarMappings,
-        imports,
-        abstractEffectType
+        outputPath.toString,
+        Some(fmtPath),
+        Some(headers),
+        Some(packageName),
+        Some(genView),
+        Some(effect),
+        Some(scalarMappings),
+        Some(imports),
+        Some(abstractEffectType)
       )
-      println("Options: " + options.toString)
       Runtime.default.unsafeRun(
         Codegen.generate(options, GenType.Schema).unit
       )
+      PathRef(outputPath)
     }
 }

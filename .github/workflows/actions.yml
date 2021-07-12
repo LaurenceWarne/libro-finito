@@ -18,10 +18,6 @@ jobs:
         run: ./mill __.compile
       - name: Check Formatting
         run: ./mill __.checkFormat
-      - name: Check for schema updates
-        run: |
-          ./mill genSchema
-          git diff --exit-code
       - name: Scalafix
         run: ./mill __.fix --check
       - name: Run tests
