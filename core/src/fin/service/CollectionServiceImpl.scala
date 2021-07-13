@@ -46,7 +46,10 @@ class CollectionServiceImpl[F[_]: Sync] private (
   ): F[Collection] =
     for {
       collection <- collectionOrError(args.currentName)
-      _          <- args.newName.traverse(errorIfCollectionExists)
+      _ <- Sync[F].whenA(args.newName.orElse(args.preferredSort).isEmpty) {
+        Sync[F].raiseError(NotEnoughArgumentsForUpdateError)
+      }
+      _ <- args.newName.traverse(errorIfCollectionExists)
       _ <- collectionRepo.updateCollection(
         args.currentName,
         args.newName.getOrElse(collection.name),
@@ -106,4 +109,9 @@ object CollectionServiceImpl {
 
   def apply[F[_]: Sync](collectionRepo: CollectionRepository[F]) =
     new CollectionServiceImpl[F](collectionRepo)
+}
+
+case object NotEnoughArgumentsForUpdateError extends Throwable {
+  override def getMessage =
+    "At least one of 'newName' and 'preferredSort' must be specified"
 }

@@ -76,15 +76,20 @@ object SqliteCollectionRepositoryTest extends IOSuite {
     )
   }
 
-  test("updateCollection changes collection name") {
+  test("updateCollection changes collection name and sort") {
     val oldName = "old_name"
     val newName = "new_name"
-    val sort    = Sort.DateAdded
+    val oldSort = Sort.DateAdded
+    val newSort = Sort.Title
     for {
-      _                   <- repo.createCollection(oldName, sort)
-      _                   <- repo.updateCollection(oldName, newName, sort)
+      _                   <- repo.createCollection(oldName, oldSort)
+      _                   <- repo.updateCollection(oldName, newName, newSort)
       retrievedCollection <- repo.collection(newName)
-    } yield expect(retrievedCollection.exists(_.name === newName))
+    } yield expect(
+      retrievedCollection.exists(c =>
+        c.name === newName && c.preferredSort === newSort
+      )
+    )
   }
 
   test("updateCollection errors if name already exists") {

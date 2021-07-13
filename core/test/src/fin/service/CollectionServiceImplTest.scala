@@ -103,19 +103,23 @@ object CollectionServiceImplTest extends IOSuite {
       } yield expect(response.isRight)
   }
 
-  test("updateCollectionName udpates collection name") { collectionService =>
-    val (oldName, newName) = ("old name", "new name")
-    for {
-      _ <-
-        collectionService
-          .createCollection(MutationsCreateCollectionArgs(oldName, None))
-      collection <- collectionService.updateCollection(
-        MutationsUpdateCollectionArgs(oldName, newName.some, None)
+  test("updateCollection udpates collection name and sort") {
+    collectionService =>
+      val (oldName, newName) = ("old name", "new name")
+      val newSort            = Sort.Author
+      for {
+        _ <-
+          collectionService
+            .createCollection(MutationsCreateCollectionArgs(oldName, None))
+        collection <- collectionService.updateCollection(
+          MutationsUpdateCollectionArgs(oldName, newName.some, newSort.some)
+        )
+      } yield expect(collection.name === newName) and expect(
+        collection.preferredSort === newSort
       )
-    } yield expect(collection.name === newName)
   }
 
-  test("updateCollectionName errors on inexistant collection") {
+  test("updateCollection errors on inexistant collection") {
     collectionService =>
       for {
         response <-
@@ -131,7 +135,7 @@ object CollectionServiceImplTest extends IOSuite {
       } yield expect(response.isLeft)
   }
 
-  test("updateCollectionName errors if new name already exists") {
+  test("updateCollection errors if new name already exists") {
     collectionService =>
       val (oldName, newName) = ("another old name", "existing new name")
       for {
@@ -148,6 +152,21 @@ object CollectionServiceImplTest extends IOSuite {
             )
             .attempt
       } yield expect(response.isLeft)
+  }
+
+  test("updateCollection errors if all arguments None") { collectionService =>
+    val name = "another name"
+    for {
+      _ <-
+        collectionService
+          .createCollection(MutationsCreateCollectionArgs(name, None))
+      response <-
+        collectionService
+          .updateCollection(
+            MutationsUpdateCollectionArgs(name, None, None)
+          )
+          .attempt
+    } yield expect(response == NotEnoughArgumentsForUpdateError.asLeft)
   }
 
   test("addBookToCollection adds book to collection") { collectionService =>
