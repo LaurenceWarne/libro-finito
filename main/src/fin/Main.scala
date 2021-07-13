@@ -26,14 +26,17 @@ object Main extends IOApp {
         case (client, blocker) =>
           for {
             config <- Config.get[IO]
-            (uri, user, password) =
-              (show"jdbc:sqlite:${config.databasePath}", "", "")
+            uri = show"jdbc:sqlite:${config.databasePath}"
             xa = Transactor.fromDriverManager[IO](
-              "org.sqlite.JDBC",
+              config.databaseDriver,
               uri,
               DbProperties.properties
             )
-            _ <- FlywaySetup.init[IO](uri, user, password)
+            _ <- FlywaySetup.init[IO](
+              uri,
+              config.databaseUser,
+              config.databasePassword
+            )
             clock          = Clock[IO]
             collectionRepo = SqliteCollectionRepository[IO](xa, clock)
             implicit0(logger: Logger[IO]) <- Slf4jLogger.create[IO]

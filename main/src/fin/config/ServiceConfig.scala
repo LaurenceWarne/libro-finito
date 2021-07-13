@@ -8,6 +8,9 @@ import fin.service.{CollectionHook, HookType}
 
 case class ServiceConfig(
     databasePath: String,
+    databaseUser: String,
+    databasePassword: String,
+    databaseDriver: String,
     port: Int,
     defaultCollection: Option[String],
     specialCollections: List[SpecialCollection]
@@ -38,6 +41,9 @@ object ServiceConfig {
     ConfigSource.string(
       show"""{
           |  database-path = $configDirectory/db.sqlite,
+          |  database-user = "",
+          |  database-password = "",
+          |  database-driver = org.sqlite.JDBC,
           |  port = 8080,
           |  default-collection-name = My Books,
           |  special-collections = [
@@ -48,6 +54,7 @@ object ServiceConfig {
           |    },
           |    {
           |      name = Currently Reading,
+          |      lazy = false,
           |      read-begun-hook = \"\"\"add = true\"\"\",
           |      read-complete-hook = \"\"\"remove = true\"\"\"
           |    },
