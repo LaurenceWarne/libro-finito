@@ -8,8 +8,6 @@ import fin.Types._
 import fin.implicits._
 import fin.persistence.CollectionRepository
 
-import CollectionServiceImpl._
-
 class InMemoryCollectionRepository[F[_]](
     collectionsRef: Ref[F, List[Collection]]
 )(implicit me: MonadError[F, Throwable])
@@ -17,8 +15,8 @@ class InMemoryCollectionRepository[F[_]](
 
   override def collections: F[List[Collection]] = collectionsRef.get
 
-  override def createCollection(name: String): F[Unit] = {
-    val collection = Collection(name, List.empty, defaultSort)
+  override def createCollection(name: String, preferredSort: Sort): F[Unit] = {
+    val collection = Collection(name, List.empty, preferredSort)
     collectionsRef.getAndUpdate(collection :: _).void
   }
 
@@ -34,8 +32,7 @@ class InMemoryCollectionRepository[F[_]](
   ): F[Unit] = {
     for {
       retrievedCollection <- collectionOrError(currentName)
-      newCollection =
-        Collection(newName, retrievedCollection.books, defaultSort)
+      newCollection = retrievedCollection.copy(name = newName)
       _ <- collectionsRef.getAndUpdate(_.map { col =>
         if (col === retrievedCollection) newCollection else col
       })
@@ -48,11 +45,8 @@ class InMemoryCollectionRepository[F[_]](
   ): F[Unit] =
     for {
       retrievedCollection <- collectionOrError(collectionName)
-      newCollection = Collection(
-        collectionName,
-        book :: retrievedCollection.books,
-        defaultSort
-      )
+      newCollection =
+        retrievedCollection.copy(books = book :: retrievedCollection.books)
       _ <- collectionsRef.getAndUpdate(_.map { col =>
         if (col === retrievedCollection) newCollection else col
       })

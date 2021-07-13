@@ -47,7 +47,7 @@ object SqliteCollectionRepositoryTest extends IOSuite {
   test("collection retrieves created collection") {
     val name = "retrieve_collection"
     for {
-      _                   <- repo.createCollection(name)
+      _                   <- repo.createCollection(name, Sort.DateAdded)
       retrievedCollection <- repo.collection(name)
     } yield expect(
       retrievedCollection.exists(
@@ -59,17 +59,17 @@ object SqliteCollectionRepositoryTest extends IOSuite {
   test("createCollection fails when name already exists") {
     val name = "duplicated_name"
     for {
-      _        <- repo.createCollection(name)
-      response <- repo.createCollection(name).attempt
+      _        <- repo.createCollection(name, Sort.DateAdded)
+      response <- repo.createCollection(name, Sort.DateAdded).attempt
     } yield expect(response.isLeft)
   }
 
   test("collections retrieves created collections") {
     val (name1, name2, name3) = ("collection1", "collection2", "collection3")
     for {
-      _                    <- repo.createCollection(name1)
-      _                    <- repo.createCollection(name2)
-      _                    <- repo.createCollection(name3)
+      _                    <- repo.createCollection(name1, Sort.DateAdded)
+      _                    <- repo.createCollection(name2, Sort.DateAdded)
+      _                    <- repo.createCollection(name3, Sort.DateAdded)
       retrievedCollections <- repo.collections
     } yield expect(
       Set(name1, name2, name3).subsetOf(retrievedCollections.map(_.name).toSet)
@@ -80,7 +80,7 @@ object SqliteCollectionRepositoryTest extends IOSuite {
     val oldName = "old_name"
     val newName = "new_name"
     for {
-      _                   <- repo.createCollection(oldName)
+      _                   <- repo.createCollection(oldName, Sort.DateAdded)
       _                   <- repo.updateCollection(oldName, newName)
       retrievedCollection <- repo.collection(newName)
     } yield expect(retrievedCollection.exists(_.name === newName))
@@ -90,8 +90,8 @@ object SqliteCollectionRepositoryTest extends IOSuite {
     val oldName = "old_name_"
     val newName = "new_name_"
     for {
-      _        <- repo.createCollection(oldName)
-      _        <- repo.createCollection(newName)
+      _        <- repo.createCollection(oldName, Sort.DateAdded)
+      _        <- repo.createCollection(newName, Sort.DateAdded)
       response <- repo.updateCollection(oldName, newName).attempt
     } yield expect(response.isLeft)
   }
@@ -108,7 +108,7 @@ object SqliteCollectionRepositoryTest extends IOSuite {
   test("AddToCollection adds book not already added") {
     val name = "collection with books"
     for {
-      _                   <- repo.createCollection(name)
+      _                   <- repo.createCollection(name, Sort.DateAdded)
       _                   <- repo.addBookToCollection(name, book)
       retrievedCollection <- repo.collection(name)
     } yield expect(
@@ -122,8 +122,8 @@ object SqliteCollectionRepositoryTest extends IOSuite {
     val name1 = "collection with books 1"
     val name2 = "collection with books 2"
     for {
-      _                   <- repo.createCollection(name1)
-      _                   <- repo.createCollection(name2)
+      _                   <- repo.createCollection(name1, Sort.DateAdded)
+      _                   <- repo.createCollection(name2, Sort.DateAdded)
       _                   <- repo.addBookToCollection(name1, book)
       _                   <- repo.addBookToCollection(name2, book)
       retrievedCollection <- repo.collection(name2)
@@ -144,7 +144,7 @@ object SqliteCollectionRepositoryTest extends IOSuite {
   test("deleteCollection successful with collection with no books") {
     val name = "collection to delete"
     for {
-      _               <- repo.createCollection(name)
+      _               <- repo.createCollection(name, Sort.DateAdded)
       _               <- repo.deleteCollection(name)
       maybeCollection <- repo.collection(name)
     } yield expect(maybeCollection.isEmpty)
@@ -154,7 +154,7 @@ object SqliteCollectionRepositoryTest extends IOSuite {
     val name  = "collection to delete with books"
     val book2 = book.copy(isbn = "isbn-d")
     for {
-      _               <- repo.createCollection(name)
+      _               <- repo.createCollection(name, Sort.DateAdded)
       _               <- repo.addBookToCollection(name, book2)
       _               <- repo.deleteCollection(name)
       maybeCollection <- repo.collection(name)
@@ -171,7 +171,7 @@ object SqliteCollectionRepositoryTest extends IOSuite {
     val name  = "collection with book to delete"
     val book2 = book.copy(isbn = "isbn-d")
     for {
-      _               <- repo.createCollection(name)
+      _               <- repo.createCollection(name, Sort.DateAdded)
       _               <- repo.addBookToCollection(name, book2)
       _               <- repo.removeBookFromCollection(name, book2.isbn)
       maybeCollection <- repo.collection(name)
@@ -190,7 +190,7 @@ object SqliteCollectionRepositoryTest extends IOSuite {
     val name = "collection with no book"
     val isbn = "isbn-d"
     for {
-      _        <- repo.createCollection(name)
+      _        <- repo.createCollection(name, Sort.DateAdded)
       response <- repo.removeBookFromCollection(name, isbn).attempt
     } yield expect(response.isRight)
   }

@@ -6,8 +6,11 @@ import cats.Show
 import fin.Types._
 
 object implicits {
-  implicit val CollectionEq: Eq[Collection]     = Eq.fromUniversalEquals
-  implicit val BookEq: Eq[Book]                 = Eq.fromUniversalEquals
-  implicit val CollectionShow: Show[Collection] = Show.fromToString
-  implicit val BookShow: Show[Book]             = Show.fromToString
+  implicit val collectionEq: Eq[Collection] = Eq.fromUniversalEquals
+  implicit val bookEq: Eq[Book]             = Eq.fromUniversalEquals
+  implicit val sortEq: Eq[Sort]             = Eq.fromUniversalEquals
+
+  implicit val sortShow: Show[Sort]             = Show.fromToString
+  implicit val collectionShow: Show[Collection] = Show.fromToString
+  implicit val bookShow: Show[Book]             = Show.fromToString
 }

@@ -21,7 +21,7 @@ class CollectionServiceImpl[F[_]: Sync] private (
     for {
       maybeExistingCollection <- collectionRepo.collection(args.name)
       _ <- maybeExistingCollection.fold(
-        collectionRepo.createCollection(args.name)
+        collectionRepo.createCollection(args.name, defaultSort)
       ) { collection =>
         Sync[F].raiseError(
           new Exception(show"Collection already exists: $collection")

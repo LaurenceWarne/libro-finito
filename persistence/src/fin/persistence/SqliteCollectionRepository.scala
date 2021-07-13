@@ -14,6 +14,7 @@ import doobie.implicits.javasql._
 import doobie.util.fragment.Fragment
 import doobie.util.transactor.Transactor
 
+import fin.SortConversions
 import fin.Types._
 
 class SqliteCollectionRepository[F[_]: Sync] private (
@@ -60,18 +61,22 @@ class SqliteCollectionRepository[F[_]: Sync] private (
       .query[CollectionBookRow]
       .to[List]
       .transact(xa)
-      .map(toCollections(_).headOption)
+      .flatMap(rows => Sync[F].fromEither(toCollections(rows)))
+      .map(_.headOption)
 
   override def collections: F[List[Collection]] =
     Fragments.retrieveCollections
       .query[CollectionBookRow]
       .to[List]
       .transact(xa)
-      .map(toCollections(_))
+      .flatMap(rows => Sync[F].fromEither(toCollections(rows)))
 
-  override def createCollection(name: String): F[Unit] = {
+  override def createCollection(
+      name: String,
+      preferredSort: Sort
+  ): F[Unit] = {
     Fragments
-      .create(name)
+      .create(name, preferredSort)
       .update
       .run
       .transact(xa)
@@ -95,13 +100,18 @@ class SqliteCollectionRepository[F[_]: Sync] private (
       .transact(xa)
       .void
 
-  private def toCollections(rows: List[CollectionBookRow]): List[Collection] = {
+  private def toCollections(
+      rows: List[CollectionBookRow]
+  ): Either[Throwable, List[Collection]] = {
     rows
-      .groupMapReduce(_.name)(_.asBook.toList)(_ ++ _)
-      .map {
-        case (name, books) => Collection(name, books, Sort.DateAdded)
-      }
+      .groupMapReduce(c => (c.name, c.preferredSort))(_.asBook.toList)(_ ++ _)
       .toList
+      .traverse {
+        case ((name, preferredSort), books) =>
+          SortConversions
+            .fromString(preferredSort)
+            .map(Collection(name, books, _))
+      }
   }
 }
 
@@ -113,10 +123,13 @@ object SqliteCollectionRepository {
 
 object Fragments {
 
+  implicit val sortPut: Put[Sort] = Put[String].contramap(_.toString)
+
   val retrieveCollections =
     fr"""
        |SELECT 
        |  c.name,
+       |  c.preferred_sort,
        |  b.isbn,
        |  b.title, 
        |  b.authors,
@@ -130,8 +143,10 @@ object Fragments {
   def fromName(name: String): Fragment =
     retrieveCollections ++ fr"WHERE name = $name"
 
-  def create(name: String): Fragment =
-    fr"INSERT INTO collections (name) VALUES($name)"
+  def create(name: String, preferredSort: Sort): Fragment =
+    fr"""
+       |INSERT INTO collections (name, preferred_sort)
+       |VALUES ($name, $preferredSort)""".stripMargin
 
   def delete(name: String): Fragment =
     fr"DELETE FROM collections WHERE name = $name"
@@ -171,6 +186,7 @@ object BookFragments {
 
 case class CollectionBookRow(
     name: String,
+    preferredSort: String,
     maybeIsbn: Option[String],
     maybeTitle: Option[String],
     maybeAuthors: Option[String],
