@@ -36,7 +36,13 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
 
   override def updateCollection(
       args: MutationsUpdateCollectionArgs
-  ): F[Collection] = wrappedService.updateCollection(args)
+  ): F[Collection] =
+    Sync[F].whenA(
+      args.newName.nonEmpty && collectionHooks
+        .map(_.collection)
+        .contains(args.currentName)
+    )(Sync[F].raiseError(CannotChangeNameOfSpecialCollectionError)) *>
+      wrappedService.updateCollection(args)
 
   override def addBookToCollection(
       args: MutationsAddBookArgs
@@ -158,4 +164,8 @@ sealed trait ProcessResult
 object ProcessResult {
   case object Add    extends ProcessResult
   case object Remove extends ProcessResult
+}
+
+case object CannotChangeNameOfSpecialCollectionError extends Throwable {
+  override def getMessage = "Cannot update the name of a special collection"
 }

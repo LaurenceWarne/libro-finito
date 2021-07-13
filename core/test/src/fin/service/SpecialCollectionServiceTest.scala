@@ -8,6 +8,7 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import javax.script.ScriptEngineManager
 import weaver._
 
+import fin.implicits._
 import fin.Types._
 
 object SpecialCollectionServiceTest extends IOSuite {
@@ -153,5 +154,42 @@ object SpecialCollectionServiceTest extends IOSuite {
             )
             .attempt
       } yield expect(hookResponse.isRight)
+  }
+
+  test("updateCollection errors if name specified for special collection") {
+    collectionService =>
+      for {
+        response <-
+          collectionService
+            .updateCollection(
+              MutationsUpdateCollectionArgs(
+                hook1Collection,
+                "a new name".some,
+                None
+              )
+            )
+            .attempt
+      } yield expect(
+        response.swap.exists(_ == CannotChangeNameOfSpecialCollectionError)
+      )
+  }
+
+  test(
+    "updateCollection successful if name not specified for special collection"
+  ) { collectionService =>
+    val newSort = Sort.Author
+    for {
+      _ <-
+        collectionService
+          .updateCollection(
+            MutationsUpdateCollectionArgs(
+              hook1Collection,
+              None,
+              newSort.some
+            )
+          )
+      hookResponse <-
+        collectionService.collection(QueriesCollectionArgs(hook1Collection))
+    } yield expect(hookResponse.preferredSort === newSort)
   }
 }
