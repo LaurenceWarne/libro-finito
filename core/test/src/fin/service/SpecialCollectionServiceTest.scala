@@ -39,9 +39,16 @@ object SpecialCollectionServiceTest extends IOSuite {
     )
   )
   val baseBook =
-    Book("title", List("auth"), "description", "isbn", "thumbnail uri")
-  val book2 =
-    Book("my cool bk", List("auth"), "description", "isbn", "thumbnail uri")
+    Book(
+      "title",
+      List("auth"),
+      "description",
+      "isbn",
+      "thumbnail uri",
+      None,
+      None
+    )
+  val book2     = baseBook.copy(title = "my cool book")
   val argsBook2 = MutationsAddBookArgs(otherCollection, book2)
 
   implicit def unsafeLogger: Logger[IO] = Slf4jLogger.getLogger

@@ -100,7 +100,9 @@ object GoogleBookInfoService {
         authors,
         maybeDescription.getOrElse("No Description!"),
         industryIdentifier.getIsbn13,
-        largeThumbnail
+        largeThumbnail,
+        None,
+        None
       )
   }
 
@@ -117,7 +119,9 @@ object GoogleBookInfoService {
           .getOrElse(Nil)
           .headOption
           .fold("???")(_.getIsbn13),
-        bookItem.imageLinks.fold(emptyThumbnailUri)(_.thumbnail)
+        bookItem.imageLinks.fold(emptyThumbnailUri)(_.thumbnail),
+        None,
+        None
       )
   }
 

@@ -3,21 +3,33 @@ schema {
   mutation: Mutations
 }
 
+enum Sort {
+  DateAdded
+  Title
+  Author
+  Rating
+}
+
 type Book {
   title: String!
   authors: [String!]!
   description: String!
   isbn: String!
   thumbnailUri: String!
+  rating: Int,
+  lastRead: DateTime
 }
 
 type Collection {
   name: String!
   books: [Book!]!
+  preferredSort: Sort!
 }
 
 type Queries {
-  books(titleKeywords: String, authorKeywords: String, maxResults: Int = 10): [Book!]!
+  books(
+    titleKeywords: String, authorKeywords: String, maxResults: Int = 10
+  ): [Book!]!
   book(isbn: String!): Book!
   collections: [Collection!]!
   collection(name: String!): Collection!
@@ -26,7 +38,13 @@ type Queries {
 type Mutations {
   createCollection(name: String!, books: [Book!]): Collection!
   deleteCollection(name: String!): Boolean
-  changeCollectionName(currentName: String!, newName: String!): Collection!
+  updateCollection(
+    currentName: String!, newName: String, preferredSort: Sort
+  ): Collection!
   addBook(collection: String!, book: Book!): Collection!
   removeBook(collection: String!, isbn: String!): Boolean
+  startReading(book: Book!): Book!
+  finishReading(book: Book!): Book!
+  rate(book: Book!, rating: Int!): Book!
+  createBook(book: Book!): Book!
 }

@@ -26,9 +26,13 @@ object CalibanSetup {
     val mutations = Mutations[F](
       args => collectionService.createCollection(args),
       args => collectionService.deleteCollection(args).map(_ => None),
-      args => collectionService.changeCollectionName(args),
+      args => collectionService.updateCollection(args),
       args => collectionService.addBookToCollection(args),
-      args => collectionService.removeBookFromCollection(args).map(_ => None)
+      args => collectionService.removeBookFromCollection(args).map(_ => None),
+      _ => ???,
+      _ => ???,
+      _ => ???,
+      _ => ???
     )
     val api = GraphQL.graphQL(RootResolver(queries, mutations))
     api.interpreterAsync[F].map(withErrors(_))

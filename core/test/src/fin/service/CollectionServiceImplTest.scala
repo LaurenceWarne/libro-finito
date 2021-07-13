@@ -10,6 +10,9 @@ import fin.implicits._
 
 object CollectionServiceImplTest extends IOSuite {
 
+  val book =
+    Book("title", List("author"), "cool description", "???", "uri", None, None)
+
   override type Res = CollectionService[IO]
   override def sharedResource: Resource[IO, CollectionService[IO]] =
     Resource.eval(Ref.of[IO, List[Collection]](List.empty).map { ref =>
@@ -106,8 +109,8 @@ object CollectionServiceImplTest extends IOSuite {
       _ <-
         collectionService
           .createCollection(MutationsCreateCollectionArgs(oldName, None))
-      collection <- collectionService.changeCollectionName(
-        MutationsChangeCollectionNameArgs(oldName, newName)
+      collection <- collectionService.updateCollection(
+        MutationsUpdateCollectionArgs(oldName, newName.some, None)
       )
     } yield expect(collection.name === newName)
   }
@@ -117,10 +120,11 @@ object CollectionServiceImplTest extends IOSuite {
       for {
         response <-
           collectionService
-            .changeCollectionName(
-              MutationsChangeCollectionNameArgs(
+            .updateCollection(
+              MutationsUpdateCollectionArgs(
                 "inexistant collection",
-                "new name"
+                "new name".some,
+                None
               )
             )
             .attempt
@@ -139,8 +143,8 @@ object CollectionServiceImplTest extends IOSuite {
             .createCollection(MutationsCreateCollectionArgs(newName, None))
         response <-
           collectionService
-            .changeCollectionName(
-              MutationsChangeCollectionNameArgs(oldName, newName)
+            .updateCollection(
+              MutationsUpdateCollectionArgs(oldName, newName.some, None)
             )
             .attempt
       } yield expect(response.isLeft)
@@ -148,20 +152,25 @@ object CollectionServiceImplTest extends IOSuite {
 
   test("addBookToCollection adds book to collection") { collectionService =>
     val name = "collection with books"
-    val book = Book("title", List("author"), "cool description", "???", "uri")
     for {
       _ <- collectionService.createCollection(
         MutationsCreateCollectionArgs(name, None)
       )
-      collection <-
-        collectionService.addBookToCollection(MutationsAddBookArgs(name, book))
-    } yield expect(collection === Collection(name, List(book)))
+      collection <- collectionService.addBookToCollection(
+        MutationsAddBookArgs(name, book)
+      )
+    } yield expect(
+      collection === Collection(
+        name,
+        List(book),
+        CollectionServiceImpl.defaultSort
+      )
+    )
   }
 
   test("addBookToCollection errors on inexistant collection") {
     collectionService =>
       val name = "inexistant collection"
-      val book = Book("title", List("author"), "cool description", "???", "uri")
       for {
         response <-
           collectionService
@@ -174,17 +183,17 @@ object CollectionServiceImplTest extends IOSuite {
 
   test("removeBookFromCollection removes book") { collectionService =>
     val name = "collection with books to remove"
-    val book = Book("title", List("author"), "cool description", "???", "uri")
     for {
       _ <- collectionService.createCollection(
         MutationsCreateCollectionArgs(name, None)
       )
-      _ <-
-        collectionService.addBookToCollection(MutationsAddBookArgs(name, book))
+      _ <- collectionService.addBookToCollection(
+        MutationsAddBookArgs(name, book)
+      )
       collection <- collectionService.removeBookFromCollection(
         MutationsRemoveBookArgs(name, book.isbn)
       )
-    } yield expect(collection === Collection(name, List.empty))
+    } yield expect(collection === Collection(name, List.empty, Sort.DateAdded))
   }
 
   test("removeBookFromCollection errors on inexistant collection") {
@@ -204,7 +213,6 @@ object CollectionServiceImplTest extends IOSuite {
   test("removeBookFromCollection does not error when book not in collection") {
     collectionService =>
       val name = "empty collection"
-      val book = Book("title", List("author"), "cool description", "???", "uri")
       for {
         _ <- collectionService.createCollection(
           MutationsCreateCollectionArgs(name, None)

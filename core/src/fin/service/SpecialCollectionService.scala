@@ -8,12 +8,12 @@ import io.chrisdavenport.log4cats.Logger
 import javax.script._
 import org.luaj.vm2.LuaBoolean
 
-import fin.implicits._
 import fin.Types._
+import fin.implicits._
 
 import ProcessResult._
 
-class SpecialCollectionService[F[_]: Sync: Logger](
+class SpecialCollectionService[F[_]: Sync: Logger] private (
     wrappedService: CollectionService[F],
     collectionHooks: List[CollectionHook],
     scriptEngineManager: ScriptEngineManager
@@ -34,9 +34,9 @@ class SpecialCollectionService[F[_]: Sync: Logger](
       args: MutationsDeleteCollectionArgs
   ): F[Unit] = wrappedService.deleteCollection(args)
 
-  override def changeCollectionName(
-      args: MutationsChangeCollectionNameArgs
-  ): F[Collection] = wrappedService.changeCollectionName(args)
+  override def updateCollection(
+      args: MutationsUpdateCollectionArgs
+  ): F[Collection] = wrappedService.updateCollection(args)
 
   override def addBookToCollection(
       args: MutationsAddBookArgs

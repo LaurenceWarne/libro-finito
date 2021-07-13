@@ -7,6 +7,8 @@ import fin.Types._
 import fin.implicits._
 import fin.persistence.CollectionRepository
 
+import CollectionServiceImpl._
+
 class CollectionServiceImpl[F[_]: Sync] private (
     collectionRepo: CollectionRepository[F]
 ) extends CollectionService[F] {
@@ -25,7 +27,11 @@ class CollectionServiceImpl[F[_]: Sync] private (
           new Exception(show"Collection already exists: $collection")
         )
       }
-    } yield Collection(args.name, args.books.getOrElse(List.empty[Book]))
+    } yield Collection(
+      args.name,
+      args.books.getOrElse(List.empty),
+      defaultSort
+    )
 
   override def collection(
       args: QueriesCollectionArgs
@@ -35,21 +41,25 @@ class CollectionServiceImpl[F[_]: Sync] private (
       args: MutationsDeleteCollectionArgs
   ): F[Unit] = collectionRepo.deleteCollection(args.name)
 
-  override def changeCollectionName(
-      args: MutationsChangeCollectionNameArgs
+  override def updateCollection(
+      args: MutationsUpdateCollectionArgs
   ): F[Collection] =
     for {
-      collection              <- collectionOrError(args.currentName)
-      maybeExistingCollection <- collectionRepo.collection(args.newName)
-      _ <- Sync[F].whenA(maybeExistingCollection.nonEmpty)(
-        Sync[F].raiseError(
-          new Exception(
-            show"A collection with the name '${args.newName}' already exists!"
+      collection <- collectionOrError(args.currentName)
+      _ <- args.newName.traverse { newName =>
+        for {
+          maybeExistingCollection <- collectionRepo.collection(newName)
+          _ <- Sync[F].whenA(maybeExistingCollection.nonEmpty)(
+            Sync[F].raiseError(
+              new Exception(
+                show"A collection with the name '${args.newName}' already exists!"
+              )
+            )
           )
-        )
-      )
-      _ <- collectionRepo.changeCollectionName(args.currentName, args.newName)
-    } yield Collection(args.newName, collection.books)
+          _ <- collectionRepo.updateCollection(args.currentName, newName)
+        } yield ()
+      }
+    } yield collection.copy(name = args.newName.getOrElse(collection.name))
 
   override def addBookToCollection(
       args: MutationsAddBookArgs
@@ -57,7 +67,7 @@ class CollectionServiceImpl[F[_]: Sync] private (
     for {
       collection <- collectionOrError(args.collection)
       _          <- collectionRepo.addBookToCollection(args.collection, args.book)
-    } yield Collection(args.collection, args.book :: collection.books)
+    } yield collection.copy(books = args.book :: collection.books)
 
   override def removeBookFromCollection(
       args: MutationsRemoveBookArgs
@@ -68,8 +78,7 @@ class CollectionServiceImpl[F[_]: Sync] private (
         args.collection,
         args.isbn
       )
-    } yield Collection(
-      args.collection,
+    } yield collection.copy(books =
       collection.books.filterNot(_.isbn === args.isbn)
     )
 
@@ -84,6 +93,9 @@ class CollectionServiceImpl[F[_]: Sync] private (
 }
 
 object CollectionServiceImpl {
+
+  val defaultSort: Sort = Sort.DateAdded
+
   def apply[F[_]: Sync](collectionRepo: CollectionRepository[F]) =
     new CollectionServiceImpl[F](collectionRepo)
 }

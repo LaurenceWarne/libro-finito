@@ -42,7 +42,7 @@ class SqliteCollectionRepository[F[_]: Sync] private (
     } yield ()
   }
 
-  override def changeCollectionName(
+  override def updateCollection(
       currentName: String,
       newName: String
   ): F[Unit] = {
@@ -99,8 +99,7 @@ class SqliteCollectionRepository[F[_]: Sync] private (
     rows
       .groupMapReduce(_.name)(_.asBook.toList)(_ ++ _)
       .map {
-        case (name, books) =>
-          Collection(name, books)
+        case (name, books) => Collection(name, books, Sort.DateAdded)
       }
       .toList
   }
@@ -191,7 +190,9 @@ case class CollectionBookRow(
       authors = authors.split(",").toList,
       description = description,
       isbn = isbn,
-      thumbnailUri = thumbnailUri
+      thumbnailUri = thumbnailUri,
+      None,
+      None
     )
   }
 }

@@ -1,13 +1,13 @@
 package fin
 
+import cats.effect.Sync
 import cats.implicits._
+import io.chrisdavenport.log4cats.Logger
+import javax.script.ScriptEngineManager
 
 import fin.Types._
 import fin.config.SpecialCollection
 import fin.service._
-import cats.effect.Sync
-import javax.script.ScriptEngineManager
-import io.chrisdavenport.log4cats.Logger
 
 object SpecialCollectionSetup {
   def setup[F[_]: Sync: Logger](

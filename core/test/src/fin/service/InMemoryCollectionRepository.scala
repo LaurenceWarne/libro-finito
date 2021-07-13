@@ -8,6 +8,8 @@ import fin.Types._
 import fin.implicits._
 import fin.persistence.CollectionRepository
 
+import CollectionServiceImpl._
+
 class InMemoryCollectionRepository[F[_]](
     collectionsRef: Ref[F, List[Collection]]
 )(implicit me: MonadError[F, Throwable])
@@ -16,7 +18,7 @@ class InMemoryCollectionRepository[F[_]](
   override def collections: F[List[Collection]] = collectionsRef.get
 
   override def createCollection(name: String): F[Unit] = {
-    val collection = Collection(name, List.empty)
+    val collection = Collection(name, List.empty, defaultSort)
     collectionsRef.getAndUpdate(collection :: _).void
   }
 
@@ -26,13 +28,14 @@ class InMemoryCollectionRepository[F[_]](
   override def deleteCollection(name: String): F[Unit] =
     collectionsRef.getAndUpdate(_.filterNot(_.name === name)).void
 
-  override def changeCollectionName(
+  override def updateCollection(
       currentName: String,
       newName: String
   ): F[Unit] = {
     for {
       retrievedCollection <- collectionOrError(currentName)
-      newCollection = Collection(newName, retrievedCollection.books)
+      newCollection =
+        Collection(newName, retrievedCollection.books, defaultSort)
       _ <- collectionsRef.getAndUpdate(_.map { col =>
         if (col === retrievedCollection) newCollection else col
       })
@@ -45,8 +48,11 @@ class InMemoryCollectionRepository[F[_]](
   ): F[Unit] =
     for {
       retrievedCollection <- collectionOrError(collectionName)
-      newCollection =
-        Collection(collectionName, book :: retrievedCollection.books)
+      newCollection = Collection(
+        collectionName,
+        book :: retrievedCollection.books,
+        defaultSort
+      )
       _ <- collectionsRef.getAndUpdate(_.map { col =>
         if (col === retrievedCollection) newCollection else col
       })
@@ -58,8 +64,7 @@ class InMemoryCollectionRepository[F[_]](
   ): F[Unit] =
     for {
       retrievedCollection <- collectionOrError(collectionName)
-      newCollection = Collection(
-        collectionName,
+      newCollection = retrievedCollection.copy(books =
         retrievedCollection.books.filterNot(_.isbn === isbn)
       )
       _ <- collectionsRef.getAndUpdate(_.map { col =>
