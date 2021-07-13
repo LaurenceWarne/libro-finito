@@ -79,9 +79,10 @@ object SqliteCollectionRepositoryTest extends IOSuite {
   test("updateCollection changes collection name") {
     val oldName = "old_name"
     val newName = "new_name"
+    val sort    = Sort.DateAdded
     for {
-      _                   <- repo.createCollection(oldName, Sort.DateAdded)
-      _                   <- repo.updateCollection(oldName, newName)
+      _                   <- repo.createCollection(oldName, sort)
+      _                   <- repo.updateCollection(oldName, newName, sort)
       retrievedCollection <- repo.collection(newName)
     } yield expect(retrievedCollection.exists(_.name === newName))
   }
@@ -89,10 +90,11 @@ object SqliteCollectionRepositoryTest extends IOSuite {
   test("updateCollection errors if name already exists") {
     val oldName = "old_name_"
     val newName = "new_name_"
+    val sort    = Sort.DateAdded
     for {
-      _        <- repo.createCollection(oldName, Sort.DateAdded)
-      _        <- repo.createCollection(newName, Sort.DateAdded)
-      response <- repo.updateCollection(oldName, newName).attempt
+      _        <- repo.createCollection(oldName, sort)
+      _        <- repo.createCollection(newName, sort)
+      response <- repo.updateCollection(oldName, newName, sort).attempt
     } yield expect(response.isLeft)
   }
 
@@ -101,19 +103,20 @@ object SqliteCollectionRepositoryTest extends IOSuite {
   ) {
     val name = "inexistant name"
     for {
-      response <- repo.updateCollection(name, "???").attempt
+      response <- repo.updateCollection(name, "???", Sort.DateAdded).attempt
     } yield expect(response.isRight)
   }
 
   test("AddToCollection adds book not already added") {
     val name = "collection with books"
+    val sort = Sort.DateAdded
     for {
-      _                   <- repo.createCollection(name, Sort.DateAdded)
+      _                   <- repo.createCollection(name, sort)
       _                   <- repo.addBookToCollection(name, book)
       retrievedCollection <- repo.collection(name)
     } yield expect(
       retrievedCollection.exists(
-        _ === Collection(name, List(book), Sort.DateAdded)
+        _ === Collection(name, List(book), sort)
       )
     )
   }
@@ -121,15 +124,16 @@ object SqliteCollectionRepositoryTest extends IOSuite {
   test("AddToCollection adds in another collection") {
     val name1 = "collection with books 1"
     val name2 = "collection with books 2"
+    val sort  = Sort.DateAdded
     for {
-      _                   <- repo.createCollection(name1, Sort.DateAdded)
-      _                   <- repo.createCollection(name2, Sort.DateAdded)
+      _                   <- repo.createCollection(name1, sort)
+      _                   <- repo.createCollection(name2, sort)
       _                   <- repo.addBookToCollection(name1, book)
       _                   <- repo.addBookToCollection(name2, book)
       retrievedCollection <- repo.collection(name2)
     } yield expect(
       retrievedCollection.exists(
-        _ === Collection(name2, List(book), Sort.DateAdded)
+        _ === Collection(name2, List(book), sort)
       )
     )
   }

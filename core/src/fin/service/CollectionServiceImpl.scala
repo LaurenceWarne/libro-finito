@@ -46,20 +46,16 @@ class CollectionServiceImpl[F[_]: Sync] private (
   ): F[Collection] =
     for {
       collection <- collectionOrError(args.currentName)
-      _ <- args.newName.traverse { newName =>
-        for {
-          maybeExistingCollection <- collectionRepo.collection(newName)
-          _ <- Sync[F].whenA(maybeExistingCollection.nonEmpty)(
-            Sync[F].raiseError(
-              new Exception(
-                show"A collection with the name '${args.newName}' already exists!"
-              )
-            )
-          )
-          _ <- collectionRepo.updateCollection(args.currentName, newName)
-        } yield ()
-      }
-    } yield collection.copy(name = args.newName.getOrElse(collection.name))
+      _          <- args.newName.traverse(errorIfCollectionExists)
+      _ <- collectionRepo.updateCollection(
+        args.currentName,
+        args.newName.getOrElse(collection.name),
+        args.preferredSort.getOrElse(collection.preferredSort)
+      )
+    } yield collection.copy(
+      name = args.newName.getOrElse(collection.name),
+      preferredSort = args.preferredSort.getOrElse(collection.preferredSort)
+    )
 
   override def addBookToCollection(
       args: MutationsAddBookArgs
@@ -90,6 +86,18 @@ class CollectionServiceImpl[F[_]: Sync] private (
         new Exception(show"Collection '$collection' does not exist!")
       )
     } yield collection
+
+  private def errorIfCollectionExists(collection: String): F[Unit] =
+    for {
+      maybeExistingCollection <- collectionRepo.collection(collection)
+      _ <- Sync[F].whenA(maybeExistingCollection.nonEmpty)(
+        Sync[F].raiseError(
+          new Exception(
+            show"A collection with the name '${collection}' already exists!"
+          )
+        )
+      )
+    } yield ()
 }
 
 object CollectionServiceImpl {

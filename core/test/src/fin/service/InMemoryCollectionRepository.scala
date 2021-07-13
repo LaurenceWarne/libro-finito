@@ -28,11 +28,13 @@ class InMemoryCollectionRepository[F[_]](
 
   override def updateCollection(
       currentName: String,
-      newName: String
+      newName: String,
+      preferredSort: Sort
   ): F[Unit] = {
     for {
       retrievedCollection <- collectionOrError(currentName)
-      newCollection = retrievedCollection.copy(name = newName)
+      newCollection =
+        retrievedCollection.copy(name = newName, preferredSort = preferredSort)
       _ <- collectionsRef.getAndUpdate(_.map { col =>
         if (col === retrievedCollection) newCollection else col
       })

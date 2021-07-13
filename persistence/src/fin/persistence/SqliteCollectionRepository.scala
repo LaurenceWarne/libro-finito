@@ -45,10 +45,11 @@ class SqliteCollectionRepository[F[_]: Sync] private (
 
   override def updateCollection(
       currentName: String,
-      newName: String
+      newName: String,
+      preferredSort: Sort
   ): F[Unit] = {
     Fragments
-      .update(currentName, newName)
+      .update(currentName, newName, preferredSort)
       .update
       .run
       .transact(xa)
@@ -160,8 +161,15 @@ object Fragments {
        |WHERE collection_name = $name
        |AND isbn = $isbn""".stripMargin
 
-  def update(currentName: String, newName: String): Fragment =
-    fr"UPDATE collections SET name = $newName WHERE name = $currentName"
+  def update(
+      currentName: String,
+      newName: String,
+      preferredSort: Sort
+  ): Fragment =
+    fr"""
+       |UPDATE collections 
+       |SET name = $newName, preferred_sort = $preferredSort
+       |WHERE name = $currentName""".stripMargin
 }
 
 object BookFragments {
