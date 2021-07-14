@@ -8,8 +8,8 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import javax.script.ScriptEngineManager
 import weaver._
 
-import fin.implicits._
 import fin.Types._
+import fin.implicits._
 
 object SpecialCollectionServiceTest extends IOSuite {
 
@@ -191,5 +191,33 @@ object SpecialCollectionServiceTest extends IOSuite {
       hookResponse <-
         collectionService.collection(QueriesCollectionArgs(hook1Collection))
     } yield expect(hookResponse.preferredSort === newSort)
+  }
+
+  test("deleteCollection errors if special collection") { collectionService =>
+    for {
+      response <-
+        collectionService
+          .deleteCollection(MutationsDeleteCollectionArgs(hook1Collection))
+          .attempt
+    } yield expect(
+      response.swap.exists(_ == CannotDeleteSpecialCollectionError)
+    )
+  }
+
+  test("deleteCollection succeeds if not special collection") {
+    collectionService =>
+      val collection = "not a special collection"
+      for {
+        _ <- collectionService.createCollection(
+          MutationsCreateCollectionArgs(collection, None)
+        )
+        _ <-
+          collectionService
+            .deleteCollection(MutationsDeleteCollectionArgs(collection))
+        collection <-
+          collectionService
+            .collection(QueriesCollectionArgs(collection))
+            .attempt
+      } yield expect(collection.isLeft)
   }
 }

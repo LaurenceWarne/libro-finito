@@ -32,15 +32,19 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
 
   override def deleteCollection(
       args: MutationsDeleteCollectionArgs
-  ): F[Unit] = wrappedService.deleteCollection(args)
+  ): F[Unit] =
+    Sync[F].whenA(
+      collectionHooks.exists(_.collection === args.name)
+    )(Sync[F].raiseError(CannotDeleteSpecialCollectionError)) *>
+      wrappedService.deleteCollection(args)
 
   override def updateCollection(
       args: MutationsUpdateCollectionArgs
   ): F[Collection] =
     Sync[F].whenA(
-      args.newName.nonEmpty && collectionHooks
-        .map(_.collection)
-        .contains(args.currentName)
+      args.newName.nonEmpty && collectionHooks.exists(
+        _.collection === args.currentName
+      )
     )(Sync[F].raiseError(CannotChangeNameOfSpecialCollectionError)) *>
       wrappedService.updateCollection(args)
 
@@ -168,4 +172,12 @@ object ProcessResult {
 
 case object CannotChangeNameOfSpecialCollectionError extends Throwable {
   override def getMessage = "Cannot update the name of a special collection"
+}
+
+case object CannotDeleteSpecialCollectionError extends Throwable {
+  override def getMessage =
+    """
+     |Cannot delete a special collection!  In order to delete a special
+     |collection, first remove it's special collection definition from your
+     |config file, and then delete it.""".stripMargin.replace("\n", " ")
 }
