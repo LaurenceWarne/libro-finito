@@ -1,11 +1,12 @@
 package fin.service
 
+import javax.script._
+
 import scala.util.Try
 
 import cats.effect.Sync
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
-import javax.script._
 import org.luaj.vm2.LuaBoolean
 
 import fin.Types._

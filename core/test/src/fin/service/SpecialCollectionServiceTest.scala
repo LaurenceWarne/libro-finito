@@ -1,11 +1,12 @@
 package fin.service
 
+import javax.script.ScriptEngineManager
+
 import cats.effect.concurrent.Ref
 import cats.effect.{IO, Resource}
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
-import javax.script.ScriptEngineManager
 import weaver._
 
 import fin.Types._
