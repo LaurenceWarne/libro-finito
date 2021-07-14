@@ -20,10 +20,18 @@ CREATE TABLE IF NOT EXISTS collection_books(
   PRIMARY KEY(collection_name, isbn)
 );
 
-CREATE TABLE IF NOT EXISTS read_books(
-  isbn TEXT NOT NULL PRIMARY KEY,
-  date DATE NOT NULL,
+CREATE TABLE IF NOT EXISTS currently_reading_books(
+  isbn     TEXT NOT NULL PRIMARY KEY,
+  started  DATE NOT NULL,
   FOREIGN KEY(isbn) REFERENCES books(isbn)
+);
+
+CREATE TABLE IF NOT EXISTS read_books(
+  isbn     TEXT NOT NULL,
+  started  DATE NOT NULL,
+  finished DATE NOT NULL,
+  FOREIGN KEY(isbn) REFERENCES books(isbn),
+  PRIMARY KEY(isbn, started)
 );
 
 CREATE TABLE IF NOT EXISTS rated_books(
