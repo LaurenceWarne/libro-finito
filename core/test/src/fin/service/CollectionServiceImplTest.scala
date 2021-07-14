@@ -64,6 +64,48 @@ object CollectionServiceImplTest extends IOSuite {
     } yield expect(response.isLeft)
   }
 
+  test("collection returns collection sorted by title") { collectionService =>
+    val name  = "sorted collection"
+    val book2 = book.copy(title = "alphabetically before")
+    for {
+      _ <- collectionService.createCollection(
+        MutationsCreateCollectionArgs(name, None)
+      )
+      _ <- collectionService.updateCollection(
+        MutationsUpdateCollectionArgs(name, None, Sort.Title.some)
+      )
+      _ <- collectionService.addBookToCollection(
+        MutationsAddBookArgs(name, book)
+      )
+      _ <- collectionService.addBookToCollection(
+        MutationsAddBookArgs(name, book2)
+      )
+      retrievedCollection <-
+        collectionService.collection(QueriesCollectionArgs(name))
+    } yield expect(retrievedCollection.books === List(book2, book))
+  }
+
+  test("collection returns collection sorted by author") { collectionService =>
+    val name  = "sorted collection 2"
+    val book2 = book.copy(authors = List("aauthor", "bauthor"))
+    for {
+      _ <- collectionService.createCollection(
+        MutationsCreateCollectionArgs(name, None)
+      )
+      _ <- collectionService.updateCollection(
+        MutationsUpdateCollectionArgs(name, None, Sort.Author.some)
+      )
+      _ <- collectionService.addBookToCollection(
+        MutationsAddBookArgs(name, book)
+      )
+      _ <- collectionService.addBookToCollection(
+        MutationsAddBookArgs(name, book2)
+      )
+      retrievedCollection <-
+        collectionService.collection(QueriesCollectionArgs(name))
+    } yield expect(retrievedCollection.books === List(book2, book))
+  }
+
   test("collections returns created collections") { collectionService =>
     val (name1, name2) = ("name1", "name2")
     for {
