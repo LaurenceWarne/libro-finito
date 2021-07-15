@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS collections(
 CREATE TABLE IF NOT EXISTS collection_books(
   collection_name TEXT NOT NULL,
   isbn            TEXT NOT NULL,
-  FOREIGN KEY(collection_name) REFERENCES collections(name),
+  FOREIGN KEY(collection_name) REFERENCES collections(name) ON DELETE CASCADE,
   FOREIGN KEY(isbn)            REFERENCES books(isbn),
   PRIMARY KEY(collection_name, isbn)
 );

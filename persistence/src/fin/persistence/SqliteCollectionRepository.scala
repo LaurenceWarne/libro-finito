@@ -172,26 +172,6 @@ object Fragments {
        |WHERE name = $currentName""".stripMargin
 }
 
-object BookFragments {
-
-  def retrieveByIsbn(isbn: String): Fragment =
-    fr"select isbn from books WHERE isbn=$isbn"
-
-  def insert(book: Book, date: Date): Fragment =
-    fr"""
-       |INSERT INTO books VALUES (
-       |  ${book.isbn},
-       |  ${book.title},
-       |  ${book.authors.mkString(",")},
-       |  ${book.description},
-       |  ${book.thumbnailUri},
-       |  $date
-       |)""".stripMargin
-
-  def addToCollection(collectionName: String, isbn: String): Fragment =
-    fr"INSERT INTO collection_books VALUES ($collectionName, $isbn)"
-}
-
 case class CollectionBookRow(
     name: String,
     preferredSort: String,
