@@ -85,10 +85,12 @@ class SqliteCollectionRepository[F[_]: Sync] private (
   }
 
   override def deleteCollection(name: String): F[Unit] =
-    (Fragments.deleteReferences(name).update.run *> Fragments
+    Fragments
       .delete(name)
       .update
-      .run).transact(xa).void
+      .run
+      .transact(xa)
+      .void
 
   override def removeBookFromCollection(
       collectionName: String,
