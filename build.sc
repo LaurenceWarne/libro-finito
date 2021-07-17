@@ -98,6 +98,7 @@ object persistence extends LibroFinitoModule {
 
   def ivyDeps =
     Agg(
+      Deps.betterFiles,
       Deps.catsEffect,
       Deps.catsLogging,
       Deps.Circe.core,

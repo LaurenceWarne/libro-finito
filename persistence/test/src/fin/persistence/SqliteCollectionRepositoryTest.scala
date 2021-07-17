@@ -1,48 +1,16 @@
 package fin.persistence
 
-import java.io.File
-
-import cats.effect.{Clock, IO, Resource}
+import cats.effect.{Clock, IO}
 import cats.implicits._
-import doobie.util.transactor.Transactor
-import weaver._
 
 import fin.Types._
 import fin.implicits._
 
-object SqliteCollectionRepositoryTest extends IOSuite {
+object SqliteCollectionRepositoryTest extends SqliteSuite {
 
-  val filename              = "tmp.db"
-  val (uri, user, password) = (show"jdbc:sqlite:$filename", "", "")
-  val xa = Transactor.fromDriverManager[IO](
-    "org.sqlite.JDBC",
-    uri,
-    DbProperties.properties
-  )
   val book =
     Book("title", List("author"), "cool description", "???", "uri", None, None)
-
   val repo = SqliteCollectionRepository(xa, Clock[IO])
-  // We can't use the in memory db since that is killed whenever no connections
-  // exist
-  val deleteDb: IO[Unit] = for {
-    file <- IO(new File(filename))
-    _    <- IO(file.delete())
-  } yield ()
-
-  override type Res = Unit
-  override def sharedResource: Resource[IO, Unit] =
-    Resource.make(
-      FlywaySetup.init[IO](
-        uri,
-        user,
-        password
-      )
-    )(_ => deleteDb)
-
-  // See https://www.sqlite.org/faq.html#q5 of why generally it's a bad idea
-  // to run sqlite writes in parallel
-  override def maxParallelism = 1
 
   test("collection retrieves created collection") {
     val name = "retrieve_collection"
