@@ -1,12 +1,9 @@
 package fin.persistence
 
 import java.sql.Date
-import java.time.LocalDate
-
-import scala.concurrent.duration.DAYS
 
 import cats.MonadError
-import cats.effect.{Clock, Sync}
+import cats.effect.Sync
 import cats.implicits._
 import doobie._
 import doobie.implicits._
@@ -19,27 +16,20 @@ import fin.implicits._
 import BookFragments._
 
 class SqliteBookRepository[F[_]: Sync] private (
-    xa: Transactor[F],
-    clock: Clock[F]
+    xa: Transactor[F]
 ) extends BookRepository[F] {
 
-  override def createBook(book: Book): F[Unit] =
-    for {
-      date <- currentDate
-      _    <- insert(book, date).update.run.transact(xa)
-    } yield ()
+  override def createBook(book: Book, date: Date): F[Unit] =
+    insert(book, date).update.run.transact(xa).void
 
   override def rateBook(book: Book, rating: Int): F[Unit] =
     insertRating(book.isbn, rating).update.run.transact(xa).void
 
-  override def startReading(book: Book): F[Unit] =
-    for {
-      date <- currentDate
-      _    <- insertCurrentlyReading(book.isbn, date).update.run.transact(xa)
-    } yield ()
+  override def startReading(book: Book, date: Date): F[Unit] =
+    insertCurrentlyReading(book.isbn, date).update.run.transact(xa).void
 
-  override def finishReading(book: Book): F[Unit] = {
-    val transaction = (date: Date) =>
+  override def finishReading(book: Book, date: Date): F[Unit] = {
+    val transaction =
       for {
         maybeStarted <-
           retrieveStartedFromCurrentlyReading(book.isbn)
@@ -53,19 +43,14 @@ class SqliteBookRepository[F[_]: Sync] private (
         _ <- deleteCurrentlyReading(book.isbn).update.run
         _ <- insertRead(book.isbn, started, date).update.run
       } yield ()
-    currentDate.map(transaction(_).transact(xa))
+    transaction.transact(xa)
   }
-
-  private def currentDate: F[Date] =
-    clock
-      .monotonic(DAYS)
-      .map(t => Date.valueOf(LocalDate.ofEpochDay(t)))
 }
 
 object SqliteBookRepository {
 
-  def apply[F[_]: Sync](xa: Transactor[F], clock: Clock[F]) =
-    new SqliteBookRepository[F](xa, clock)
+  def apply[F[_]: Sync](xa: Transactor[F]) =
+    new SqliteBookRepository[F](xa)
 }
 
 object BookFragments {
