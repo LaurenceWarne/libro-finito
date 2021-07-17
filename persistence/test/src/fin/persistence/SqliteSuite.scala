@@ -1,10 +1,10 @@
 package fin.persistence
 
-import better.files._
 import better.files.Dsl._
+import better.files._
+import cats.Show
 import cats.effect.{IO, Resource}
 import cats.implicits._
-import cats.Show
 import doobie.util.transactor.Transactor
 import weaver._
 
