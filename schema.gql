@@ -28,9 +28,12 @@ type Collection {
 
 type Queries {
   books(
-    titleKeywords: String, authorKeywords: String, maxResults: Int = 10
+    titleKeywords: String,
+    authorKeywords: String,
+    maxResults: Int = 10,
+    langRestrict: String = "en"
   ): [Book!]!
-  book(isbn: String!): Book!
+  book(isbn: String!, langRestrict: String = "en"): Book!
   collections: [Collection!]!
   collection(name: String!): Collection!
 }
@@ -43,8 +46,8 @@ type Mutations {
   ): Collection!
   addBook(collection: String!, book: Book!): Collection!
   removeBook(collection: String!, isbn: String!): Boolean
-  startReading(book: Book!): Book!
-  finishReading(book: Book!): Book!
+  startReading(book: Book!, date: DateTime): Book!
+  finishReading(book: Book!, date: DateTime): Book!
   rate(book: Book!, rating: Int!): Book!
   createBook(book: Book!): Book!
 }

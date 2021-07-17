@@ -45,7 +45,7 @@ object ServiceConfig {
           |  database-password = "",
           |  database-driver = org.sqlite.JDBC,
           |  port = 8080,
-          |  default-collection-name = My Books,
+          |  default-collection = My Books,
           |  special-collections = [
           |    {
           |      name = My Books,
@@ -54,14 +54,13 @@ object ServiceConfig {
           |    },
           |    {
           |      name = Currently Reading,
-          |      lazy = false,
           |      read-begun-hook = \"\"\"add = true\"\"\",
           |      read-complete-hook = \"\"\"remove = true\"\"\"
           |    },
           |    {
           |      name = Favourites,
           |      rate-hook = \"\"\"
-          |        if(rating == 5) then
+          |        if(rating >= 5) then
           |          add = true
           |        else
           |          remove = true
