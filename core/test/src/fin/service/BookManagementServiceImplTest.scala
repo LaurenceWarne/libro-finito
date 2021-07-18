@@ -6,12 +6,20 @@ import weaver._
 
 import fin.Types._
 import cats.effect.Clock
+import fin.Constants
 import fin.persistence.BookRepository
 
 object BookManagementServiceImplTest extends IOSuite {
 
   val book =
-    Book("title", List("author"), "cool description", "???", "uri", None, None)
+    Book(
+      "title",
+      List("author"),
+      "cool description",
+      "???",
+      "uri",
+      Constants.emptyUserData
+    )
 
   override type Res = (BookRepository[IO], BookManagementService[IO])
   override def sharedResource

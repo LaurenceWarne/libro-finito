@@ -10,14 +10,19 @@ enum Sort {
   Rating
 }
 
+type UserData {
+  rating: Int,
+  startedReading: DateTime,
+  lastRead: DateTime
+}
+
 type Book {
   title: String!
   authors: [String!]!
   description: String!
   isbn: String!
   thumbnailUri: String!
-  rating: Int,
-  lastRead: DateTime
+  userData: UserData!
 }
 
 type Collection {

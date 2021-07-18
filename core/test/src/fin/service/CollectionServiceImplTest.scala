@@ -7,11 +7,19 @@ import weaver._
 
 import fin.Types._
 import fin.implicits._
+import fin.Constants
 
 object CollectionServiceImplTest extends IOSuite {
 
   val book =
-    Book("title", List("author"), "cool description", "???", "uri", None, None)
+    Book(
+      "title",
+      List("author"),
+      "cool description",
+      "???",
+      "uri",
+      Constants.emptyUserData
+    )
 
   override type Res = CollectionService[IO]
   override def sharedResource: Resource[IO, CollectionService[IO]] =

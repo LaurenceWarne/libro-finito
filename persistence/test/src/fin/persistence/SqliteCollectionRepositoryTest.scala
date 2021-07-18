@@ -3,13 +3,21 @@ package fin.persistence
 import cats.effect.{Clock, IO}
 import cats.implicits._
 
+import fin.Constants
 import fin.Types._
 import fin.implicits._
 
 object SqliteCollectionRepositoryTest extends SqliteSuite {
 
   val book =
-    Book("title", List("author"), "cool description", "???", "uri", None, None)
+    Book(
+      "title",
+      List("author"),
+      "cool description",
+      "???",
+      "uri",
+      Constants.emptyUserData
+    )
   val repo = SqliteCollectionRepository(xa, Clock[IO])
 
   test("collection retrieves created collection") {

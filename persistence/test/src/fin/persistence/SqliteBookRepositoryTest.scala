@@ -8,6 +8,7 @@ import cats.implicits._
 import cats.kernel.Eq
 import doobie.implicits._
 
+import fin.Constants
 import fin.Types._
 import fin.implicits._
 
@@ -17,7 +18,14 @@ object SqliteBookRepositoryTest extends SqliteSuite {
   val repo                      = SqliteBookRepository(xa)
   val date                      = Date.valueOf("2020-03-20")
   val book =
-    Book("title", List("author"), "cool description", "???", "uri", None, None)
+    Book(
+      "title",
+      List("author"),
+      "cool description",
+      "???",
+      "uri",
+      Constants.emptyUserData
+    )
 
   test("createBook creates book") {
     for {

@@ -11,6 +11,7 @@ import org.http4s.Uri
 import org.http4s.client._
 import org.http4s.implicits._
 
+import fin.Constants
 import fin.Types._
 
 /**
@@ -101,8 +102,7 @@ object GoogleBookInfoService {
         maybeDescription.getOrElse("No Description!"),
         industryIdentifier.getIsbn13,
         largeThumbnail,
-        None,
-        None
+        Constants.emptyUserData
       )
   }
 
@@ -120,8 +120,7 @@ object GoogleBookInfoService {
           .headOption
           .fold("???")(_.getIsbn13),
         bookItem.imageLinks.fold(emptyThumbnailUri)(_.thumbnail),
-        None,
-        None
+        Constants.emptyUserData
       )
   }
 

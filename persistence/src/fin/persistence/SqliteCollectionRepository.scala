@@ -14,6 +14,7 @@ import doobie.implicits.javasql._
 import doobie.util.fragment.Fragment
 import doobie.util.transactor.Transactor
 
+import fin.Constants
 import fin.SortConversions
 import fin.Types._
 
@@ -197,8 +198,7 @@ case class CollectionBookRow(
       description = description,
       isbn = isbn,
       thumbnailUri = thumbnailUri,
-      None,
-      None
+      Constants.emptyUserData
     )
   }
 }

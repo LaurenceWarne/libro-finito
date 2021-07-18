@@ -11,6 +11,7 @@ import weaver._
 
 import fin.Types._
 import fin.implicits._
+import fin.Constants
 
 object SpecialCollectionServiceTest extends IOSuite {
 
@@ -47,8 +48,7 @@ object SpecialCollectionServiceTest extends IOSuite {
       "description",
       "isbn",
       "thumbnail uri",
-      None,
-      None
+      Constants.emptyUserData
     )
   val book2     = baseBook.copy(title = "my cool book")
   val argsBook2 = MutationsAddBookArgs(otherCollection, book2)

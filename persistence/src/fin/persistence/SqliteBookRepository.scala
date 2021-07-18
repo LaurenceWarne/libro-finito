@@ -9,6 +9,7 @@ import doobie.implicits._
 import doobie.implicits.javasql._
 import doobie.util.transactor.Transactor
 
+import fin.Constants
 import fin.Types._
 
 import BookFragments._
@@ -127,7 +128,6 @@ case class BookRow(
       description,
       isbn,
       thumbnailUri,
-      None,
-      None
+      Constants.emptyUserData
     )
 }
