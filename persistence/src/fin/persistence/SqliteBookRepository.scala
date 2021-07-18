@@ -17,6 +17,17 @@ class SqliteBookRepository[F[_]: Sync] private (
     xa: Transactor[F]
 ) extends BookRepository[F] {
 
+  override def retrieveBook(isbn: String): F[Option[Book]] =
+    fr"""
+       |SELECT title, authors, description, isbn, thumbnail_uri
+       |FROM books WHERE isbn=$isbn""".stripMargin
+      .query[BookRow]
+      .option
+      .transact(xa)
+      .nested
+      .map(_.toBook)
+      .value
+
   override def createBook(book: Book, date: Date): F[Unit] =
     insert(book, date).update.run.transact(xa).void
 
@@ -51,6 +62,9 @@ object SqliteBookRepository {
 object BookFragments {
 
   def retrieveByIsbn(isbn: String): Fragment =
+    fr"select * from books WHERE isbn=$isbn"
+
+  def checkIsbn(isbn: String): Fragment =
     fr"select isbn from books WHERE isbn=$isbn"
 
   def insert(book: Book, date: Date): Fragment =
@@ -97,4 +111,23 @@ object BookFragments {
        |VALUES ($isbn, $rating)
        |ON CONFLICT(isbn)
        |DO UPDATE SET rating=excluded.rating""".stripMargin
+}
+
+case class BookRow(
+    title: String,
+    authors: String,
+    description: String,
+    isbn: String,
+    thumbnailUri: String
+) {
+  def toBook: Book =
+    Book(
+      title,
+      authors.split(",").toList,
+      description,
+      isbn,
+      thumbnailUri,
+      None,
+      None
+    )
 }

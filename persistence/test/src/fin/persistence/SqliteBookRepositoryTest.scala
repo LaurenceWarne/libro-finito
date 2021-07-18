@@ -22,7 +22,7 @@ object SqliteBookRepositoryTest extends SqliteSuite {
   test("createBook creates book") {
     for {
       _         <- repo.createBook(book, date)
-      maybeBook <- retrieveBook(book.isbn)
+      maybeBook <- repo.retrieveBook(book.isbn)
     } yield expect(maybeBook.exists(_ === book))
   }
 
@@ -83,27 +83,6 @@ object SqliteBookRepositoryTest extends SqliteSuite {
     } yield expect(maybeRead.exists(_.isEmpty))
   }
 
-  private def retrieveBook(isbn: String): IO[Option[Book]] =
-    fr"""
-       |SELECT title, authors, description, isbn, thumbnail_uri
-       |FROM books WHERE isbn=$isbn""".stripMargin
-      .query[BookRow]
-      .option
-      .transact(xa)
-      .nested
-      .map { b =>
-        Book(
-          b.title,
-          b.authors.split(",").toList,
-          b.description,
-          b.isbn,
-          b.thumbnailUri,
-          None,
-          None
-        )
-      }
-      .value
-
   private def retrieveRating(isbn: String): IO[Option[Int]] =
     fr"SELECT rating FROM rated_books WHERE isbn=$isbn".stripMargin
       .query[Int]
@@ -127,11 +106,3 @@ object SqliteBookRepositoryTest extends SqliteSuite {
       Instant.ofEpochMilli(epoch).atZone(ZoneId.systemDefault()).toLocalDate()
     )
 }
-
-case class BookRow(
-    title: String,
-    authors: String,
-    description: String,
-    isbn: String,
-    thumbnailUri: String
-)
