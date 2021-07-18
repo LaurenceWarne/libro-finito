@@ -1,20 +1,21 @@
 package fin.persistence
 
 import java.sql.Date
-import java.time.Instant
+import java.time.{Instant, ZoneId}
 
 import cats.effect.IO
 import cats.implicits._
+import cats.kernel.Eq
 import doobie.implicits._
-import doobie.util.Read
 
 import fin.Types._
+import fin.implicits._
 
 object SqliteBookRepositoryTest extends SqliteSuite {
 
-  implicit val instantRead: Read[Instant] = Read[String].map(Instant.parse(_))
-  val repo                                = SqliteBookRepository(xa)
-  val date                                = Date.valueOf("2020-03-20")
+  implicit val dateEq: Eq[Date] = Eq.fromUniversalEquals
+  val repo                      = SqliteBookRepository(xa)
+  val date                      = Date.valueOf("2020-03-20")
   val book =
     Book("title", List("author"), "cool description", "???", "uri", None, None)
 
@@ -22,7 +23,40 @@ object SqliteBookRepositoryTest extends SqliteSuite {
     for {
       _         <- repo.createBook(book, date)
       maybeBook <- retrieveBook(book.isbn)
-    } yield expect(maybeBook.exists(_ == book))
+    } yield expect(maybeBook.exists(_ === book))
+  }
+
+  test("rateBook rates book") {
+    val bookToRate = book.copy(isbn = "rateme")
+    val rating     = 5
+    for {
+      _           <- repo.createBook(bookToRate, date)
+      _           <- repo.rateBook(bookToRate, rating)
+      maybeRating <- retrieveRating(bookToRate.isbn)
+    } yield expect(maybeRating.exists(_ === rating))
+  }
+
+  test("startReading starts book reading") {
+    val bookToRead = book.copy(isbn = "reading")
+    for {
+      _          <- repo.createBook(bookToRead, date)
+      _          <- repo.startReading(bookToRead, date)
+      maybeEpoch <- retrieveReading(bookToRead.isbn)
+    } yield expect(maybeEpoch.exists(toDate(_) === date))
+  }
+
+  test("finishReading finishes book reading") {
+    val finishedDate = Date.valueOf("2020-03-24")
+    val bookToFinish = book.copy(isbn = "finished")
+    for {
+      _          <- repo.createBook(bookToFinish, date)
+      _          <- repo.startReading(bookToFinish, date)
+      _          <- repo.finishReading(bookToFinish, finishedDate)
+      maybeDates <- retrieveFinished(bookToFinish.isbn)
+      (maybeStarted, maybeFinished) = maybeDates.unzip
+    } yield expect(maybeStarted.exists(toDate(_) === date)) and expect(
+      maybeFinished.exists(toDate(_) === finishedDate)
+    )
   }
 
   private def retrieveBook(isbn: String): IO[Option[Book]] =
@@ -46,6 +80,28 @@ object SqliteBookRepositoryTest extends SqliteSuite {
       }
       .value
 
+  private def retrieveRating(isbn: String): IO[Option[Int]] =
+    fr"SELECT rating FROM rated_books WHERE isbn=$isbn".stripMargin
+      .query[Int]
+      .option
+      .transact(xa)
+
+  private def retrieveReading(isbn: String): IO[Option[Long]] =
+    fr"SELECT started FROM currently_reading_books WHERE isbn=$isbn"
+      .query[Long]
+      .option
+      .transact(xa)
+
+  private def retrieveFinished(isbn: String): IO[Option[(Long, Long)]] =
+    fr"SELECT started, finished FROM read_books WHERE isbn=$isbn"
+      .query[(Long, Long)]
+      .option
+      .transact(xa)
+
+  private def toDate(epoch: Long): Date =
+    Date.valueOf(
+      Instant.ofEpochMilli(epoch).atZone(ZoneId.systemDefault()).toLocalDate()
+    )
 }
 
 case class BookRow(
