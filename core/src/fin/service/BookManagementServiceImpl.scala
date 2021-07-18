@@ -56,7 +56,6 @@ class BookManagementServiceImpl[F[_]: Monad] private (
     clock
       .monotonic(DAYS)
       .map(t => Date.valueOf(LocalDate.ofEpochDay(t)))
-
 }
 
 object BookManagementServiceImpl {

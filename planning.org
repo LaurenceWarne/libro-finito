@@ -20,10 +20,11 @@
 *** DONE Remove poc package
 *** DONE Add test framework to sbt
 *** TODO Add docker build (with docker-compose)
-*** TODO Integrate with GH Actions
+*** DONE Integrate with GH Actions
 *** DONE db backend
 *** TODO Import Goodreads shelves
 *** TODO Import Calbire collections (what are they called??)
+*** TODO Implement langRestrict
 
 ** Smaller Things
 *** DONE Add a logging framework

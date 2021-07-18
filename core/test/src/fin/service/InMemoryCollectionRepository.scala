@@ -76,5 +76,4 @@ class InMemoryCollectionRepository[F[_]](
         new Exception(show"Collection '$collectionName' does not exist!")
       )
     } yield retrievedCollection
-
 }
