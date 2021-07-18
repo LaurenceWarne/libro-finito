@@ -2,7 +2,6 @@ package fin.persistence
 
 import java.sql.Date
 
-import cats.MonadError
 import cats.effect.Sync
 import cats.implicits._
 import doobie._
@@ -11,7 +10,6 @@ import doobie.implicits.javasql._
 import doobie.util.transactor.Transactor
 
 import fin.Types._
-import fin.implicits._
 
 import BookFragments._
 
@@ -35,13 +33,10 @@ class SqliteBookRepository[F[_]: Sync] private (
           retrieveStartedFromCurrentlyReading(book.isbn)
             .query[Date]
             .option
-        // TODO allow this if a started date is specified in gql
-        started <- MonadError[ConnectionIO, Throwable].fromOption(
-          maybeStarted,
-          BookMustBeInProgressToBeFinishedError(book)
-        )
-        _ <- deleteCurrentlyReading(book.isbn).update.run
-        _ <- insertRead(book.isbn, started, date).update.run
+        _ <- maybeStarted.traverse { _ =>
+          deleteCurrentlyReading(book.isbn).update.run
+        }
+        _ <- insertRead(book.isbn, maybeStarted, date).update.run
       } yield ()
     transaction.transact(xa)
   }
@@ -87,10 +82,14 @@ object BookFragments {
        |DELETE FROM currently_reading_books
        |WHERE isbn = $isbn""".stripMargin
 
-  def insertRead(isbn: String, started: Date, finished: Date): Fragment =
+  def insertRead(
+      isbn: String,
+      maybeStarted: Option[Date],
+      finished: Date
+  ): Fragment =
     fr"""
        |INSERT INTO read_books (isbn, started, finished)
-       |VALUES ($isbn, $started, $finished)""".stripMargin
+       |VALUES ($isbn, $maybeStarted, $finished)""".stripMargin
 
   def insertRating(isbn: String, rating: Int): Fragment =
     fr"""
@@ -98,11 +97,4 @@ object BookFragments {
        |VALUES ($isbn, $rating)
        |ON CONFLICT(isbn)
        |DO UPDATE SET rating=excluded.rating""".stripMargin
-}
-
-case class BookMustBeInProgressToBeFinishedError(book: Book) extends Throwable {
-  override def getMessage: String =
-    show"""
-         |In order to finish reading a book it must first be in progress,
-         |but $book is not in progress""".stripMargin.replace("\n", ",")
 }

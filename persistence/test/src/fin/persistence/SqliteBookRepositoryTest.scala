@@ -54,9 +54,33 @@ object SqliteBookRepositoryTest extends SqliteSuite {
       _          <- repo.finishReading(bookToFinish, finishedDate)
       maybeDates <- retrieveFinished(bookToFinish.isbn)
       (maybeStarted, maybeFinished) = maybeDates.unzip
-    } yield expect(maybeStarted.exists(toDate(_) === date)) and expect(
+    } yield expect(maybeStarted.flatten.exists(toDate(_) === date)) and expect(
       maybeFinished.exists(toDate(_) === finishedDate)
     )
+  }
+
+  test("finishReading deletes row from currently_reading table") {
+    val finishedDate = Date.valueOf("2020-03-24")
+    val bookToFinish = book.copy(isbn = "finished-and-delete")
+    for {
+      _         <- repo.createBook(bookToFinish, date)
+      _         <- repo.startReading(bookToFinish, date)
+      _         <- repo.finishReading(bookToFinish, finishedDate)
+      maybeDate <- retrieveReading(bookToFinish.isbn)
+    } yield expect(maybeDate.isEmpty)
+  }
+
+  test(
+    "finishReading sets started to null when no existing currently reading"
+  ) {
+    val finishedDate = Date.valueOf("2020-03-24")
+    val bookToFinish = book.copy(isbn = "finished-no-reading")
+    for {
+      _         <- repo.createBook(bookToFinish, date)
+      _         <- repo.finishReading(bookToFinish, finishedDate)
+      maybeRead <- retrieveFinished(bookToFinish.isbn).map(_._1F)
+      // maybeRead should be Some(None) => ie found a date but was null
+    } yield expect(maybeRead.exists(_.isEmpty))
   }
 
   private def retrieveBook(isbn: String): IO[Option[Book]] =
@@ -92,9 +116,9 @@ object SqliteBookRepositoryTest extends SqliteSuite {
       .option
       .transact(xa)
 
-  private def retrieveFinished(isbn: String): IO[Option[(Long, Long)]] =
+  private def retrieveFinished(isbn: String): IO[Option[(Option[Long], Long)]] =
     fr"SELECT started, finished FROM read_books WHERE isbn=$isbn"
-      .query[(Long, Long)]
+      .query[(Option[Long], Long)]
       .option
       .transact(xa)
 

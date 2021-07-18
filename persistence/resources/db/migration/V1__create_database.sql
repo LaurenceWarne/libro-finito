@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS currently_reading_books(
 
 CREATE TABLE IF NOT EXISTS read_books(
   isbn     TEXT NOT NULL,
-  started  DATE NOT NULL,
+  started  DATE,
   finished DATE NOT NULL,
   FOREIGN KEY(isbn) REFERENCES books(isbn),
   PRIMARY KEY(isbn, started)
