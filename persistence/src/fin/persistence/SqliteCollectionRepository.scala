@@ -14,9 +14,9 @@ import doobie.implicits.javasql._
 import doobie.util.fragment.Fragment
 import doobie.util.transactor.Transactor
 
-import fin.Constants
 import fin.SortConversions
 import fin.Types._
+import java.time.Instant
 
 class SqliteCollectionRepository[F[_]: Sync] private (
     xa: Transactor[F],
@@ -129,6 +129,12 @@ object Fragments {
 
   implicit val sortPut: Put[Sort] = Put[String].contramap(_.toString)
 
+  val lastRead =
+    fr"""
+       |SELECT isbn, MAX(finished) AS finished
+       |FROM read_books
+       |GROUP BY isbn""".stripMargin
+
   val retrieveCollections =
     fr"""
        |SELECT 
@@ -139,10 +145,16 @@ object Fragments {
        |  b.authors,
        |  b.description,
        |  b.thumbnail_uri,
-       |  b.added
+       |  b.added,
+       |  cr.started,
+       |  lr.finished,
+       |  r.rating
        |FROM collections AS c
        |LEFT JOIN collection_books AS cb ON c.name = cb.collection_name
-       |LEFT JOIN books AS b ON cb.isbn = b.isbn""".stripMargin
+       |LEFT JOIN books AS b ON cb.isbn = b.isbn
+       |LEFT JOIN currently_reading_books cr ON b.isbn = cr.isbn
+       |LEFT JOIN (${lastRead}) lr ON b.isbn = lr.isbn
+       |LEFT JOIN rated_books r ON b.isbn = r.isbn""".stripMargin
 
   def fromName(name: String): Fragment =
     retrieveCollections ++ fr"WHERE name = $name"
@@ -183,7 +195,10 @@ case class CollectionBookRow(
     maybeAuthors: Option[String],
     maybeDescription: Option[String],
     maybeThumbnailUri: Option[String],
-    maybeAdded: Option[Date]
+    maybeAdded: Option[Date],
+    maybeStarted: Option[Long],
+    maybeFinished: Option[Long],
+    maybeRating: Option[Int]
 ) {
   def asBook: Option[Book] = {
     for {
@@ -198,7 +213,11 @@ case class CollectionBookRow(
       description = description,
       isbn = isbn,
       thumbnailUri = thumbnailUri,
-      Constants.emptyUserData
+      UserData(
+        maybeRating,
+        maybeStarted.map(Instant.ofEpochMilli(_)),
+        maybeFinished.map(Instant.ofEpochMilli(_))
+      )
     )
   }
 }
