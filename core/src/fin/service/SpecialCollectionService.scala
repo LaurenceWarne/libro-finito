@@ -80,7 +80,10 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
     createCollection(MutationsCreateCollectionArgs(collection, None)).void
       .handleError(_ => ())
 
-  private def addHookCollection(hook: CollectionHook, book: Book): F[Unit] = {
+  private def addHookCollection(
+      hook: CollectionHook,
+      book: BookInput
+  ): F[Unit] = {
     Logger[F].info(
       show"Adding $book to special collection '${hook.collection}'"
     ) *>
@@ -101,7 +104,7 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
 
   private def removeHookCollection(
       hook: CollectionHook,
-      book: Book
+      book: BookInput
   ): F[Unit] = {
     Logger[F].info(
       show"Removing $book from special collection '${hook.collection}'"
@@ -121,7 +124,7 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
         )
   }
 
-  private def bindings(collection: String, book: Book): F[Bindings] = {
+  private def bindings(collection: String, book: BookInput): F[Bindings] = {
     for {
       bindings <- Sync[F].delay(new SimpleBindings)
       _        <- Sync[F].delay(bindings.put("collection", collection))

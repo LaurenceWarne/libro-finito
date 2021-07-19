@@ -8,7 +8,7 @@ import cats.implicits._
 import cats.kernel.Eq
 import doobie.implicits._
 
-import fin.Constants
+import fin.BookConversions._
 import fin.Types._
 import fin.implicits._
 
@@ -18,20 +18,19 @@ object SqliteBookRepositoryTest extends SqliteSuite {
   val repo                      = SqliteBookRepository(xa)
   val date                      = Date.valueOf("2020-03-20")
   val book =
-    Book(
+    BookInput(
       "title",
       List("author"),
       "cool description",
       "???",
-      "uri",
-      Constants.emptyUserData
+      "uri"
     )
 
   test("createBook creates book") {
     for {
       _         <- repo.createBook(book, date)
       maybeBook <- repo.retrieveBook(book.isbn)
-    } yield expect(maybeBook.exists(_ === book))
+    } yield expect(maybeBook.exists(_ === toUserBook(book)))
   }
 
   test("rateBook rates book") {
@@ -103,13 +102,11 @@ object SqliteBookRepositoryTest extends SqliteSuite {
       maybeBook <- repo.retrieveBook(bookToUse.isbn)
     } yield expect(
       maybeBook.exists(
-        _ === bookToUse.copy(userData =
-          UserData(
-            rating = rating.some,
-            startedReading =
-              Instant.ofEpochMilli(startedReadingDate.getTime).some,
-            lastRead = Instant.ofEpochMilli(date.getTime).some
-          )
+        _ === toUserBook(bookToUse).copy(
+          rating = rating.some,
+          startedReading =
+            Instant.ofEpochMilli(startedReadingDate.getTime).some,
+          lastRead = Instant.ofEpochMilli(date.getTime).some
         )
       )
     )

@@ -5,20 +5,18 @@ import cats.effect.{IO, Resource}
 import cats.implicits._
 import weaver._
 
-import fin.Constants
+import fin.BookConversions._
 import fin.Types._
 import fin.implicits._
-
 object CollectionServiceImplTest extends IOSuite {
 
   val book =
-    Book(
+    BookInput(
       "title",
       List("author"),
       "cool description",
       "???",
-      "uri",
-      Constants.emptyUserData
+      "uri"
     )
 
   override type Res = CollectionService[IO]
@@ -90,7 +88,9 @@ object CollectionServiceImplTest extends IOSuite {
       )
       retrievedCollection <-
         collectionService.collection(QueriesCollectionArgs(name))
-    } yield expect(retrievedCollection.books === List(book2, book))
+    } yield expect(
+      retrievedCollection.books === List(book2, book).map(toUserBook(_))
+    )
   }
 
   test("collection returns collection sorted by author") { collectionService =>
@@ -111,7 +111,9 @@ object CollectionServiceImplTest extends IOSuite {
       )
       retrievedCollection <-
         collectionService.collection(QueriesCollectionArgs(name))
-    } yield expect(retrievedCollection.books === List(book2, book))
+    } yield expect(
+      retrievedCollection.books === List(book2, book).map(toUserBook(_))
+    )
   }
 
   test("collections returns created collections") { collectionService =>
@@ -231,7 +233,7 @@ object CollectionServiceImplTest extends IOSuite {
     } yield expect(
       collection === Collection(
         name,
-        List(book),
+        List(toUserBook(book)),
         CollectionServiceImpl.defaultSort
       )
     )

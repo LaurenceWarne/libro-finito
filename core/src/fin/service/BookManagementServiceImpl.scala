@@ -9,6 +9,7 @@ import cats.effect.Clock
 import cats.implicits._
 import cats.{Monad, MonadError}
 
+import fin.BookConversions._
 import fin.Types._
 import fin.implicits._
 import fin.persistence.BookRepository
@@ -20,50 +21,46 @@ class BookManagementServiceImpl[F[_]] private (
 )(implicit ev: MonadError[F, Throwable])
     extends BookManagementService[F] {
 
-  override def createBook(args: MutationsCreateBookArgs): F[Book] =
+  override def createBook(args: MutationsCreateBookArgs): F[UserBook] =
     for {
       maybeBook <- bookRepo.retrieveBook(args.book.isbn)
-      _ <- maybeBook.fold(createBook(args.book)) { book =>
-        MonadError[F, Throwable].raiseError(BookAlreadyExistsError(book))
+      _ <- maybeBook.fold(createBook(args.book)) { _ =>
+        MonadError[F, Throwable].raiseError(BookAlreadyExistsError(args.book))
       }
-    } yield args.book
+    } yield toUserBook(args.book)
 
-  override def rateBook(args: MutationsRateBookArgs): F[Book] =
+  override def rateBook(args: MutationsRateBookArgs): F[UserBook] =
     for {
       _ <- createIfNotExists(args.book)
       _ <- bookRepo.rateBook(args.book, args.rating)
-    } yield args.book.copy(userData =
-      args.book.userData.copy(rating = args.rating.some)
-    )
+    } yield toUserBook(args.book, rating = args.rating.some)
 
-  override def startReading(args: MutationsStartReadingArgs): F[Book] =
+  override def startReading(args: MutationsStartReadingArgs): F[UserBook] =
     for {
       book <- createIfNotExists(args.book)
-      _ <- Monad[F].whenA(book.userData.startedReading.nonEmpty) {
-        MonadError[F, Throwable].raiseError(BookAlreadyBeingReadError(book))
+      _ <- Monad[F].whenA(book.startedReading.nonEmpty) {
+        MonadError[F, Throwable].raiseError(
+          BookAlreadyBeingReadError(args.book)
+        )
       }
       date <- args.date.fold(getDate)(instantToDate(_).pure[F])
       _    <- bookRepo.startReading(args.book, date)
-    } yield args.book.copy(userData =
-      args.book.userData.copy(startedReading = dateToInstant(date).some)
-    )
+    } yield toUserBook(args.book, startedReading = dateToInstant(date).some)
 
-  override def finishReading(args: MutationsFinishReadingArgs): F[Book] =
+  override def finishReading(args: MutationsFinishReadingArgs): F[UserBook] =
     for {
       _    <- createIfNotExists(args.book)
       date <- args.date.fold(getDate)(instantToDate(_).pure[F])
       _    <- bookRepo.finishReading(args.book, date)
-    } yield args.book.copy(userData =
-      args.book.userData.copy(lastRead = dateToInstant(date).some)
-    )
+    } yield toUserBook(args.book, lastRead = dateToInstant(date).some)
 
-  private def createIfNotExists(book: Book): F[Book] =
+  private def createIfNotExists(book: BookInput): F[UserBook] =
     for {
       maybeBook <- bookRepo.retrieveBook(book.isbn)
       _         <- Monad[F].whenA(maybeBook.isEmpty)(createBook(book))
-    } yield maybeBook.getOrElse(book)
+    } yield maybeBook.getOrElse(toUserBook(book))
 
-  private def createBook(book: Book): F[Unit] =
+  private def createBook(book: BookInput): F[Unit] =
     for {
       date <- getDate
       _    <- bookRepo.createBook(book, date)
@@ -82,11 +79,11 @@ object BookManagementServiceImpl {
     new BookManagementServiceImpl(bookRepo, clock)
 }
 
-case class BookAlreadyBeingReadError(book: Book) extends Throwable {
+case class BookAlreadyBeingReadError(book: BookInput) extends Throwable {
   override def getMessage = show"The book $book is already being read!"
 }
 
-case class BookAlreadyExistsError(book: Book) extends Throwable {
+case class BookAlreadyExistsError(book: BookInput) extends Throwable {
   override def getMessage =
     show"A book with isbn ${book.isbn} already exists: $book!"
 }

@@ -12,6 +12,6 @@ trait CollectionRepository[F[_]] {
       newName: String,
       preferredSort: Sort
   ): F[Unit]
-  def addBookToCollection(collectionName: String, book: Book): F[Unit]
+  def addBookToCollection(collectionName: String, book: BookInput): F[Unit]
   def removeBookFromCollection(collectionName: String, isbn: String): F[Unit]
 }

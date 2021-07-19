@@ -11,7 +11,6 @@ import org.http4s.Uri
 import org.http4s.client._
 import org.http4s.implicits._
 
-import fin.Constants
 import fin.Types._
 
 /**
@@ -25,14 +24,14 @@ class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger] private (
 
   import GoogleBookInfoService._
 
-  def search(booksArgs: QueriesBooksArgs): F[List[Book]] =
+  def search(booksArgs: QueriesBooksArgs): F[List[UserBook]] =
     for {
       uri   <- MonadError[F, Throwable].fromEither(uriFromBooksArgs(booksArgs))
       _     <- Logger[F].info(uri.toString)
       books <- booksFromUri(uri, searchPartialFn)
     } yield books
 
-  def fromIsbn(bookArgs: QueriesBookArgs): F[Book] = {
+  def fromIsbn(bookArgs: QueriesBookArgs): F[UserBook] = {
     val uri = uriFromBookArgs(bookArgs)
     for {
       _     <- Logger[F].info(uri.toString)
@@ -46,8 +45,8 @@ class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger] private (
 
   private def booksFromUri(
       uri: Uri,
-      pf: PartialFunction[GoogleVolume, Book]
-  ): F[List[Book]] = {
+      pf: PartialFunction[GoogleVolume, UserBook]
+  ): F[List[UserBook]] = {
     for {
       json <- client.expect[String](uri)
       _    <- Logger[F].info(decode[GoogleResponse](json).toString)
@@ -86,7 +85,7 @@ object GoogleBookInfoService {
   implicit val googleResponseDecoder: Decoder[GoogleResponse] =
     deriveDecoder[GoogleResponse]
 
-  val searchPartialFn: PartialFunction[GoogleVolume, Book] = {
+  val searchPartialFn: PartialFunction[GoogleVolume, UserBook] = {
     case GoogleVolume(
           GoogleBookItem(
             title,
@@ -96,22 +95,24 @@ object GoogleBookInfoService {
             Some(industryIdentifier :: _)
           )
         ) =>
-      Book(
+      UserBook(
         title,
         authors,
         maybeDescription.getOrElse("No Description!"),
         industryIdentifier.getIsbn13,
         largeThumbnail,
-        Constants.emptyUserData
+        None,
+        None,
+        None
       )
   }
 
   private val emptyThumbnailUri =
     "https://user-images.githubusercontent.com/101482/29592647-40da86ca-875a-11e7-8bc3-941700b0a323.png"
 
-  val isbnPartialFn: PartialFunction[GoogleVolume, Book] = {
+  val isbnPartialFn: PartialFunction[GoogleVolume, UserBook] = {
     case GoogleVolume(bookItem) =>
-      Book(
+      UserBook(
         bookItem.title,
         bookItem.authors.getOrElse(List("???")),
         bookItem.description.getOrElse("No Description!"),
@@ -120,7 +121,9 @@ object GoogleBookInfoService {
           .headOption
           .fold("???")(_.getIsbn13),
         bookItem.imageLinks.fold(emptyThumbnailUri)(_.thumbnail),
-        Constants.emptyUserData
+        None,
+        None,
+        None
       )
   }
 

@@ -10,7 +10,7 @@ import cats.effect.{Clock, IO, Resource}
 import cats.implicits._
 import weaver._
 
-import fin.Constants
+import fin.BookConversions._
 import fin.Types._
 import fin.implicits._
 
@@ -19,18 +19,17 @@ object BookManagementServiceImplTest extends IOSuite {
   val constantTime = Instant.parse("2021-11-30T00:00:00.00Z")
 
   val book =
-    Book(
+    BookInput(
       "title",
       List("author"),
       "cool description",
       "???",
-      "uri",
-      Constants.emptyUserData
+      "uri"
     )
 
   override type Res = BookManagementService[IO]
   override def sharedResource: Resource[IO, BookManagementService[IO]] =
-    Resource.eval(Ref.of[IO, List[Book]](List.empty).map { ref =>
+    Resource.eval(Ref.of[IO, List[UserBook]](List.empty).map { ref =>
       val repo = new InMemoryBookRepository(ref)
       BookManagementServiceImpl(
         repo,
@@ -63,11 +62,7 @@ object BookManagementServiceImplTest extends IOSuite {
       _ <- bookService.createBook(MutationsCreateBookArgs(bookToRate))
       ratedBook <-
         bookService.rateBook(MutationsRateBookArgs(bookToRate, rating))
-    } yield expect(
-      ratedBook === bookToRate.copy(userData =
-        bookToRate.userData.copy(rating = rating.some)
-      )
-    )
+    } yield expect(ratedBook === toUserBook(bookToRate, rating = rating.some))
   }
 
   test("rateBook creates book if not exists") { bookService =>
@@ -76,11 +71,7 @@ object BookManagementServiceImplTest extends IOSuite {
     for {
       ratedBook <-
         bookService.rateBook(MutationsRateBookArgs(bookToRate, rating))
-    } yield expect(
-      ratedBook === bookToRate.copy(userData =
-        bookToRate.userData.copy(rating = rating.some)
-      )
-    )
+    } yield expect(ratedBook === toUserBook(bookToRate, rating = rating.some))
   }
 
   test("startReading starts reading") { bookService =>
@@ -92,8 +83,9 @@ object BookManagementServiceImplTest extends IOSuite {
         MutationsStartReadingArgs(bookToRead, startedReading.some)
       )
     } yield expect(
-      updatedBook === bookToRead.copy(userData =
-        bookToRead.userData.copy(startedReading = startedReading.some)
+      updatedBook === toUserBook(
+        bookToRead,
+        startedReading = startedReading.some
       )
     )
   }
@@ -106,8 +98,9 @@ object BookManagementServiceImplTest extends IOSuite {
         updatedBook <-
           bookService.startReading(MutationsStartReadingArgs(bookToRead, None))
       } yield expect(
-        updatedBook === bookToRead.copy(userData =
-          bookToRead.userData.copy(startedReading = constantTime.some)
+        updatedBook === toUserBook(
+          bookToRead,
+          startedReading = constantTime.some
         )
       )
   }
@@ -116,15 +109,13 @@ object BookManagementServiceImplTest extends IOSuite {
     val copiedBook = book.copy(isbn = "copied reading")
     for {
       _ <- bookService.createBook(MutationsCreateBookArgs(copiedBook))
-      updatedBook <-
-        bookService.startReading(MutationsStartReadingArgs(copiedBook, None))
+      _ <- bookService.startReading(MutationsStartReadingArgs(copiedBook, None))
       response <-
         bookService
-          .startReading(MutationsStartReadingArgs(updatedBook, None))
+          .startReading(MutationsStartReadingArgs(copiedBook, None))
           .attempt
-      _ = println(updatedBook)
     } yield expect(
-      response.swap.exists(_ == BookAlreadyBeingReadError(updatedBook))
+      response.swap.exists(_ == BookAlreadyBeingReadError(copiedBook))
     )
   }
 
@@ -137,9 +128,7 @@ object BookManagementServiceImplTest extends IOSuite {
         MutationsFinishReadingArgs(bookToRead, finishedReading.some)
       )
     } yield expect(
-      updatedBook === bookToRead.copy(userData =
-        bookToRead.userData.copy(lastRead = finishedReading.some)
-      )
+      updatedBook === toUserBook(bookToRead, lastRead = finishedReading.some)
     )
   }
 
@@ -152,9 +141,7 @@ object BookManagementServiceImplTest extends IOSuite {
           MutationsFinishReadingArgs(bookToRead, None)
         )
       } yield expect(
-        updatedBook === bookToRead.copy(userData =
-          bookToRead.userData.copy(lastRead = constantTime.some)
-        )
+        updatedBook === toUserBook(bookToRead, lastRead = constantTime.some)
       )
   }
 }

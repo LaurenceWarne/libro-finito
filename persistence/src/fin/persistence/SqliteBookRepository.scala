@@ -16,7 +16,7 @@ class SqliteBookRepository[F[_]: Sync] private (
     xa: Transactor[F]
 ) extends BookRepository[F] {
 
-  override def retrieveBook(isbn: String): F[Option[Book]] =
+  override def retrieveBook(isbn: String): F[Option[UserBook]] =
     BookFragments
       .retrieveBook(isbn)
       .query[BookRow]
@@ -26,13 +26,13 @@ class SqliteBookRepository[F[_]: Sync] private (
       .map(_.toBook)
       .value
 
-  override def createBook(book: Book, date: Date): F[Unit] =
+  override def createBook(book: BookInput, date: Date): F[Unit] =
     BookFragments.insert(book, date).update.run.transact(xa).void
 
-  override def rateBook(book: Book, rating: Int): F[Unit] =
+  override def rateBook(book: BookInput, rating: Int): F[Unit] =
     BookFragments.insertRating(book.isbn, rating).update.run.transact(xa).void
 
-  override def startReading(book: Book, date: Date): F[Unit] =
+  override def startReading(book: BookInput, date: Date): F[Unit] =
     BookFragments
       .insertCurrentlyReading(book.isbn, date)
       .update
@@ -40,7 +40,7 @@ class SqliteBookRepository[F[_]: Sync] private (
       .transact(xa)
       .void
 
-  override def finishReading(book: Book, date: Date): F[Unit] = {
+  override def finishReading(book: BookInput, date: Date): F[Unit] = {
     val transaction =
       for {
         maybeStarted <-
@@ -95,7 +95,7 @@ object BookFragments {
   def checkIsbn(isbn: String): Fragment =
     fr"select isbn from books WHERE isbn=$isbn"
 
-  def insert(book: Book, date: Date): Fragment =
+  def insert(book: BookInput, date: Date): Fragment =
     fr"""
        |INSERT INTO books VALUES (
        |  ${book.isbn},
@@ -152,17 +152,15 @@ case class BookRow(
     maybeFinished: Option[Long],
     maybeRating: Option[Int]
 ) {
-  def toBook: Book =
-    Book(
+  def toBook: UserBook =
+    UserBook(
       title,
       authors.split(",").toList,
       description,
       isbn,
       thumbnailUri,
-      UserData(
-        maybeRating,
-        maybeStarted.map(Instant.ofEpochMilli(_)),
-        maybeFinished.map(Instant.ofEpochMilli(_))
-      )
+      maybeRating,
+      maybeStarted.map(Instant.ofEpochMilli(_)),
+      maybeFinished.map(Instant.ofEpochMilli(_))
     )
 }

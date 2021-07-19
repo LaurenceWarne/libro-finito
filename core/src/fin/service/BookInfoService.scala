@@ -10,7 +10,7 @@ trait BookInfoService[F[_]] {
     * @param booksArgs books arguments
     * @return books satisfying booksArgs
     */
-  def search(booksArgs: QueriesBooksArgs): F[List[Book]]
+  def search(booksArgs: QueriesBooksArgs): F[List[UserBook]]
 
   /**
     * Find a book given an isbn.
@@ -18,5 +18,5 @@ trait BookInfoService[F[_]] {
     * @param bookArgs isbn data
     * @return a book with the given isbn
     */
-  def fromIsbn(bookArgs: QueriesBookArgs): F[Book]
+  def fromIsbn(bookArgs: QueriesBookArgs): F[UserBook]
 }

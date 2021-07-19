@@ -7,49 +7,51 @@ import cats.Monad
 import cats.effect.concurrent.Ref
 import cats.implicits._
 
+import fin.BookConversions._
 import fin.Types._
 import fin.implicits._
 import fin.persistence.BookRepository
 
-class InMemoryBookRepository[F[_]: Monad](booksRef: Ref[F, List[Book]])
+class InMemoryBookRepository[F[_]: Monad](booksRef: Ref[F, List[UserBook]])
     extends BookRepository[F] {
 
-  override def createBook(book: Book, date: Date): F[Unit] =
-    booksRef.getAndUpdate(book :: _).void
+  override def createBook(book: BookInput, date: Date): F[Unit] =
+    booksRef.getAndUpdate(toUserBook(book) :: _).void
 
-  override def retrieveBook(isbn: String): F[Option[Book]] =
+  override def retrieveBook(isbn: String): F[Option[UserBook]] =
     booksRef.get.map(_.find(_.isbn === isbn))
 
-  override def rateBook(book: Book, rating: Int): F[Unit] =
+  override def rateBook(book: BookInput, rating: Int): F[Unit] = {
+    val userBook = toUserBook(book)
     for {
       _ <- booksRef.getAndUpdate(_.map { b =>
-        if (b === book)
-          book.copy(userData = book.userData.copy(rating = rating.some))
+        if (b === userBook) userBook.copy(rating = rating.some)
         else b
       })
     } yield ()
+  }
 
-  override def startReading(book: Book, date: Date): F[Unit] =
+  override def startReading(book: BookInput, date: Date): F[Unit] = {
+    val userBook = toUserBook(book)
     for {
       _ <- booksRef.getAndUpdate(_.map { b =>
-        if (b === book)
-          book.copy(userData =
-            book.userData
-              .copy(startedReading = Instant.ofEpochMilli(date.getTime).some)
+        if (b === userBook)
+          userBook.copy(startedReading =
+            Instant.ofEpochMilli(date.getTime).some
           )
         else b
       })
     } yield ()
+  }
 
-  override def finishReading(book: Book, date: Date): F[Unit] =
+  override def finishReading(book: BookInput, date: Date): F[Unit] = {
+    val userBook = toUserBook(book)
     for {
       _ <- booksRef.getAndUpdate(_.map { b =>
-        if (b === book)
-          book.copy(userData =
-            book.userData
-              .copy(lastRead = Instant.ofEpochMilli(date.getTime).some)
-          )
+        if (b === userBook)
+          userBook.copy(lastRead = Instant.ofEpochMilli(date.getTime).some)
         else b
       })
     } yield ()
+  }
 }

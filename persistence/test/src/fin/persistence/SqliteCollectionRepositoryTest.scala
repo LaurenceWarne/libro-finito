@@ -3,20 +3,19 @@ package fin.persistence
 import cats.effect.{Clock, IO}
 import cats.implicits._
 
-import fin.Constants
+import fin.BookConversions._
 import fin.Types._
 import fin.implicits._
 
 object SqliteCollectionRepositoryTest extends SqliteSuite {
 
   val book =
-    Book(
+    BookInput(
       "title",
       List("author"),
       "cool description",
       "???",
-      "uri",
-      Constants.emptyUserData
+      "uri"
     )
   val repo = SqliteCollectionRepository(xa, Clock[IO])
 
@@ -97,7 +96,7 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
       retrievedCollection <- repo.collection(name)
     } yield expect(
       retrievedCollection.exists(
-        _ === Collection(name, List(book), sort)
+        _ === Collection(name, List(toUserBook(book)), sort)
       )
     )
   }
@@ -114,7 +113,7 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
       retrievedCollection <- repo.collection(name2)
     } yield expect(
       retrievedCollection.exists(
-        _ === Collection(name2, List(book), sort)
+        _ === Collection(name2, List(toUserBook(book)), sort)
       )
     )
   }

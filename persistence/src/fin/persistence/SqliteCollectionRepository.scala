@@ -24,7 +24,7 @@ class SqliteCollectionRepository[F[_]: Sync] private (
 
   override def addBookToCollection(
       collectionName: String,
-      book: Book
+      book: BookInput
   ): F[Unit] = {
     val transaction: Date => ConnectionIO[Unit] = date =>
       for {
@@ -107,7 +107,7 @@ class SqliteCollectionRepository[F[_]: Sync] private (
       rows: List[CollectionBookRow]
   ): Either[Throwable, List[Collection]] = {
     rows
-      .groupMapReduce(c => (c.name, c.preferredSort))(_.asBook.toList)(_ ++ _)
+      .groupMapReduce(c => (c.name, c.preferredSort))(_.toBook.toList)(_ ++ _)
       .toList
       .traverse {
         case ((name, preferredSort), books) =>
@@ -193,24 +193,22 @@ case class CollectionBookRow(
     maybeFinished: Option[Long],
     maybeRating: Option[Int]
 ) {
-  def asBook: Option[Book] = {
+  def toBook: Option[UserBook] = {
     for {
       isbn         <- maybeIsbn
       title        <- maybeTitle
       authors      <- maybeAuthors
       description  <- maybeDescription
       thumbnailUri <- maybeThumbnailUri
-    } yield Book(
+    } yield UserBook(
       title = title,
       authors = authors.split(",").toList,
       description = description,
       isbn = isbn,
       thumbnailUri = thumbnailUri,
-      UserData(
-        maybeRating,
-        maybeStarted.map(Instant.ofEpochMilli(_)),
-        maybeFinished.map(Instant.ofEpochMilli(_))
-      )
+      maybeRating,
+      maybeStarted.map(Instant.ofEpochMilli(_)),
+      maybeFinished.map(Instant.ofEpochMilli(_))
     )
   }
 }

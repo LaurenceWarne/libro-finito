@@ -4,6 +4,7 @@ import cats.MonadError
 import cats.effect.concurrent.Ref
 import cats.implicits._
 
+import fin.BookConversions._
 import fin.Types._
 import fin.implicits._
 import fin.persistence.CollectionRepository
@@ -43,12 +44,13 @@ class InMemoryCollectionRepository[F[_]](
 
   override def addBookToCollection(
       collectionName: String,
-      book: Book
+      book: BookInput
   ): F[Unit] =
     for {
       retrievedCollection <- collectionOrError(collectionName)
-      newCollection =
-        retrievedCollection.copy(books = book :: retrievedCollection.books)
+      newCollection = retrievedCollection.copy(books =
+        toUserBook(book) :: retrievedCollection.books
+      )
       _ <- collectionsRef.getAndUpdate(_.map { col =>
         if (col === retrievedCollection) newCollection else col
       })

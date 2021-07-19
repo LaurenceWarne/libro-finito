@@ -9,10 +9,9 @@ import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import weaver._
 
-import fin.Constants
+import fin.BookConversions._
 import fin.Types._
 import fin.implicits._
-
 object SpecialCollectionServiceTest extends IOSuite {
 
   val scriptEngineManager       = new ScriptEngineManager
@@ -42,13 +41,12 @@ object SpecialCollectionServiceTest extends IOSuite {
     )
   )
   val baseBook =
-    Book(
+    BookInput(
       "title",
       List("auth"),
       "description",
       "isbn",
-      "thumbnail uri",
-      Constants.emptyUserData
+      "thumbnail uri"
     )
   val book2     = baseBook.copy(title = "my cool book")
   val argsBook2 = MutationsAddBookArgs(otherCollection, book2)
@@ -91,14 +89,15 @@ object SpecialCollectionServiceTest extends IOSuite {
           collectionService.collection(QueriesCollectionArgs(hook1Collection))
         hook2Response <-
           collectionService.collection(QueriesCollectionArgs(hook2Collection))
-      } yield expect(hook1Response.books.contains(book)) and expect(
-        !hook2Response.books.contains(book)
+      } yield expect(hook1Response.books.contains(toUserBook(book))) and expect(
+        !hook2Response.books.contains(toUserBook(book))
       )
   }
 
   test("addBookToCollection removes for matching hook, but not for others") {
     collectionService =>
       val book     = baseBook.copy(isbn = "isbn2")
+      val userBook = toUserBook(book)
       val argsBook = MutationsAddBookArgs(otherCollection, book)
       for {
         _ <- collectionService.addBookToCollection(
@@ -112,19 +111,20 @@ object SpecialCollectionServiceTest extends IOSuite {
           collectionService.collection(QueriesCollectionArgs(hook1Collection))
         hook2Response <-
           collectionService.collection(QueriesCollectionArgs(hook2Collection))
-      } yield expect(hook1Response.books.contains(book)) and expect(
-        !hook2Response.books.contains(book)
+      } yield expect(hook1Response.books.contains(userBook)) and expect(
+        !hook2Response.books.contains(userBook)
       )
   }
 
   test("addBookToCollection ignores hook of wrong type") { collectionService =>
     val book     = baseBook.copy(isbn = "isbn3")
+    val userBook = toUserBook(book)
     val argsBook = MutationsAddBookArgs(otherCollection, book)
     for {
       _ <- collectionService.addBookToCollection(argsBook)
       hook3Response <-
         collectionService.collection(QueriesCollectionArgs(hook3Collection))
-    } yield expect(!hook3Response.books.contains(book))
+    } yield expect(!hook3Response.books.contains(userBook))
   }
 
   test("addBookToCollection does not create special collection if add false") {

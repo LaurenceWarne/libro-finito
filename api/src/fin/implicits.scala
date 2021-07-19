@@ -7,10 +7,12 @@ import fin.Types._
 
 object implicits {
   implicit val collectionEq: Eq[Collection] = Eq.fromUniversalEquals
-  implicit val bookEq: Eq[Book]             = Eq.fromUniversalEquals
+  implicit val bookEq: Eq[BookInput]        = Eq.fromUniversalEquals
+  implicit val userBookEq: Eq[UserBook]     = Eq.fromUniversalEquals
   implicit val sortEq: Eq[Sort]             = Eq.fromUniversalEquals
 
-  implicit val sortShow: Show[Sort]             = Show.fromToString
   implicit val collectionShow: Show[Collection] = Show.fromToString
-  implicit val bookShow: Show[Book]             = Show.fromToString
+  implicit val userBookShow: Show[BookInput]    = Show.fromToString
+  implicit val bookShow: Show[UserBook]         = Show.fromToString
+  implicit val sortShow: Show[Sort]             = Show.fromToString
 }

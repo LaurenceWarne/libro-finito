@@ -10,24 +10,28 @@ enum Sort {
   Rating
 }
 
-type UserData {
-  rating: Int,
-  startedReading: DateTime,
-  lastRead: DateTime
-}
-
-type Book {
+input BookInput {
   title: String!
   authors: [String!]!
   description: String!
   isbn: String!
   thumbnailUri: String!
-  userData: UserData!
+}
+
+type UserBook {
+  title: String!
+  authors: [String!]!
+  description: String!
+  isbn: String!
+  thumbnailUri: String!
+  rating: Int
+  startedReading: DateTime
+  lastRead: DateTime
 }
 
 type Collection {
   name: String!
-  books: [Book!]!
+  books: [UserBook!]!
   preferredSort: Sort!
 }
 
@@ -37,22 +41,22 @@ type Queries {
     authorKeywords: String,
     maxResults: Int = 10,
     langRestrict: String = "en"
-  ): [Book!]!
-  book(isbn: String!, langRestrict: String = "en"): Book!
+  ): [UserBook!]!
+  book(isbn: String!, langRestrict: String = "en"): UserBook!
   collections: [Collection!]!
   collection(name: String!): Collection!
 }
 
 type Mutations {
-  createCollection(name: String!, books: [Book!]): Collection!
+  createCollection(name: String!, books: [BookInput!]): Collection!
   deleteCollection(name: String!): Boolean
   updateCollection(
     currentName: String!, newName: String, preferredSort: Sort
   ): Collection!
-  addBook(collection: String!, book: Book!): Collection!
+  addBook(collection: String!, book: BookInput!): Collection!
   removeBook(collection: String!, isbn: String!): Boolean
-  startReading(book: Book!, date: DateTime): Book!
-  finishReading(book: Book!, date: DateTime): Book!
-  rateBook(book: Book!, rating: Int!): Book!
-  createBook(book: Book!): Book!
+  startReading(book: BookInput!, date: DateTime): UserBook!
+  finishReading(book: BookInput!, date: DateTime): UserBook!
+  rateBook(book: BookInput!, rating: Int!): UserBook!
+  createBook(book: BookInput!): UserBook!
 }

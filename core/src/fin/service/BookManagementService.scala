@@ -3,8 +3,8 @@ package fin.service
 import fin.Types._
 
 trait BookManagementService[F[_]] {
-  def createBook(args: MutationsCreateBookArgs): F[Book]
-  def rateBook(args: MutationsRateBookArgs): F[Book]
-  def startReading(args: MutationsStartReadingArgs): F[Book]
-  def finishReading(args: MutationsFinishReadingArgs): F[Book]
+  def createBook(args: MutationsCreateBookArgs): F[UserBook]
+  def rateBook(args: MutationsRateBookArgs): F[UserBook]
+  def startReading(args: MutationsStartReadingArgs): F[UserBook]
+  def finishReading(args: MutationsFinishReadingArgs): F[UserBook]
 }

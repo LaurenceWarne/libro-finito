@@ -3,6 +3,7 @@ package fin.service
 import cats.effect.Sync
 import cats.implicits._
 
+import fin.BookConversions._
 import fin.Types._
 import fin.implicits._
 import fin.persistence.CollectionRepository
@@ -30,7 +31,7 @@ class CollectionServiceImpl[F[_]: Sync] private (
       }
     } yield Collection(
       args.name,
-      args.books.getOrElse(List.empty),
+      args.books.fold(List.empty[UserBook])(_.map(toUserBook(_))),
       defaultSort
     )
 
@@ -67,7 +68,7 @@ class CollectionServiceImpl[F[_]: Sync] private (
     for {
       collection <- collectionOrError(args.collection)
       _          <- collectionRepo.addBookToCollection(args.collection, args.book)
-    } yield collection.copy(books = args.book :: collection.books)
+    } yield collection.copy(books = toUserBook(args.book) :: collection.books)
 
   override def removeBookFromCollection(
       args: MutationsRemoveBookArgs
@@ -108,12 +109,12 @@ class CollectionServiceImpl[F[_]: Sync] private (
       case (b1, b2) =>
         collection.preferredSort match {
           case Sort.DateAdded =>
-            b1.userData.lastRead.map(_.toEpochMilli) < b2.userData.lastRead.map(
+            b1.lastRead.map(_.toEpochMilli) < b2.lastRead.map(
               _.toEpochMilli
             )
           case Sort.Title  => b1.title < b2.title
           case Sort.Author => b1.authors < b2.authors
-          case Sort.Rating => b1.userData.rating < b2.userData.rating
+          case Sort.Rating => b1.rating < b2.rating
         }
     })
 }

@@ -49,7 +49,7 @@ The server may be configured in a number of ways by via a file whose expected lo
 
 ## Special Collections
 
-`libro-finito` allows us to specify some collections as **special**, these collections allow for books to be added or removed automatically via **hooks** whose behaviours are described in [lua](https://www.lua.org/).
+`libro-finito` allows us to mark some collections as **special**, these collections allow for books to be added or removed automatically via **hooks** whose behaviours are described in [lua](https://www.lua.org/).
 
 For example, the `My Books` special collection defines one hook, the `add-hook`, in which it simply sets the variable `add` to `true`.  The `add-hook` is called whenever a book is added to a collection.  It receives the book attributes as variable bindings, and books will be added or removed from the collection according to the values of the `add` and `remove` variables after the call (setting neither of these is a nop).
 
