@@ -5,20 +5,27 @@ import java.time.LocalDate
 
 import scala.concurrent.duration.DAYS
 
-import cats.Monad
 import cats.effect.Clock
 import cats.implicits._
+import cats.{Monad, MonadError}
 
 import fin.Types._
+import fin.implicits._
 import fin.persistence.BookRepository
 
-class BookManagementServiceImpl[F[_]: Monad] private (
+class BookManagementServiceImpl[F[_]] private (
     bookRepo: BookRepository[F],
     clock: Clock[F]
-) extends BookManagementService[F] {
+)(implicit ev: MonadError[F, Throwable])
+    extends BookManagementService[F] {
 
   override def createBook(args: MutationsCreateBookArgs): F[Unit] =
-    createBook(args.book)
+    for {
+      maybeBook <- bookRepo.retrieveBook(args.book.isbn)
+      _ <- maybeBook.fold(createBook(args.book)) { book =>
+        MonadError[F, Throwable].raiseError(BookAlreadyExistsError(book))
+      }
+    } yield ()
 
   override def rateBook(args: MutationsRateBookArgs): F[Book] =
     for {
@@ -28,7 +35,10 @@ class BookManagementServiceImpl[F[_]: Monad] private (
 
   override def startReading(args: MutationsStartReadingArgs): F[Book] =
     for {
-      _    <- createIfNotExists(args.book)
+      book <- createIfNotExists(args.book)
+      _ <- Monad[F].whenA(book.userData.startedReading.nonEmpty) {
+        MonadError[F, Throwable].raiseError(BookAlreadyBeingReadError(book))
+      }
       date <- getDate
       _    <- bookRepo.startReading(args.book, date)
     } yield args.book
@@ -40,11 +50,11 @@ class BookManagementServiceImpl[F[_]: Monad] private (
       _    <- bookRepo.finishReading(args.book, date)
     } yield args.book
 
-  private def createIfNotExists(book: Book): F[Unit] =
+  private def createIfNotExists(book: Book): F[Book] =
     for {
       maybeBook <- bookRepo.retrieveBook(book.isbn)
       _         <- Monad[F].whenA(maybeBook.isEmpty)(createBook(book))
-    } yield ()
+    } yield maybeBook.getOrElse(book)
 
   private def createBook(book: Book): F[Unit] =
     for {
@@ -59,6 +69,17 @@ class BookManagementServiceImpl[F[_]: Monad] private (
 }
 
 object BookManagementServiceImpl {
-  def apply[F[_]: Monad](bookRepo: BookRepository[F], clock: Clock[F]) =
+  def apply[F[_]](bookRepo: BookRepository[F], clock: Clock[F])(implicit
+      ev: MonadError[F, Throwable]
+  ) =
     new BookManagementServiceImpl(bookRepo, clock)
+}
+
+case class BookAlreadyBeingReadError(book: Book) extends Throwable {
+  override def getMessage = show"The book $book is already being read!"
+}
+
+case class BookAlreadyExistsError(book: Book) extends Throwable {
+  override def getMessage =
+    show"A book with isbn ${book.isbn} already exists: $book!"
 }
