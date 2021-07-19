@@ -5,9 +5,9 @@ import cats.effect.{IO, Resource}
 import cats.implicits._
 import weaver._
 
+import fin.Constants
 import fin.Types._
 import fin.implicits._
-import fin.Constants
 
 object CollectionServiceImplTest extends IOSuite {
 

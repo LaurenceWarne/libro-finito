@@ -91,6 +91,30 @@ object SqliteBookRepositoryTest extends SqliteSuite {
     } yield expect(maybeRead.exists(_.isEmpty))
   }
 
+  test("retrieveBook retrieves all parts of book") {
+    val bookToUse          = book.copy(isbn = "megabook")
+    val rating             = 3
+    val startedReadingDate = Date.valueOf("2020-03-28")
+    for {
+      _         <- repo.createBook(bookToUse, date)
+      _         <- repo.rateBook(bookToUse, rating)
+      _         <- repo.finishReading(bookToUse, date)
+      _         <- repo.startReading(bookToUse, startedReadingDate)
+      maybeBook <- repo.retrieveBook(bookToUse.isbn)
+    } yield expect(
+      maybeBook.exists(
+        _ === bookToUse.copy(userData =
+          UserData(
+            rating = rating.some,
+            startedReading =
+              Instant.ofEpochMilli(startedReadingDate.getTime).some,
+            lastRead = Instant.ofEpochMilli(date.getTime).some
+          )
+        )
+      )
+    )
+  }
+
   private def retrieveRating(isbn: String): IO[Option[Int]] =
     fr"SELECT rating FROM rated_books WHERE isbn=$isbn".stripMargin
       .query[Int]

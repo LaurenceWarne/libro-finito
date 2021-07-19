@@ -1,12 +1,11 @@
 package fin.service
 
 import cats.effect.concurrent.Ref
-import cats.effect.{IO, Resource}
+import cats.effect.{Clock, IO, Resource}
 import weaver._
 
-import fin.Types._
-import cats.effect.Clock
 import fin.Constants
+import fin.Types._
 import fin.persistence.BookRepository
 
 object BookManagementServiceImplTest extends IOSuite {

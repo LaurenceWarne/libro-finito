@@ -1,6 +1,7 @@
 package fin.persistence
 
 import java.sql.Date
+import java.time.Instant
 
 import cats.effect.Sync
 import cats.implicits._
@@ -9,19 +10,15 @@ import doobie.implicits._
 import doobie.implicits.javasql._
 import doobie.util.transactor.Transactor
 
-import fin.Constants
 import fin.Types._
-
-import BookFragments._
 
 class SqliteBookRepository[F[_]: Sync] private (
     xa: Transactor[F]
 ) extends BookRepository[F] {
 
   override def retrieveBook(isbn: String): F[Option[Book]] =
-    fr"""
-       |SELECT title, authors, description, isbn, thumbnail_uri
-       |FROM books WHERE isbn=$isbn""".stripMargin
+    BookFragments
+      .retrieveBook(isbn)
       .query[BookRow]
       .option
       .transact(xa)
@@ -30,25 +27,31 @@ class SqliteBookRepository[F[_]: Sync] private (
       .value
 
   override def createBook(book: Book, date: Date): F[Unit] =
-    insert(book, date).update.run.transact(xa).void
+    BookFragments.insert(book, date).update.run.transact(xa).void
 
   override def rateBook(book: Book, rating: Int): F[Unit] =
-    insertRating(book.isbn, rating).update.run.transact(xa).void
+    BookFragments.insertRating(book.isbn, rating).update.run.transact(xa).void
 
   override def startReading(book: Book, date: Date): F[Unit] =
-    insertCurrentlyReading(book.isbn, date).update.run.transact(xa).void
+    BookFragments
+      .insertCurrentlyReading(book.isbn, date)
+      .update
+      .run
+      .transact(xa)
+      .void
 
   override def finishReading(book: Book, date: Date): F[Unit] = {
     val transaction =
       for {
         maybeStarted <-
-          retrieveStartedFromCurrentlyReading(book.isbn)
+          BookFragments
+            .retrieveStartedFromCurrentlyReading(book.isbn)
             .query[Date]
             .option
         _ <- maybeStarted.traverse { _ =>
-          deleteCurrentlyReading(book.isbn).update.run
+          BookFragments.deleteCurrentlyReading(book.isbn).update.run
         }
-        _ <- insertRead(book.isbn, maybeStarted, date).update.run
+        _ <- BookFragments.insertRead(book.isbn, maybeStarted, date).update.run
       } yield ()
     transaction.transact(xa)
   }
@@ -61,6 +64,30 @@ object SqliteBookRepository {
 }
 
 object BookFragments {
+
+  val lastRead: Fragment =
+    fr"""
+       |SELECT isbn, MAX(finished) AS finished
+       |FROM read_books
+       |GROUP BY isbn""".stripMargin
+
+  def retrieveBook(isbn: String): Fragment =
+    fr"""
+       |SELECT 
+       |  title,
+       |  authors,
+       |  description,
+       |  b.isbn,
+       |  thumbnail_uri,
+       |  added,
+       |  cr.started,
+       |  lr.finished,
+       |  r.rating
+       |FROM books b
+       |LEFT JOIN currently_reading_books cr ON b.isbn = cr.isbn
+       |LEFT JOIN (${lastRead}) lr ON b.isbn = lr.isbn
+       |LEFT JOIN rated_books r ON b.isbn = r.isbn
+       |WHERE b.isbn=$isbn""".stripMargin
 
   def retrieveByIsbn(isbn: String): Fragment =
     fr"select * from books WHERE isbn=$isbn"
@@ -119,7 +146,11 @@ case class BookRow(
     authors: String,
     description: String,
     isbn: String,
-    thumbnailUri: String
+    thumbnailUri: String,
+    maybeAdded: Option[Long],
+    maybeStarted: Option[Long],
+    maybeFinished: Option[Long],
+    maybeRating: Option[Int]
 ) {
   def toBook: Book =
     Book(
@@ -128,6 +159,10 @@ case class BookRow(
       description,
       isbn,
       thumbnailUri,
-      Constants.emptyUserData
+      UserData(
+        maybeRating,
+        maybeStarted.map(Instant.ofEpochMilli(_)),
+        maybeFinished.map(Instant.ofEpochMilli(_))
+      )
     )
 }

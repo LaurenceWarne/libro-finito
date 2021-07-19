@@ -1,7 +1,7 @@
 package fin.persistence
 
 import java.sql.Date
-import java.time.LocalDate
+import java.time.{Instant, LocalDate}
 
 import scala.concurrent.duration.DAYS
 
@@ -16,7 +16,6 @@ import doobie.util.transactor.Transactor
 
 import fin.SortConversions
 import fin.Types._
-import java.time.Instant
 
 class SqliteCollectionRepository[F[_]: Sync] private (
     xa: Transactor[F],
@@ -129,12 +128,6 @@ object Fragments {
 
   implicit val sortPut: Put[Sort] = Put[String].contramap(_.toString)
 
-  val lastRead =
-    fr"""
-       |SELECT isbn, MAX(finished) AS finished
-       |FROM read_books
-       |GROUP BY isbn""".stripMargin
-
   val retrieveCollections =
     fr"""
        |SELECT 
@@ -149,11 +142,11 @@ object Fragments {
        |  cr.started,
        |  lr.finished,
        |  r.rating
-       |FROM collections AS c
-       |LEFT JOIN collection_books AS cb ON c.name = cb.collection_name
-       |LEFT JOIN books AS b ON cb.isbn = b.isbn
+       |FROM collections c
+       |LEFT JOIN collection_books cb ON c.name = cb.collection_name
+       |LEFT JOIN books b ON cb.isbn = b.isbn
        |LEFT JOIN currently_reading_books cr ON b.isbn = cr.isbn
-       |LEFT JOIN (${lastRead}) lr ON b.isbn = lr.isbn
+       |LEFT JOIN (${BookFragments.lastRead}) lr ON b.isbn = lr.isbn
        |LEFT JOIN rated_books r ON b.isbn = r.isbn""".stripMargin
 
   def fromName(name: String): Fragment =
