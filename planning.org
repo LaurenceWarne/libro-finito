@@ -35,6 +35,7 @@
 *** DONE Get better errors than "Effect Failure"
 *** TODO Caching middleware?
 *** TODO Add error classes for better testing than ~isLeft~
+*** TODO Add typeclass to put objects into ~Bindings~
 
 ** Bugs
 *** TODO Adding the same book to a collection results in an uhelpful sql error
