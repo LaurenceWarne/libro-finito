@@ -13,7 +13,7 @@ import org.http4s.server.blaze.BlazeServerBuilder
 import zio.Runtime
 
 import fin.config._
-import fin.persistence.{DbProperties, FlywaySetup, SqliteCollectionRepository}
+import fin.persistence._
 import fin.service._
 
 object Main extends IOApp {
@@ -39,10 +39,12 @@ object Main extends IOApp {
             )
             clock          = Clock[IO]
             collectionRepo = SqliteCollectionRepository[IO](xa, clock)
+            bookRepo       = SqliteBookRepository[IO](xa)
             implicit0(logger: Logger[IO]) <- Slf4jLogger.create[IO]
             _                             <- logger.debug("Creating services...")
-            bookInfoService   = GoogleBookInfoService[IO](client)
-            collectionService = CollectionServiceImpl(collectionRepo)
+            bookInfoService      = GoogleBookInfoService[IO](client)
+            collectionService    = CollectionServiceImpl(collectionRepo)
+            bookManagmentService = BookManagementServiceImpl(bookRepo, clock)
             wrappedCollectionService <- SpecialCollectionSetup.setup(
               collectionService,
               config.specialCollections
@@ -50,6 +52,7 @@ object Main extends IOApp {
             _ <- logger.debug("Bootstrapping caliban...")
             interpreter <- CalibanSetup.interpreter[IO](
               bookInfoService,
+              bookManagmentService,
               wrappedCollectionService
             )
             server <-

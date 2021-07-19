@@ -7,12 +7,13 @@ import cats.effect.Effect
 import cats.implicits._
 
 import fin.Operations._
-import fin.service.{BookInfoService, CollectionService}
+import fin.service.{BookInfoService, BookManagementService, CollectionService}
 
 object CalibanSetup {
 
   def interpreter[F[_]: Effect](
       bookInfoService: BookInfoService[F],
+      bookManagementService: BookManagementService[F],
       collectionService: CollectionService[F]
   )(implicit
       runtime: zio.Runtime[Any]
@@ -29,10 +30,10 @@ object CalibanSetup {
       args => collectionService.updateCollection(args),
       args => collectionService.addBookToCollection(args),
       args => collectionService.removeBookFromCollection(args).map(_ => None),
-      _ => ???,
-      _ => ???,
-      _ => ???,
-      _ => ???
+      args => bookManagementService.startReading(args),
+      args => bookManagementService.finishReading(args),
+      args => bookManagementService.rateBook(args),
+      args => bookManagementService.createBook(args)
     )
     val api = GraphQL.graphQL(RootResolver(queries, mutations))
     api.interpreterAsync[F].map(withErrors(_))

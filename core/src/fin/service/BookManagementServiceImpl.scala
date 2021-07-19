@@ -20,13 +20,13 @@ class BookManagementServiceImpl[F[_]] private (
 )(implicit ev: MonadError[F, Throwable])
     extends BookManagementService[F] {
 
-  override def createBook(args: MutationsCreateBookArgs): F[Unit] =
+  override def createBook(args: MutationsCreateBookArgs): F[Book] =
     for {
       maybeBook <- bookRepo.retrieveBook(args.book.isbn)
       _ <- maybeBook.fold(createBook(args.book)) { book =>
         MonadError[F, Throwable].raiseError(BookAlreadyExistsError(book))
       }
-    } yield ()
+    } yield args.book
 
   override def rateBook(args: MutationsRateBookArgs): F[Book] =
     for {
