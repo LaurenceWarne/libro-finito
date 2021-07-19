@@ -12,6 +12,7 @@ import cats.{Monad, MonadError}
 import fin.Types._
 import fin.implicits._
 import fin.persistence.BookRepository
+import fin.persistence.DateConversions._
 
 class BookManagementServiceImpl[F[_]] private (
     bookRepo: BookRepository[F],
@@ -31,7 +32,9 @@ class BookManagementServiceImpl[F[_]] private (
     for {
       _ <- createIfNotExists(args.book)
       _ <- bookRepo.rateBook(args.book, args.rating)
-    } yield args.book
+    } yield args.book.copy(userData =
+      args.book.userData.copy(rating = args.rating.some)
+    )
 
   override def startReading(args: MutationsStartReadingArgs): F[Book] =
     for {
@@ -39,16 +42,20 @@ class BookManagementServiceImpl[F[_]] private (
       _ <- Monad[F].whenA(book.userData.startedReading.nonEmpty) {
         MonadError[F, Throwable].raiseError(BookAlreadyBeingReadError(book))
       }
-      date <- getDate
+      date <- args.date.fold(getDate)(instantToDate(_).pure[F])
       _    <- bookRepo.startReading(args.book, date)
-    } yield args.book
+    } yield args.book.copy(userData =
+      args.book.userData.copy(startedReading = dateToInstant(date).some)
+    )
 
   override def finishReading(args: MutationsFinishReadingArgs): F[Book] =
     for {
       _    <- createIfNotExists(args.book)
-      date <- getDate
+      date <- args.date.fold(getDate)(instantToDate(_).pure[F])
       _    <- bookRepo.finishReading(args.book, date)
-    } yield args.book
+    } yield args.book.copy(userData =
+      args.book.userData.copy(lastRead = dateToInstant(date).some)
+    )
 
   private def createIfNotExists(book: Book): F[Book] =
     for {
