@@ -90,6 +90,18 @@ object SqliteBookRepositoryTest extends SqliteSuite {
     } yield expect(maybeRead.exists(_.isEmpty))
   }
 
+  test(
+    "finishReading ignores duplicate entries"
+  ) {
+    val finishedDate = Date.valueOf("2020-03-24")
+    val bookToFinish = book.copy(isbn = "finished-duplicated")
+    for {
+      _        <- repo.createBook(bookToFinish, date)
+      _        <- repo.finishReading(bookToFinish, finishedDate)
+      response <- repo.finishReading(bookToFinish, finishedDate).attempt
+    } yield expect(response.isRight)
+  }
+
   test("retrieveBook retrieves all parts of book") {
     val bookToUse          = book.copy(isbn = "megabook")
     val rating             = 3

@@ -90,10 +90,10 @@ object BookFragments {
        |WHERE b.isbn=$isbn""".stripMargin
 
   def retrieveByIsbn(isbn: String): Fragment =
-    fr"select * from books WHERE isbn=$isbn"
+    fr"SELECT * from books WHERE isbn=$isbn"
 
   def checkIsbn(isbn: String): Fragment =
-    fr"select isbn from books WHERE isbn=$isbn"
+    fr"SELECT isbn from books WHERE isbn=$isbn"
 
   def insert(book: BookInput, date: Date): Fragment =
     fr"""
@@ -130,7 +130,7 @@ object BookFragments {
       finished: Date
   ): Fragment =
     fr"""
-       |INSERT INTO read_books (isbn, started, finished)
+       |INSERT OR IGNORE INTO read_books (isbn, started, finished)
        |VALUES ($isbn, $maybeStarted, $finished)""".stripMargin
 
   def insertRating(isbn: String, rating: Int): Fragment =
