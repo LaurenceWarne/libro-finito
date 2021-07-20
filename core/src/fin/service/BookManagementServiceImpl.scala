@@ -1,9 +1,9 @@
 package fin.service
 
 import java.sql.Date
-import java.time.LocalDate
+import java.time.Instant
 
-import scala.concurrent.duration.DAYS
+import scala.concurrent.duration.MILLISECONDS
 
 import cats.effect.Clock
 import cats.implicits._
@@ -68,8 +68,8 @@ class BookManagementServiceImpl[F[_]] private (
 
   private def getDate: F[Date] =
     clock
-      .monotonic(DAYS)
-      .map(t => Date.valueOf(LocalDate.ofEpochDay(t)))
+      .realTime(MILLISECONDS)
+      .map(t => instantToDate(Instant.ofEpochMilli(t)))
 }
 
 object BookManagementServiceImpl {

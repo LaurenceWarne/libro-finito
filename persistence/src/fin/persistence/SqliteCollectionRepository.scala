@@ -37,7 +37,7 @@ class SqliteCollectionRepository[F[_]: Sync] private (
     for {
       date <-
         clock
-          .monotonic(DAYS)
+          .realTime(DAYS)
           .map(t => Date.valueOf(LocalDate.ofEpochDay(t)))
       _ <- transaction(date).transact(xa)
     } yield ()
