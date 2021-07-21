@@ -123,6 +123,24 @@ object BookManagementServiceImplTest extends IOSuite {
     )
   }
 
+  test("startReading returns lastRead info when applicable") { bookService =>
+    val popularBook = book.copy(isbn = "popular")
+    for {
+      _ <- bookService.createBook(MutationsCreateBookArgs(popularBook))
+      _ <- bookService.finishReading(
+        MutationsFinishReadingArgs(popularBook, None)
+      )
+      book <-
+        bookService.startReading(MutationsStartReadingArgs(popularBook, None))
+    } yield expect(
+      book == toUserBook(
+        popularBook,
+        startedReading = constantTime.some,
+        lastRead = constantTime.some
+      )
+    )
+  }
+
   test("finishReading finishes reading") { bookService =>
     val bookToRead      = book.copy(isbn = "finished")
     val finishedReading = LocalDate.parse("2018-11-30")

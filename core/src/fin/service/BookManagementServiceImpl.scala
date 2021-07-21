@@ -24,9 +24,9 @@ class BookManagementServiceImpl[F[_]] private (
 
   override def rateBook(args: MutationsRateBookArgs): F[UserBook] =
     for {
-      _ <- createIfNotExists(args.book)
-      _ <- bookRepo.rateBook(args.book, args.rating)
-    } yield toUserBook(args.book, rating = args.rating.some)
+      book <- createIfNotExists(args.book)
+      _    <- bookRepo.rateBook(args.book, args.rating)
+    } yield book.copy(rating = args.rating.some)
 
   override def startReading(args: MutationsStartReadingArgs): F[UserBook] =
     for {
@@ -38,14 +38,14 @@ class BookManagementServiceImpl[F[_]] private (
       }
       date <- args.date.fold(Dates.currentDate(clock))(_.pure[F])
       _    <- bookRepo.startReading(args.book, date)
-    } yield toUserBook(args.book, startedReading = date.some)
+    } yield book.copy(startedReading = date.some)
 
   override def finishReading(args: MutationsFinishReadingArgs): F[UserBook] =
     for {
-      _    <- createIfNotExists(args.book)
+      book <- createIfNotExists(args.book)
       date <- args.date.fold(Dates.currentDate(clock))(_.pure[F])
       _    <- bookRepo.finishReading(args.book, date)
-    } yield toUserBook(args.book, lastRead = date.some)
+    } yield book.copy(startedReading = None, lastRead = date.some)
 
   private def createIfNotExists(book: BookInput): F[UserBook] =
     for {
