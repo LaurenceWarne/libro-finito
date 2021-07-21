@@ -1,7 +1,6 @@
 package fin.persistence
 
-import java.sql.Date
-import java.time.{Instant, ZoneId}
+import java.time.LocalDate
 
 import cats.effect.IO
 import cats.implicits._
@@ -14,9 +13,11 @@ import fin.implicits._
 
 object SqliteBookRepositoryTest extends SqliteSuite {
 
-  implicit val dateEq: Eq[Date] = Eq.fromUniversalEquals
-  val repo                      = SqliteBookRepository(xa)
-  val date                      = Date.valueOf("2020-03-20")
+  import BookFragments._
+
+  implicit val dateEq: Eq[LocalDate] = Eq.fromUniversalEquals
+  val repo                           = SqliteBookRepository(xa)
+  val date                           = LocalDate.parse("2020-03-20")
   val book =
     BookInput(
       "title",
@@ -49,11 +50,11 @@ object SqliteBookRepositoryTest extends SqliteSuite {
       _          <- repo.createBook(bookToRead, date)
       _          <- repo.startReading(bookToRead, date)
       maybeEpoch <- retrieveReading(bookToRead.isbn)
-    } yield expect(maybeEpoch.exists(toDate(_) === date))
+    } yield expect(maybeEpoch.exists(_ === date))
   }
 
   test("finishReading finishes book reading") {
-    val finishedDate = Date.valueOf("2020-03-24")
+    val finishedDate = LocalDate.parse("2020-03-24")
     val bookToFinish = book.copy(isbn = "finished")
     for {
       _          <- repo.createBook(bookToFinish, date)
@@ -61,13 +62,13 @@ object SqliteBookRepositoryTest extends SqliteSuite {
       _          <- repo.finishReading(bookToFinish, finishedDate)
       maybeDates <- retrieveFinished(bookToFinish.isbn)
       (maybeStarted, maybeFinished) = maybeDates.unzip
-    } yield expect(maybeStarted.flatten.exists(toDate(_) === date)) and expect(
-      maybeFinished.exists(toDate(_) === finishedDate)
+    } yield expect(maybeStarted.flatten.exists(_ === date)) and expect(
+      maybeFinished.exists(_ === finishedDate)
     )
   }
 
   test("finishReading deletes row from currently_reading table") {
-    val finishedDate = Date.valueOf("2020-03-24")
+    val finishedDate = LocalDate.parse("2020-03-24")
     val bookToFinish = book.copy(isbn = "finished-and-delete")
     for {
       _         <- repo.createBook(bookToFinish, date)
@@ -80,7 +81,7 @@ object SqliteBookRepositoryTest extends SqliteSuite {
   test(
     "finishReading sets started to null when no existing currently reading"
   ) {
-    val finishedDate = Date.valueOf("2020-03-24")
+    val finishedDate = LocalDate.parse("2020-03-24")
     val bookToFinish = book.copy(isbn = "finished-no-reading")
     for {
       _         <- repo.createBook(bookToFinish, date)
@@ -93,7 +94,7 @@ object SqliteBookRepositoryTest extends SqliteSuite {
   test(
     "finishReading ignores duplicate entries"
   ) {
-    val finishedDate = Date.valueOf("2020-03-24")
+    val finishedDate = LocalDate.parse("2020-03-24")
     val bookToFinish = book.copy(isbn = "finished-duplicated")
     for {
       _        <- repo.createBook(bookToFinish, date)
@@ -105,7 +106,7 @@ object SqliteBookRepositoryTest extends SqliteSuite {
   test("retrieveBook retrieves all parts of book") {
     val bookToUse          = book.copy(isbn = "megabook")
     val rating             = 3
-    val startedReadingDate = Date.valueOf("2020-03-28")
+    val startedReadingDate = LocalDate.parse("2020-03-28")
     for {
       _         <- repo.createBook(bookToUse, date)
       _         <- repo.rateBook(bookToUse, rating)
@@ -116,9 +117,8 @@ object SqliteBookRepositoryTest extends SqliteSuite {
       maybeBook.exists(
         _ === toUserBook(bookToUse).copy(
           rating = rating.some,
-          startedReading =
-            Instant.ofEpochMilli(startedReadingDate.getTime).some,
-          lastRead = Instant.ofEpochMilli(date.getTime).some
+          startedReading = startedReadingDate.some,
+          lastRead = date.some
         )
       )
     )
@@ -130,20 +130,17 @@ object SqliteBookRepositoryTest extends SqliteSuite {
       .option
       .transact(xa)
 
-  private def retrieveReading(isbn: String): IO[Option[Long]] =
+  private def retrieveReading(isbn: String): IO[Option[LocalDate]] =
     fr"SELECT started FROM currently_reading_books WHERE isbn=$isbn"
-      .query[Long]
+      .query[LocalDate]
       .option
       .transact(xa)
 
-  private def retrieveFinished(isbn: String): IO[Option[(Option[Long], Long)]] =
+  private def retrieveFinished(
+      isbn: String
+  ): IO[Option[(Option[LocalDate], LocalDate)]] =
     fr"SELECT started, finished FROM read_books WHERE isbn=$isbn"
-      .query[(Option[Long], Long)]
+      .query[(Option[LocalDate], LocalDate)]
       .option
       .transact(xa)
-
-  private def toDate(epoch: Long): Date =
-    Date.valueOf(
-      Instant.ofEpochMilli(epoch).atZone(ZoneId.systemDefault()).toLocalDate()
-    )
 }

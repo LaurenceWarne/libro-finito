@@ -3,6 +3,8 @@ schema {
   mutation: Mutations
 }
 
+scalar Date
+
 enum Sort {
   DateAdded
   Title
@@ -25,8 +27,8 @@ type UserBook {
   isbn: String!
   thumbnailUri: String!
   rating: Int
-  startedReading: DateTime
-  lastRead: DateTime
+  startedReading: Date
+  lastRead: Date
 }
 
 type Collection {
@@ -55,8 +57,9 @@ type Mutations {
   ): Collection!
   addBook(collection: String!, book: BookInput!): Collection!
   removeBook(collection: String!, isbn: String!): Boolean
-  startReading(book: BookInput!, date: DateTime): UserBook!
-  finishReading(book: BookInput!, date: DateTime): UserBook!
+  startReading(book: BookInput!, date: Date): UserBook!
+  finishReading(book: BookInput!, date: Date): UserBook!
   rateBook(book: BookInput!, rating: Int!): UserBook!
   createBook(book: BookInput!): UserBook!
+  deleteBook(book: BookInput!): UserBook!
 }

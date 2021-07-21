@@ -1,10 +1,5 @@
 package fin.service
 
-import java.sql.Date
-import java.time.Instant
-
-import scala.concurrent.duration.MILLISECONDS
-
 import cats.effect.Clock
 import cats.implicits._
 import cats.{Monad, MonadError}
@@ -12,15 +7,13 @@ import cats.{Monad, MonadError}
 import fin.BookConversions._
 import fin.Types._
 import fin.implicits._
-import fin.persistence.BookRepository
-import fin.persistence.DateConversions._
+import fin.persistence.{BookRepository, Dates}
 
 class BookManagementServiceImpl[F[_]] private (
     bookRepo: BookRepository[F],
     clock: Clock[F]
 )(implicit ev: MonadError[F, Throwable])
     extends BookManagementService[F] {
-
   override def createBook(args: MutationsCreateBookArgs): F[UserBook] =
     for {
       maybeBook <- bookRepo.retrieveBook(args.book.isbn)
@@ -43,16 +36,16 @@ class BookManagementServiceImpl[F[_]] private (
           BookAlreadyBeingReadError(args.book)
         )
       }
-      date <- args.date.fold(getDate)(instantToDate(_).pure[F])
+      date <- args.date.fold(Dates.currentDate(clock))(_.pure[F])
       _    <- bookRepo.startReading(args.book, date)
-    } yield toUserBook(args.book, startedReading = dateToInstant(date).some)
+    } yield toUserBook(args.book, startedReading = date.some)
 
   override def finishReading(args: MutationsFinishReadingArgs): F[UserBook] =
     for {
       _    <- createIfNotExists(args.book)
-      date <- args.date.fold(getDate)(instantToDate(_).pure[F])
+      date <- args.date.fold(Dates.currentDate(clock))(_.pure[F])
       _    <- bookRepo.finishReading(args.book, date)
-    } yield toUserBook(args.book, lastRead = dateToInstant(date).some)
+    } yield toUserBook(args.book, lastRead = date.some)
 
   private def createIfNotExists(book: BookInput): F[UserBook] =
     for {
@@ -62,21 +55,15 @@ class BookManagementServiceImpl[F[_]] private (
 
   private def createBook(book: BookInput): F[Unit] =
     for {
-      date <- getDate
+      date <- Dates.currentDate(clock)
       _    <- bookRepo.createBook(book, date)
     } yield ()
-
-  private def getDate: F[Date] =
-    clock
-      .realTime(MILLISECONDS)
-      .map(t => instantToDate(Instant.ofEpochMilli(t)))
 }
 
 object BookManagementServiceImpl {
   def apply[F[_]](bookRepo: BookRepository[F], clock: Clock[F])(implicit
       ev: MonadError[F, Throwable]
-  ) =
-    new BookManagementServiceImpl(bookRepo, clock)
+  ) = new BookManagementServiceImpl(bookRepo, clock)
 }
 
 case class BookAlreadyBeingReadError(book: BookInput) extends Throwable {

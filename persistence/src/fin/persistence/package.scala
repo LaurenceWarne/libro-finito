@@ -1,8 +1,13 @@
 package fin.persistence
 
-import java.sql.Date
-import java.time.{Instant, ZoneId}
+import java.time.LocalDate
 import java.util.Properties
+
+import scala.concurrent.duration.DAYS
+
+import cats.Functor
+import cats.effect.Clock
+import cats.implicits._
 
 object DbProperties {
 
@@ -13,15 +18,10 @@ object DbProperties {
   }
 }
 
-object DateConversions {
-  def instantToDate(instant: Instant): Date =
-    Date.valueOf(
-      Instant
-        .ofEpochMilli(instant.toEpochMilli)
-        .atZone(ZoneId.systemDefault())
-        .toLocalDate()
-    )
+object Dates {
 
-  def dateToInstant(date: Date): Instant =
-    Instant.ofEpochMilli(date.getTime)
+  def currentDate[F[_]: Functor](clock: Clock[F]): F[LocalDate] =
+    clock
+      .realTime(DAYS)
+      .map(LocalDate.ofEpochDay(_))
 }

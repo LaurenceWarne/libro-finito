@@ -1,16 +1,12 @@
 package fin.persistence
 
-import java.sql.Date
-import java.time.{Instant, LocalDate}
-
-import scala.concurrent.duration.DAYS
+import java.time.LocalDate
 
 import cats.Monad
 import cats.effect.{Clock, Sync}
 import cats.implicits._
 import doobie._
 import doobie.implicits._
-import doobie.implicits.javasql._
 import doobie.util.fragment.Fragment
 import doobie.util.transactor.Transactor
 
@@ -22,11 +18,13 @@ class SqliteCollectionRepository[F[_]: Sync] private (
     clock: Clock[F]
 ) extends CollectionRepository[F] {
 
+  import BookFragments._
+
   override def addBookToCollection(
       collectionName: String,
       book: BookInput
   ): F[Unit] = {
-    val transaction: Date => ConnectionIO[Unit] = date =>
+    val transaction: LocalDate => ConnectionIO[Unit] = date =>
       for {
         exists <- BookFragments.retrieveByIsbn(book.isbn).query[String].option
         _ <- Monad[ConnectionIO].whenA(exists.isEmpty) {
@@ -35,11 +33,8 @@ class SqliteCollectionRepository[F[_]: Sync] private (
         _ <- BookFragments.addToCollection(collectionName, book.isbn).update.run
       } yield ()
     for {
-      date <-
-        clock
-          .realTime(DAYS)
-          .map(t => Date.valueOf(LocalDate.ofEpochDay(t)))
-      _ <- transaction(date).transact(xa)
+      date <- Dates.currentDate(clock)
+      _    <- transaction(date).transact(xa)
     } yield ()
   }
 
@@ -188,9 +183,9 @@ case class CollectionBookRow(
     maybeAuthors: Option[String],
     maybeDescription: Option[String],
     maybeThumbnailUri: Option[String],
-    maybeAdded: Option[Date],
-    maybeStarted: Option[Long],
-    maybeFinished: Option[Long],
+    maybeAdded: Option[LocalDate],
+    maybeStarted: Option[LocalDate],
+    maybeFinished: Option[LocalDate],
     maybeRating: Option[Int]
 ) {
   def toBook: Option[UserBook] = {
@@ -207,8 +202,8 @@ case class CollectionBookRow(
       isbn = isbn,
       thumbnailUri = thumbnailUri,
       maybeRating,
-      maybeStarted.map(Instant.ofEpochMilli(_)),
-      maybeFinished.map(Instant.ofEpochMilli(_))
+      maybeStarted,
+      maybeFinished
     )
   }
 }

@@ -58,7 +58,7 @@ object api extends LibroFinitoModuleNoLinting with CalibanSchemaModule {
   def schemaPath         = "schema.gql"
   def packageName        = "fin"
   def abstractEffectType = true
-  def scalarMappings     = Map("DateTime" -> "java.time.Instant")
+  def scalarMappings     = Map("Date" -> "java.time.LocalDate")
 
   def ivyDeps =
     Agg(

@@ -1,13 +1,11 @@
 package fin.persistence
 
-import java.sql.Date
-import java.time.Instant
+import java.time.LocalDate
 
 import cats.effect.Sync
 import cats.implicits._
 import doobie._
 import doobie.implicits._
-import doobie.implicits.javasql._
 import doobie.util.transactor.Transactor
 
 import fin.Types._
@@ -15,6 +13,8 @@ import fin.Types._
 class SqliteBookRepository[F[_]: Sync] private (
     xa: Transactor[F]
 ) extends BookRepository[F] {
+
+  import BookFragments._
 
   override def retrieveBook(isbn: String): F[Option[UserBook]] =
     BookFragments
@@ -26,13 +26,13 @@ class SqliteBookRepository[F[_]: Sync] private (
       .map(_.toBook)
       .value
 
-  override def createBook(book: BookInput, date: Date): F[Unit] =
+  override def createBook(book: BookInput, date: LocalDate): F[Unit] =
     BookFragments.insert(book, date).update.run.transact(xa).void
 
   override def rateBook(book: BookInput, rating: Int): F[Unit] =
     BookFragments.insertRating(book.isbn, rating).update.run.transact(xa).void
 
-  override def startReading(book: BookInput, date: Date): F[Unit] =
+  override def startReading(book: BookInput, date: LocalDate): F[Unit] =
     BookFragments
       .insertCurrentlyReading(book.isbn, date)
       .update
@@ -40,13 +40,13 @@ class SqliteBookRepository[F[_]: Sync] private (
       .transact(xa)
       .void
 
-  override def finishReading(book: BookInput, date: Date): F[Unit] = {
+  override def finishReading(book: BookInput, date: LocalDate): F[Unit] = {
     val transaction =
       for {
         maybeStarted <-
           BookFragments
             .retrieveStartedFromCurrentlyReading(book.isbn)
-            .query[Date]
+            .query[LocalDate]
             .option
         _ <- maybeStarted.traverse { _ =>
           BookFragments.deleteCurrentlyReading(book.isbn).update.run
@@ -64,6 +64,12 @@ object SqliteBookRepository {
 }
 
 object BookFragments {
+
+  implicit val localDatePut: Put[LocalDate] =
+    Put[String].contramap(_.toString)
+
+  implicit val localDateGet: Get[LocalDate] =
+    Get[String].map(LocalDate.parse(_))
 
   val lastRead: Fragment =
     fr"""
@@ -95,7 +101,7 @@ object BookFragments {
   def checkIsbn(isbn: String): Fragment =
     fr"SELECT isbn from books WHERE isbn=$isbn"
 
-  def insert(book: BookInput, date: Date): Fragment =
+  def insert(book: BookInput, date: LocalDate): Fragment =
     fr"""
        |INSERT INTO books VALUES (
        |  ${book.isbn},
@@ -109,7 +115,7 @@ object BookFragments {
   def addToCollection(collectionName: String, isbn: String): Fragment =
     fr"INSERT INTO collection_books VALUES ($collectionName, $isbn)"
 
-  def insertCurrentlyReading(isbn: String, start: Date): Fragment =
+  def insertCurrentlyReading(isbn: String, start: LocalDate): Fragment =
     fr"""
        |INSERT INTO currently_reading_books (isbn, started)
        |VALUES ($isbn, $start)""".stripMargin
@@ -126,8 +132,8 @@ object BookFragments {
 
   def insertRead(
       isbn: String,
-      maybeStarted: Option[Date],
-      finished: Date
+      maybeStarted: Option[LocalDate],
+      finished: LocalDate
   ): Fragment =
     fr"""
        |INSERT OR IGNORE INTO read_books (isbn, started, finished)
@@ -147,9 +153,9 @@ case class BookRow(
     description: String,
     isbn: String,
     thumbnailUri: String,
-    maybeAdded: Option[Long],
-    maybeStarted: Option[Long],
-    maybeFinished: Option[Long],
+    maybeAdded: Option[LocalDate],
+    maybeStarted: Option[LocalDate],
+    maybeFinished: Option[LocalDate],
     maybeRating: Option[Int]
 ) {
   def toBook: UserBook =
@@ -160,7 +166,7 @@ case class BookRow(
       isbn,
       thumbnailUri,
       maybeRating,
-      maybeStarted.map(Instant.ofEpochMilli(_)),
-      maybeFinished.map(Instant.ofEpochMilli(_))
+      maybeStarted,
+      maybeFinished
     )
 }

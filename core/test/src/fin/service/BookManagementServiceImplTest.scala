@@ -1,6 +1,6 @@
 package fin.service
 
-import java.time.Instant
+import java.time.{LocalDate, ZoneId}
 
 import scala.concurrent.duration.{MILLISECONDS, TimeUnit}
 
@@ -16,7 +16,7 @@ import fin.implicits._
 
 object BookManagementServiceImplTest extends IOSuite {
 
-  val constantTime = Instant.parse("2021-11-30T00:00:00.00Z")
+  val constantTime = LocalDate.parse("2021-11-30")
 
   val book =
     BookInput(
@@ -33,7 +33,11 @@ object BookManagementServiceImplTest extends IOSuite {
       val repo = new InMemoryBookRepository(ref)
       BookManagementServiceImpl(
         repo,
-        TestClock[IO](constantTime.toEpochMilli)
+        TestClock[IO](
+          constantTime
+            .atStartOfDay(ZoneId.systemDefault())
+            .toEpochSecond * 1000L
+        )
       )
     })
 
@@ -76,7 +80,7 @@ object BookManagementServiceImplTest extends IOSuite {
 
   test("startReading starts reading") { bookService =>
     val bookToRead     = book.copy(isbn = "read")
-    val startedReading = Instant.parse("2018-11-30T00:00:00.00Z")
+    val startedReading = LocalDate.parse("2018-11-30")
     for {
       _ <- bookService.createBook(MutationsCreateBookArgs(bookToRead))
       updatedBook <- bookService.startReading(
@@ -121,7 +125,7 @@ object BookManagementServiceImplTest extends IOSuite {
 
   test("finishReading finishes reading") { bookService =>
     val bookToRead      = book.copy(isbn = "finished")
-    val finishedReading = Instant.parse("2018-11-30T00:00:00.00Z")
+    val finishedReading = LocalDate.parse("2018-11-30")
     for {
       _ <- bookService.createBook(MutationsCreateBookArgs(bookToRead))
       updatedBook <- bookService.finishReading(
