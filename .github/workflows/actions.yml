@@ -37,6 +37,9 @@ jobs:
       ####################
       # GH Release Stuff #
       ####################
+      - name: Assembly
+        if: startsWith(github.ref, 'refs/tags/')
+        run: ./mill finito.main.assembly
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
