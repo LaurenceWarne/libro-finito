@@ -11,107 +11,109 @@ import com.goyeau.mill.scalafix.ScalafixModule
 import coursier.maven.MavenRepository
 import calibanSchemaGen.CalibanSchemaModule
 
-object main extends LibroFinitoModule with BuildInfo {
+object finito extends Module {
 
-  def version = "0.0.1"
+  object main extends LibroFinitoModule with BuildInfo {
 
-  def buildInfoPackageName = Some("fin")
+    def version = "0.0.1"
 
-  def buildInfoMembers: T[Map[String, String]] =
-    T {
-      Map(
-        "version"      -> version,
-        "scalaVersion" -> scalaVersion()
+    def buildInfoPackageName = Some("fin")
+
+    def buildInfoMembers: T[Map[String, String]] =
+      T {
+        Map(
+          "version"      -> version,
+          "scalaVersion" -> scalaVersion()
+        )
+      }
+
+    def moduleDeps = Seq(api, core, persistence)
+
+    //def forkArgs   = Seq("-Xmx100m")
+
+    def scalacPluginIvyDeps =
+      super.scalacPluginIvyDeps() ++ Agg(Deps.Compiler.betterMonadicFor)
+    def ivyDeps =
+      Agg(
+        Deps.betterFiles,
+        Deps.Caliban.cats,
+        Deps.Caliban.core,
+        Deps.Caliban.http4s,
+        Deps.Circe.core,
+        Deps.Circe.generic,
+        Deps.Circe.parser,
+        Deps.Doobie.core,
+        Deps.Http4s.http4sBlazeClient,
+        Deps.Http4s.http4sBlazeServer,
+        Deps.Http4s.http4sDsl,
+        Deps.catsEffect,
+        Deps.catsLogging,
+        Deps.catsLoggingCore,
+        Deps.flyway,
+        Deps.logback,
+        Deps.pureconfig
       )
-    }
+  }
 
-  def moduleDeps = Seq(api, core, persistence)
+  object api extends LibroFinitoModuleNoLinting with CalibanSchemaModule {
 
-  //def forkArgs   = Seq("-Xmx100m")
+    def schemaPath         = "schema.gql"
+    def packageName        = "fin"
+    def abstractEffectType = true
+    def scalarMappings     = Map("Date" -> "java.time.LocalDate")
 
-  def scalacPluginIvyDeps =
-    super.scalacPluginIvyDeps() ++ Agg(Deps.Compiler.betterMonadicFor)
-  def ivyDeps =
-    Agg(
-      Deps.betterFiles,
-      Deps.Caliban.cats,
-      Deps.Caliban.core,
-      Deps.Caliban.http4s,
-      Deps.Circe.core,
-      Deps.Circe.generic,
-      Deps.Circe.parser,
-      Deps.Doobie.core,
-      Deps.Http4s.http4sBlazeClient,
-      Deps.Http4s.http4sBlazeServer,
-      Deps.Http4s.http4sDsl,
-      Deps.catsEffect,
-      Deps.catsLogging,
-      Deps.catsLoggingCore,
-      Deps.flyway,
-      Deps.logback,
-      Deps.pureconfig
-    )
+    def ivyDeps =
+      Agg(
+        Deps.Caliban.core,
+        Deps.Caliban.cats,
+        Deps.catsEffect
+      )
+  }
+
+  object core extends LibroFinitoModule {
+
+    def moduleDeps = Seq(api, persistence)
+
+    def ivyDeps =
+      Agg(
+        Deps.Caliban.cats,
+        Deps.Caliban.core,
+        Deps.Caliban.http4s,
+        Deps.Circe.core,
+        Deps.Circe.generic,
+        Deps.Circe.parser,
+        Deps.enumeratum,
+        Deps.Http4s.http4sBlazeClient,
+        Deps.Http4s.http4sBlazeServer,
+        Deps.Http4s.http4sDsl,
+        Deps.catsEffect,
+        Deps.catsLogging,
+        Deps.luaj
+      )
+
+    object test extends Tests with ScoverageTests with LibroFinitoTest
+  }
+
+  object persistence extends LibroFinitoModule {
+
+    def moduleDeps = Seq(api)
+
+    def ivyDeps =
+      Agg(
+        Deps.betterFiles,
+        Deps.catsEffect,
+        Deps.catsLogging,
+        Deps.Circe.core,
+        Deps.Circe.generic,
+        Deps.Circe.parser,
+        Deps.Doobie.core,
+        Deps.flyway,
+        Deps.sqlite
+      )
+
+    object test extends Tests with ScoverageTests with LibroFinitoTest
+  }
 }
-
-object api extends LibroFinitoModuleNoLinting with CalibanSchemaModule {
-
-  def schemaPath         = "schema.gql"
-  def packageName        = "fin"
-  def abstractEffectType = true
-  def scalarMappings     = Map("Date" -> "java.time.LocalDate")
-
-  def ivyDeps =
-    Agg(
-      Deps.Caliban.core,
-      Deps.Caliban.cats,
-      Deps.catsEffect
-    )
-}
-
-object core extends LibroFinitoModule {
-
-  def moduleDeps = Seq(api, persistence)
-
-  def ivyDeps =
-    Agg(
-      Deps.Caliban.cats,
-      Deps.Caliban.core,
-      Deps.Caliban.http4s,
-      Deps.Circe.core,
-      Deps.Circe.generic,
-      Deps.Circe.parser,
-      Deps.enumeratum,
-      Deps.Http4s.http4sBlazeClient,
-      Deps.Http4s.http4sBlazeServer,
-      Deps.Http4s.http4sDsl,
-      Deps.catsEffect,
-      Deps.catsLogging,
-      Deps.luaj
-    )
-
-  object test extends Tests with ScoverageTests with LibroFinitoTest
-}
-
-object persistence extends LibroFinitoModule {
-
-  def moduleDeps = Seq(api)
-
-  def ivyDeps =
-    Agg(
-      Deps.betterFiles,
-      Deps.catsEffect,
-      Deps.catsLogging,
-      Deps.Circe.core,
-      Deps.Circe.generic,
-      Deps.Circe.parser,
-      Deps.Doobie.core,
-      Deps.flyway,
-      Deps.sqlite
-    )
-
-  object test extends Tests with ScoverageTests with LibroFinitoTest
-}
-
 // TODO use this when https://github.com/com-lihaoyi/mill/pull/1309 is merged
 // object scoverage extends ScoverageReport {
 //   def scalaVersion     = Deps.scalaVersion
