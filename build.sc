@@ -2,32 +2,42 @@
 import $ivy.`com.lihaoyi::mill-contrib-buildinfo:$MILL_VERSION`
 import $ivy.`com.lihaoyi::mill-contrib-scoverage:$MILL_VERSION`
 import $ivy.`com.goyeau::mill-scalafix:0.2.4`
+import $ivy.`com.goyeau::mill-git:0.2.2`
 import $file.plugins.calibanSchemaGen
 import mill._, scalalib._, scalafmt._
+import mill.scalalib.publish._
 import mill.contrib.buildinfo.BuildInfo
 import mill.contrib.scoverage.{ScoverageModule, ScoverageReport}
 import mill.eval.Evaluator
+import com.goyeau.mill.git.GitVersionModule
 import com.goyeau.mill.scalafix.ScalafixModule
 import coursier.maven.MavenRepository
 import calibanSchemaGen.CalibanSchemaModule
 
+val finitoVersion = GitVersionModule.version()
+
 object finito extends Module {
 
   object main extends LibroFinitoModule with BuildInfo {
-
-    def version = "0.0.1"
 
     def buildInfoPackageName = Some("fin")
 
     def buildInfoMembers: T[Map[String, String]] =
       T {
         Map(
-          "version"      -> version,
+          "version"      -> finitoVersion(),
           "scalaVersion" -> scalaVersion()
         )
       }
 
     def moduleDeps = Seq(api, core, persistence)
+
+    def assembly =
+      T {
+        val newPath = T.ctx.dest / s"finito-${finitoVersion()}.jar"
+        os.move(super.assembly().path, newPath)
+        PathRef(newPath)
+      }
 
     //def forkArgs   = Seq("-Xmx100m")
 
