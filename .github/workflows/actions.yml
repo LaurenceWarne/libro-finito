@@ -34,3 +34,14 @@ jobs:
           files: ./out/finito/core/scoverage/xmlReport/dest/scoverage.xml,./out/finito/persistence/scoverage/xmlReport/dest/scoverage.xml #,./out/main/scoverage/xmlReport/dest/scoverage.xml # optional
           flags: unittests # optional
           fail_ci_if_error: true # optional (default = false)
+      ####################
+      # GH Release Stuff #
+      ####################
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            out/finito/main/assembly/dest/*.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
