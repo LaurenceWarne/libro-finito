@@ -43,12 +43,12 @@ class SqliteCollectionRepository[F[_]: Sync] private (
       newName: String,
       preferredSort: Sort
   ): F[Unit] = {
-    Fragments
-      .update(currentName, newName, preferredSort)
-      .update
-      .run
-      .transact(xa)
-      .void
+    val transaction = for {
+      _ <- Fragments.create(newName, preferredSort).update.run
+      _ <- Fragments.updateCollectonBooks(currentName, newName).update.run
+      _ <- Fragments.delete(currentName).update.run
+    } yield ()
+    transaction.transact(xa).void
   }
 
   override def collection(name: String): F[Option[Collection]] =
@@ -164,15 +164,14 @@ object Fragments {
        |WHERE collection_name = $name
        |AND isbn = $isbn""".stripMargin
 
-  def update(
+  def updateCollectonBooks(
       currentName: String,
-      newName: String,
-      preferredSort: Sort
+      newName: String
   ): Fragment =
     fr"""
-       |UPDATE collections 
-       |SET name = $newName, preferred_sort = $preferredSort
-       |WHERE name = $currentName""".stripMargin
+       |UPDATE collection_books
+       |SET collection_name = $newName
+       |WHERE collection_name = $currentName""".stripMargin
 }
 
 case class CollectionBookRow(

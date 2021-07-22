@@ -67,6 +67,25 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
     )
   }
 
+  test(
+    "updateCollection changes collection name and sort for collection with books"
+  ) {
+    val oldName = "old_name with books"
+    val newName = "new_name with books"
+    val oldSort = Sort.DateAdded
+    val newSort = Sort.Title
+    for {
+      _                   <- repo.createCollection(oldName, oldSort)
+      _                   <- repo.addBookToCollection(oldName, book)
+      _                   <- repo.updateCollection(oldName, newName, newSort)
+      retrievedCollection <- repo.collection(newName)
+    } yield expect(
+      retrievedCollection.exists(c =>
+        c === Collection(newName, List(toUserBook(book)), newSort)
+      )
+    )
+  }
+
   test("updateCollection errors if name already exists") {
     val oldName = "old_name_"
     val newName = "new_name_"
