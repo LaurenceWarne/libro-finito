@@ -6,7 +6,6 @@ import cats.implicits._
 
 import fin.BookConversions._
 import fin.Types._
-import fin.implicits._
 import fin.persistence.CollectionRepository
 
 class InMemoryCollectionRepository[F[_]](
@@ -33,11 +32,11 @@ class InMemoryCollectionRepository[F[_]](
       preferredSort: Sort
   ): F[Unit] = {
     for {
-      retrievedCollection <- collectionOrError(currentName)
-      newCollection =
-        retrievedCollection.copy(name = newName, preferredSort = preferredSort)
+      _ <- collectionOrError(currentName)
       _ <- collectionsRef.getAndUpdate(_.map { col =>
-        if (col === retrievedCollection) newCollection else col
+        if (col.name === currentName)
+          col.copy(name = newName, preferredSort = preferredSort)
+        else col
       })
     } yield ()
   }
@@ -47,12 +46,11 @@ class InMemoryCollectionRepository[F[_]](
       book: BookInput
   ): F[Unit] =
     for {
-      retrievedCollection <- collectionOrError(collectionName)
-      newCollection = retrievedCollection.copy(books =
-        toUserBook(book) :: retrievedCollection.books
-      )
+      _ <- collectionOrError(collectionName)
       _ <- collectionsRef.getAndUpdate(_.map { col =>
-        if (col === retrievedCollection) newCollection else col
+        if (col.name === collectionName)
+          col.copy(books = toUserBook(book) :: col.books)
+        else col
       })
     } yield ()
 
@@ -61,12 +59,11 @@ class InMemoryCollectionRepository[F[_]](
       isbn: String
   ): F[Unit] =
     for {
-      retrievedCollection <- collectionOrError(collectionName)
-      newCollection = retrievedCollection.copy(books =
-        retrievedCollection.books.filterNot(_.isbn === isbn)
-      )
+      _ <- collectionOrError(collectionName)
       _ <- collectionsRef.getAndUpdate(_.map { col =>
-        if (col === retrievedCollection) newCollection else col
+        if (col.name === collectionName)
+          col.copy(books = col.books.filterNot(_.isbn === isbn))
+        else col
       })
     } yield ()
 
