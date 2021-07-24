@@ -81,10 +81,10 @@ object CollectionServiceImplTest extends IOSuite {
         MutationsUpdateCollectionArgs(name, None, Sort.Title.some)
       )
       _ <- collectionService.addBookToCollection(
-        MutationsAddBookArgs(name, book)
+        MutationsAddBookArgs(name.some, book)
       )
       _ <- collectionService.addBookToCollection(
-        MutationsAddBookArgs(name, book2)
+        MutationsAddBookArgs(name.some, book2)
       )
       retrievedCollection <-
         collectionService.collection(QueriesCollectionArgs(name))
@@ -104,10 +104,10 @@ object CollectionServiceImplTest extends IOSuite {
         MutationsUpdateCollectionArgs(name, None, Sort.Author.some)
       )
       _ <- collectionService.addBookToCollection(
-        MutationsAddBookArgs(name, book)
+        MutationsAddBookArgs(name.some, book)
       )
       _ <- collectionService.addBookToCollection(
-        MutationsAddBookArgs(name, book2)
+        MutationsAddBookArgs(name.some, book2)
       )
       retrievedCollection <-
         collectionService.collection(QueriesCollectionArgs(name))
@@ -228,7 +228,7 @@ object CollectionServiceImplTest extends IOSuite {
         MutationsCreateCollectionArgs(name, None)
       )
       collection <- collectionService.addBookToCollection(
-        MutationsAddBookArgs(name, book)
+        MutationsAddBookArgs(name.some, book)
       )
     } yield expect(
       collection === Collection(
@@ -246,10 +246,22 @@ object CollectionServiceImplTest extends IOSuite {
         response <-
           collectionService
             .addBookToCollection(
-              MutationsAddBookArgs(name, book)
+              MutationsAddBookArgs(name.some, book)
             )
             .attempt
       } yield expect(response.isLeft)
+  }
+
+  test("addBookToCollection errors when collection not set") {
+    collectionService =>
+      for {
+        response <-
+          collectionService
+            .addBookToCollection(MutationsAddBookArgs(None, book))
+            .attempt
+      } yield expect(
+        response.swap.exists(_ == DefaultCollectionNotSupportedError)
+      )
   }
 
   test("removeBookFromCollection removes book") { collectionService =>
@@ -259,7 +271,7 @@ object CollectionServiceImplTest extends IOSuite {
         MutationsCreateCollectionArgs(name, None)
       )
       _ <- collectionService.addBookToCollection(
-        MutationsAddBookArgs(name, book)
+        MutationsAddBookArgs(name.some, book)
       )
       collection <- collectionService.removeBookFromCollection(
         MutationsRemoveBookArgs(name, book.isbn)

@@ -13,6 +13,7 @@ import fin.service._
 object SpecialCollectionSetup {
   def setup[F[_]: Sync: Logger](
       collectionService: CollectionService[F],
+      defaultCollection: Option[String],
       specialCollections: List[SpecialCollection]
   ): F[CollectionService[F]] =
     for {
@@ -41,6 +42,8 @@ object SpecialCollectionSetup {
           }
       scriptEngineManager <- Sync[F].delay(new ScriptEngineManager)
       wrappedCollectionService = SpecialCollectionService[F](
+        // TODO change constructor to take option
+        defaultCollection.getOrElse("???"),
         collectionService,
         specialCollections.flatMap(_.toCollectionHooks),
         scriptEngineManager

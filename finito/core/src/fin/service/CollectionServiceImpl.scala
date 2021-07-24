@@ -66,8 +66,10 @@ class CollectionServiceImpl[F[_]: Sync] private (
       args: MutationsAddBookArgs
   ): F[Collection] =
     for {
-      collection <- collectionOrError(args.collection)
-      _          <- collectionRepo.addBookToCollection(args.collection, args.book)
+      collectionName <-
+        Sync[F].fromOption(args.collection, DefaultCollectionNotSupportedError)
+      collection <- collectionOrError(collectionName)
+      _          <- collectionRepo.addBookToCollection(collectionName, args.book)
     } yield collection.copy(books = toUserBook(args.book) :: collection.books)
 
   override def removeBookFromCollection(
@@ -128,4 +130,8 @@ object CollectionServiceImpl {
 case object NotEnoughArgumentsForUpdateError extends Throwable {
   override def getMessage =
     "At least one of 'newName' and 'preferredSort' must be specified"
+}
+
+case object DefaultCollectionNotSupportedError extends Throwable {
+  override def getMessage = "The default collection is not known!"
 }

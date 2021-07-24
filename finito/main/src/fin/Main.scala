@@ -47,6 +47,7 @@ object Main extends IOApp {
             bookManagmentService = BookManagementServiceImpl(bookRepo, clock)
             wrappedCollectionService <- SpecialCollectionSetup.setup(
               collectionService,
+              config.defaultCollection,
               config.specialCollections
             )
             _ <- logger.debug("Bootstrapping caliban...")

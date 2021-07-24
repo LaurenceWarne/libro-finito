@@ -23,8 +23,9 @@
 *** DONE Integrate with GH Actions
 *** DONE db backend
 *** TODO Import Goodreads shelves
-*** TODO Import Calbire collections (what are they called??)
+*** TODO Import Calibre collections (what are they called??)
 *** TODO Implement langRestrict
+*** TODO Implement adding to default collection
 
 ** Smaller Things
 *** DONE Add a logging framework
@@ -36,6 +37,8 @@
 *** TODO Caching middleware?
 *** TODO Add error classes for better testing than ~isLeft~
 *** TODO Add typeclass to put objects into ~Bindings~
+*** TODO Add logging to file in config directory
+*** TODO Add IOCaseApp for flags
 
 ** Bugs
 *** TODO Adding the same book to a collection results in an uhelpful sql error

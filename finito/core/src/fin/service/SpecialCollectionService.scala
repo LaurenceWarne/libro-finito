@@ -15,6 +15,7 @@ import fin.implicits._
 import ProcessResult._
 
 class SpecialCollectionService[F[_]: Sync: Logger] private (
+    defaultCollection: String,
     wrappedService: CollectionService[F],
     collectionHooks: List[CollectionHook],
     scriptEngineManager: ScriptEngineManager
@@ -51,7 +52,8 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
 
   override def addBookToCollection(
       args: MutationsAddBookArgs
-  ): F[Collection] =
+  ): F[Collection] = {
+    val collectionName = args.collection.getOrElse(defaultCollection)
     for {
       resp   <- wrappedService.addBookToCollection(args)
       engine <- Sync[F].delay(scriptEngineManager.getEngineByName("luaj"))
@@ -62,7 +64,7 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
           }
           .traverse(hook => {
             for {
-              bindings     <- bindings(args.collection, args.book)
+              bindings     <- bindings(collectionName, args.book)
               hookResponse <- processHook(hook, engine, bindings)
               _ <- hookResponse.traverse {
                 case Add    => addHookCollection(hook, args.book)
@@ -71,6 +73,7 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
             } yield ()
           })
     } yield resp
+  }
 
   override def removeBookFromCollection(
       args: MutationsRemoveBookArgs
@@ -90,7 +93,7 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
       createCollectionIfNotExists(hook.collection) *>
       wrappedService
         .addBookToCollection(
-          MutationsAddBookArgs(hook.collection, book)
+          MutationsAddBookArgs(hook.collection.some, book)
         )
         .void
         .handleErrorWith(err =>
@@ -156,11 +159,13 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
 
 object SpecialCollectionService {
   def apply[F[_]: Sync: Logger](
+      defaultCollection: String,
       wrappedService: CollectionService[F],
       collectionHooks: List[CollectionHook],
       scriptEngineManager: ScriptEngineManager
   ) =
     new SpecialCollectionService[F](
+      defaultCollection,
       wrappedService,
       collectionHooks,
       scriptEngineManager

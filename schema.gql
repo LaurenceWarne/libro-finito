@@ -55,7 +55,7 @@ type Mutations {
   updateCollection(
     currentName: String!, newName: String, preferredSort: Sort
   ): Collection!
-  addBook(collection: String!, book: BookInput!): Collection!
+  addBook(collection: String, book: BookInput!): Collection!
   removeBook(collection: String!, isbn: String!): Boolean
   startReading(book: BookInput!, date: Date): UserBook!
   finishReading(book: BookInput!, date: Date): UserBook!

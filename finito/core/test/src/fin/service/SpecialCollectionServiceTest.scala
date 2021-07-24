@@ -49,7 +49,7 @@ object SpecialCollectionServiceTest extends IOSuite {
       "thumbnail uri"
     )
   val book2     = baseBook.copy(title = "my cool book")
-  val argsBook2 = MutationsAddBookArgs(otherCollection, book2)
+  val argsBook2 = MutationsAddBookArgs(otherCollection.some, book2)
 
   implicit def unsafeLogger: Logger[IO] = Slf4jLogger.getLogger
 
@@ -61,6 +61,7 @@ object SpecialCollectionServiceTest extends IOSuite {
         new InMemoryCollectionRepository(ref)
       )
       specialCollectionService = SpecialCollectionService(
+        "default collection",
         wrappedService,
         collectionHooks,
         scriptEngineManager
@@ -82,7 +83,7 @@ object SpecialCollectionServiceTest extends IOSuite {
   test("addBookToCollection adds for matching hook, but not for others") {
     collectionService =>
       val book     = baseBook.copy(isbn = "isbn1")
-      val argsBook = MutationsAddBookArgs(otherCollection, book)
+      val argsBook = MutationsAddBookArgs(otherCollection.some, book)
       for {
         _ <- collectionService.addBookToCollection(argsBook)
         hook1Response <-
@@ -98,13 +99,13 @@ object SpecialCollectionServiceTest extends IOSuite {
     collectionService =>
       val book     = baseBook.copy(isbn = "isbn2")
       val userBook = toUserBook(book)
-      val argsBook = MutationsAddBookArgs(otherCollection, book)
+      val argsBook = MutationsAddBookArgs(otherCollection.some, book)
       for {
         _ <- collectionService.addBookToCollection(
-          MutationsAddBookArgs(hook1Collection, book)
+          MutationsAddBookArgs(hook1Collection.some, book)
         )
         _ <- collectionService.addBookToCollection(
-          MutationsAddBookArgs(hook2Collection, book)
+          MutationsAddBookArgs(hook2Collection.some, book)
         )
         _ <- collectionService.addBookToCollection(argsBook)
         hook1Response <-
@@ -119,7 +120,7 @@ object SpecialCollectionServiceTest extends IOSuite {
   test("addBookToCollection ignores hook of wrong type") { collectionService =>
     val book     = baseBook.copy(isbn = "isbn3")
     val userBook = toUserBook(book)
-    val argsBook = MutationsAddBookArgs(otherCollection, book)
+    val argsBook = MutationsAddBookArgs(otherCollection.some, book)
     for {
       _ <- collectionService.addBookToCollection(argsBook)
       hook3Response <-
@@ -130,7 +131,7 @@ object SpecialCollectionServiceTest extends IOSuite {
   test("addBookToCollection does not create special collection if add false") {
     collectionService =>
       val book     = baseBook.copy(isbn = "isbn4")
-      val argsBook = MutationsAddBookArgs(otherCollection, book)
+      val argsBook = MutationsAddBookArgs(otherCollection.some, book)
       for {
         _ <- collectionService.addBookToCollection(argsBook)
         hookResponse <-
@@ -145,7 +146,7 @@ object SpecialCollectionServiceTest extends IOSuite {
   test("addBookToCollection creates special collection if not exists") {
     collectionService =>
       val book     = baseBook.copy(title = "special", isbn = "isbn5")
-      val argsBook = MutationsAddBookArgs(otherCollection, book)
+      val argsBook = MutationsAddBookArgs(otherCollection.some, book)
       for {
         _ <- collectionService.addBookToCollection(argsBook)
         hookResponse <-
