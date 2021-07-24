@@ -61,7 +61,7 @@ object SpecialCollectionServiceTest extends IOSuite {
         new InMemoryCollectionRepository(ref)
       )
       specialCollectionService = SpecialCollectionService(
-        "default collection",
+        hook1Collection.some,
         wrappedService,
         collectionHooks,
         scriptEngineManager
@@ -156,6 +156,31 @@ object SpecialCollectionServiceTest extends IOSuite {
             )
             .attempt
       } yield expect(hookResponse.isRight)
+  }
+
+  test(
+    "addBookToCollection adds to default collection when no collection in args"
+  ) { collectionService =>
+    val book     = baseBook.copy(isbn = "isbn-to-default")
+    val argsBook = MutationsAddBookArgs(None, book)
+    for {
+      _ <- collectionService.addBookToCollection(argsBook)
+      hook1Collection <-
+        collectionService.collection(QueriesCollectionArgs(hook1Collection))
+    } yield expect(hook1Collection.books.map(_.isbn).contains(book.isbn))
+  }
+
+  test(
+    "addBookToCollection errors when no default collection and no collection in args"
+  ) { _ =>
+    val stubbedService = SpecialCollectionService(None, null, null, null)
+    val book           = baseBook.copy(isbn = "isbn will never be added")
+    val argsBook       = MutationsAddBookArgs(None, book)
+    for {
+      response <- stubbedService.addBookToCollection(argsBook).attempt
+    } yield expect(
+      response.swap.exists(_ == DefaultCollectionNotSupportedError)
+    )
   }
 
   test("updateCollection errors if name specified for special collection") {

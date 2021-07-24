@@ -15,7 +15,7 @@ import fin.implicits._
 import ProcessResult._
 
 class SpecialCollectionService[F[_]: Sync: Logger] private (
-    defaultCollection: String,
+    maybeDefaultCollection: Option[String],
     wrappedService: CollectionService[F],
     collectionHooks: List[CollectionHook],
     scriptEngineManager: ScriptEngineManager
@@ -53,9 +53,15 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
   override def addBookToCollection(
       args: MutationsAddBookArgs
   ): F[Collection] = {
-    val collectionName = args.collection.getOrElse(defaultCollection)
+    val maybeCollectionName = args.collection.orElse(maybeDefaultCollection)
     for {
-      resp   <- wrappedService.addBookToCollection(args)
+      collectionName <- Sync[F].fromOption(
+        maybeCollectionName,
+        DefaultCollectionNotSupportedError
+      )
+      resp <- wrappedService.addBookToCollection(
+        args.copy(collection = collectionName.some)
+      )
       engine <- Sync[F].delay(scriptEngineManager.getEngineByName("luaj"))
       _ <-
         collectionHooks
@@ -159,13 +165,13 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
 
 object SpecialCollectionService {
   def apply[F[_]: Sync: Logger](
-      defaultCollection: String,
+      maybeDefaultCollection: Option[String],
       wrappedService: CollectionService[F],
       collectionHooks: List[CollectionHook],
       scriptEngineManager: ScriptEngineManager
   ) =
     new SpecialCollectionService[F](
-      defaultCollection,
+      maybeDefaultCollection,
       wrappedService,
       collectionHooks,
       scriptEngineManager

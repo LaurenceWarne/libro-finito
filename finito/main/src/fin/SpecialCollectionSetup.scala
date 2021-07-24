@@ -42,8 +42,7 @@ object SpecialCollectionSetup {
           }
       scriptEngineManager <- Sync[F].delay(new ScriptEngineManager)
       wrappedCollectionService = SpecialCollectionService[F](
-        // TODO change constructor to take option
-        defaultCollection.getOrElse("???"),
+        defaultCollection,
         collectionService,
         specialCollections.flatMap(_.toCollectionHooks),
         scriptEngineManager
