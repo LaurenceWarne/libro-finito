@@ -166,6 +166,24 @@ object BookManagementServiceImplTest extends IOSuite {
         updatedBook === toUserBook(bookToRead, lastRead = constantTime.some)
       )
   }
+
+  test("deleteBookData deletes book data") { bookService =>
+    val bookToClear     = book.copy(isbn = "book to delete data from")
+    val finishedReading = LocalDate.parse("2018-11-30")
+    for {
+      _ <- bookService.finishReading(
+        MutationsFinishReadingArgs(bookToClear, finishedReading.some)
+      )
+      _ <-
+        bookService.startReading(MutationsStartReadingArgs(bookToClear, None))
+      _ <- bookService.rateBook(MutationsRateBookArgs(bookToClear, 3))
+      _ <- bookService.deleteBookData(
+        MutationsDeleteBookDataArgs(bookToClear.isbn)
+      )
+    } yield expect(
+      true
+    )
+  }
 }
 
 /**

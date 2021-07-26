@@ -68,7 +68,7 @@ type Mutations {
   """
   createBook(book: BookInput!): UserBook!
   """
-  Deletes all data held about a book.
+  Deletes all data held about a book, is nop if no data is held about the book.
   """
-  deleteBookData(isbn: String!): UserBook!
+  deleteBookData(isbn: String!): Boolean
 }

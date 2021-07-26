@@ -47,6 +47,9 @@ class BookManagementServiceImpl[F[_]] private (
       _    <- bookRepo.finishReading(args.book, date)
     } yield book.copy(startedReading = None, lastRead = date.some)
 
+  override def deleteBookData(args: MutationsDeleteBookDataArgs): F[Unit] =
+    bookRepo.deleteBookData(args.isbn)
+
   private def createIfNotExists(book: BookInput): F[UserBook] =
     for {
       maybeBook <- bookRepo.retrieveBook(book.isbn)
