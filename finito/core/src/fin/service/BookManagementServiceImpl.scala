@@ -66,12 +66,12 @@ object BookManagementServiceImpl {
   ) = new BookManagementServiceImpl(bookRepo, clock)
 }
 
-case class BookAlreadyBeingReadError(book: BookInput) extends Throwable {
+final case class BookAlreadyBeingReadError(book: BookInput) extends Throwable {
   override def getMessage =
     show"The book '${book.title}' is already being read!"
 }
 
-case class BookAlreadyExistsError(book: BookInput) extends Throwable {
+final case class BookAlreadyExistsError(book: BookInput) extends Throwable {
   override def getMessage =
     show"A book with isbn ${book.isbn} already exists: $book!"
 }

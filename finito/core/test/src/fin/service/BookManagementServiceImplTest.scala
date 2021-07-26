@@ -173,7 +173,7 @@ object BookManagementServiceImplTest extends IOSuite {
   *
   * @param epoch the constant time as a unix epoch
   */
-case class TestClock[F[_]: Applicative](epoch: Long) extends Clock[F] {
+final case class TestClock[F[_]: Applicative](epoch: Long) extends Clock[F] {
 
   override def realTime(unit: TimeUnit): F[Long] =
     unit.convert(epoch, MILLISECONDS).pure[F]

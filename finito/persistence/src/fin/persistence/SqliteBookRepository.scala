@@ -147,7 +147,7 @@ object BookFragments {
        |DO UPDATE SET rating=excluded.rating""".stripMargin
 }
 
-case class BookRow(
+final case class BookRow(
     title: String,
     authors: String,
     description: String,

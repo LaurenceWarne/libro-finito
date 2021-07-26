@@ -25,7 +25,7 @@
 *** TODO Import Goodreads shelves
 *** TODO Import Calibre collections (what are they called??)
 *** TODO Implement langRestrict
-*** TODO Implement adding to default collection
+*** DONE Implement adding to default collection
 
 ** Smaller Things
 *** DONE Add a logging framework

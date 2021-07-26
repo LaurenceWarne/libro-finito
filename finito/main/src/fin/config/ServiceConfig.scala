@@ -6,7 +6,7 @@ import pureconfig.generic.semiauto._
 
 import fin.service.{CollectionHook, HookType}
 
-case class ServiceConfig(
+final case class ServiceConfig(
     databasePath: String,
     databaseUser: String,
     databasePassword: String,
@@ -16,7 +16,7 @@ case class ServiceConfig(
     specialCollections: List[SpecialCollection]
 )
 
-case class SpecialCollection(
+final case class SpecialCollection(
     name: String,
     `lazy`: Option[Boolean],
     addHook: Option[String],

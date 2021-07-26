@@ -15,6 +15,6 @@ object SortConversions {
     }
 }
 
-case class InvalidSortStringError(string: String) extends Throwable {
+final case class InvalidSortStringError(string: String) extends Throwable {
   override def getMessage = show"$string is not a valid sort type!"
 }

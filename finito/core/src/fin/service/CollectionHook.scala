@@ -13,4 +13,8 @@ object HookType extends Enum[HookType] {
   case object Add           extends HookType
 }
 
-case class CollectionHook(collection: String, `type`: HookType, code: String)
+final case class CollectionHook(
+    collection: String,
+    `type`: HookType,
+    code: String
+)

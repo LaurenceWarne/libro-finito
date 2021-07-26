@@ -174,7 +174,7 @@ object Fragments {
        |WHERE collection_name = $currentName""".stripMargin
 }
 
-case class CollectionBookRow(
+final case class CollectionBookRow(
     name: String,
     preferredSort: String,
     maybeIsbn: Option[String],
