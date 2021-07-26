@@ -124,6 +124,27 @@ object SqliteBookRepositoryTest extends SqliteSuite {
     )
   }
 
+  test("deleteBookData deletes all book data") {
+    val bookToUse          = book.copy(isbn = "book to delete data from")
+    val startedReadingDate = LocalDate.parse("2020-03-28")
+    for {
+      _         <- repo.createBook(bookToUse, date)
+      _         <- repo.rateBook(bookToUse, 3)
+      _         <- repo.finishReading(bookToUse, date)
+      _         <- repo.startReading(bookToUse, startedReadingDate)
+      _         <- repo.deleteBookData(bookToUse.isbn)
+      maybeBook <- repo.retrieveBook(bookToUse.isbn)
+    } yield expect(
+      maybeBook.exists(
+        _ === toUserBook(bookToUse).copy(
+          rating = None,
+          startedReading = None,
+          lastRead = None
+        )
+      )
+    )
+  }
+
   private def retrieveRating(isbn: String): IO[Option[Int]] =
     fr"SELECT rating FROM rated_books WHERE isbn=$isbn".stripMargin
       .query[Int]

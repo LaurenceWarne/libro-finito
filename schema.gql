@@ -51,6 +51,9 @@ type Queries {
 
 type Mutations {
   createCollection(name: String!, books: [BookInput!]): Collection!
+  """
+  Delete a collection, will error if the collection does not exist.
+  """
   deleteCollection(name: String!): Boolean
   updateCollection(
     currentName: String!, newName: String, preferredSort: Sort
@@ -60,6 +63,12 @@ type Mutations {
   startReading(book: BookInput!, date: Date): UserBook!
   finishReading(book: BookInput!, date: Date): UserBook!
   rateBook(book: BookInput!, rating: Int!): UserBook!
+  """
+  Create a custom book, useful for when you can't find a book when searching.
+  """
   createBook(book: BookInput!): UserBook!
-  deleteBook(book: BookInput!): UserBook!
+  """
+  Deletes all data held about a book.
+  """
+  deleteBookData(isbn: String!): UserBook!
 }

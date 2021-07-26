@@ -55,6 +55,16 @@ class SqliteBookRepository[F[_]: Sync] private (
       } yield ()
     transaction.transact(xa)
   }
+
+  override def deleteBookData(isbn: String): F[Unit] = {
+    val transaction =
+      for {
+        _ <- BookFragments.deleteCurrentlyReading(isbn).update.run
+        _ <- BookFragments.deleteRead(isbn).update.run
+        _ <- BookFragments.deleteRated(isbn).update.run
+      } yield ()
+    transaction.transact(xa)
+  }
 }
 
 object SqliteBookRepository {
@@ -145,6 +155,16 @@ object BookFragments {
        |VALUES ($isbn, $rating)
        |ON CONFLICT(isbn)
        |DO UPDATE SET rating=excluded.rating""".stripMargin
+
+  def deleteRead(isbn: String): Fragment =
+    fr"""
+       |DELETE FROM read_books
+       |WHERE isbn = $isbn""".stripMargin
+
+  def deleteRated(isbn: String): Fragment =
+    fr"""
+       |DELETE FROM rated_books
+       |WHERE isbn = $isbn""".stripMargin
 }
 
 final case class BookRow(

@@ -52,4 +52,13 @@ class InMemoryBookRepository[F[_]: Monad](booksRef: Ref[F, List[UserBook]])
       })
     } yield ()
   }
+
+  override def deleteBookData(isbn: String): F[Unit] =
+    booksRef
+      .getAndUpdate(_.map { b =>
+        if (b.isbn === isbn)
+          b.copy(rating = None, startedReading = None, lastRead = None)
+        else b
+      })
+      .void
 }

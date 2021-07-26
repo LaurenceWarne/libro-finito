@@ -10,4 +10,5 @@ trait BookRepository[F[_]] {
   def rateBook(book: BookInput, rating: Int): F[Unit]
   def startReading(book: BookInput, date: LocalDate): F[Unit]
   def finishReading(book: BookInput, date: LocalDate): F[Unit]
+  def deleteBookData(isbn: String): F[Unit]
 }
