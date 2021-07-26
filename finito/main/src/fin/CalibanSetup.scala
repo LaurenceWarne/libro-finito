@@ -34,7 +34,7 @@ object CalibanSetup {
       args => bookManagementService.finishReading(args),
       args => bookManagementService.rateBook(args),
       args => bookManagementService.createBook(args),
-      args => bookManagementService.deleteBookData(args)
+      args => bookManagementService.deleteBookData(args).map(_ => None)
     )
     val api = GraphQL.graphQL(RootResolver(queries, mutations))
     api.interpreterAsync[F].map(withErrors(_))
