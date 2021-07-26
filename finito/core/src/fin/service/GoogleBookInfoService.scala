@@ -4,14 +4,14 @@ import cats.MonadError
 import cats.effect.ConcurrentEffect
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
-import io.circe._
-import io.circe.generic.semiauto._
 import io.circe.parser.decode
 import org.http4s.Uri
 import org.http4s.client._
 import org.http4s.implicits._
 
 import fin.Types._
+
+import GoogleBooksAPIDecoding._
 
 /**
   * A BookInfoService implementation which uses the <a href='https://developers.google.com/books/docs/v1/using'>Google Books API</a>
@@ -70,21 +70,6 @@ case object NoKeywordsSpecified extends Throwable {
   */
 object GoogleBookInfoService {
 
-  implicit val googleIsbnInfoDecoder: Decoder[GoogleIsbnInfo] =
-    deriveDecoder[GoogleIsbnInfo]
-
-  implicit val googleImageLinksDecoder: Decoder[GoogleImageLinks] =
-    deriveDecoder[GoogleImageLinks]
-
-  implicit val googleBookItemDecoder: Decoder[GoogleBookItem] =
-    deriveDecoder[GoogleBookItem]
-
-  implicit val googleVolumeDecoder: Decoder[GoogleVolume] =
-    deriveDecoder[GoogleVolume]
-
-  implicit val googleResponseDecoder: Decoder[GoogleResponse] =
-    deriveDecoder[GoogleResponse]
-
   val searchPartialFn: PartialFunction[GoogleVolume, UserBook] = {
     case GoogleVolume(
           GoogleBookItem(
@@ -142,36 +127,11 @@ object GoogleBookInfoService {
         (booksArgs.titleKeywords.filterNot(_.isEmpty).map("intitle:" + _) ++
           booksArgs.authorKeywords.map("inauthor:" + _))
           .mkString("+")
-      ) +?? ("maxResults", booksArgs.maxResults),
+      ) +?? ("maxResults", booksArgs.maxResults)
+        +?? ("langRestrict", booksArgs.langRestrict),
       NoKeywordsSpecified
     )
 
   def uriFromBookArgs(bookArgs: QueriesBookArgs): Uri =
     baseUri +? ("q", "isbn:" + bookArgs.isbn)
-}
-
-final case class GoogleResponse(items: List[GoogleVolume])
-
-final case class GoogleVolume(volumeInfo: GoogleBookItem)
-
-final case class GoogleBookItem(
-    title: String,
-    // These are optional... because the API sometimes decides not to return them...
-    authors: Option[List[String]],
-    description: Option[String],
-    imageLinks: Option[GoogleImageLinks],
-    industryIdentifiers: Option[List[GoogleIsbnInfo]]
-)
-
-final case class GoogleImageLinks(
-    smallThumbnail: String,
-    thumbnail: String
-)
-
-final case class GoogleIsbnInfo(
-    `type`: String,
-    identifier: String
-) {
-  def getIsbn13: String =
-    if (identifier.length == 10) "978" + identifier else identifier
 }

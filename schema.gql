@@ -38,6 +38,10 @@ type Collection {
 }
 
 type Queries {
+  """
+  Search for books matching the specified parameters.  langRestrict should be
+  a two-letter ISO-639-1 code, such as "en" or "fr".
+  """
   books(
     titleKeywords: String,
     authorKeywords: String,
