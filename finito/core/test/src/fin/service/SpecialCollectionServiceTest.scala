@@ -53,8 +53,9 @@ object SpecialCollectionServiceTest extends IOSuite {
 
   implicit def unsafeLogger: Logger[IO] = Slf4jLogger.getLogger
 
-  override type Res = CollectionService[IO]
-  override def sharedResource: Resource[IO, CollectionService[IO]] =
+  override type Res = CollectionService[IO] with BookManagementService[IO]
+  override def sharedResource
+      : Resource[IO, CollectionService[IO] with BookManagementService[IO]] =
     for {
       colRef  <- Resource.eval(Ref.of[IO, List[Collection]](List.empty))
       bookRef <- Resource.eval(Ref.of[IO, List[UserBook]](List.empty))
@@ -252,5 +253,22 @@ object SpecialCollectionServiceTest extends IOSuite {
             .collection(QueriesCollectionArgs(collection))
             .attempt
       } yield expect(collection.isLeft)
+  }
+
+  test("rateBook adds for matching hook, but not for others") {
+    collectionService =>
+      val book     = baseBook.copy(isbn = "book to rate")
+      val rateArgs = MutationsRateBookArgs(book, 5)
+      for {
+        _ <- collectionService.rateBook(rateArgs)
+        hook1Response <-
+          collectionService.collection(QueriesCollectionArgs(hook1Collection))
+        hook3Response <-
+          collectionService.collection(QueriesCollectionArgs(hook3Collection))
+      } yield expect(
+        !hook1Response.books.contains(toUserBook(book))
+      ) and expect(
+        hook3Response.books.contains(toUserBook(book))
+      )
   }
 }

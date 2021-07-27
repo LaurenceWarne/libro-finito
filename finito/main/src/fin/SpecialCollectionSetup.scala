@@ -13,9 +13,10 @@ import fin.service._
 object SpecialCollectionSetup {
   def setup[F[_]: Sync: Logger](
       collectionService: CollectionService[F],
+      bookService: BookManagementService[F],
       defaultCollection: Option[String],
       specialCollections: List[SpecialCollection]
-  ): F[CollectionService[F]] =
+  ): F[(BookManagementService[F], CollectionService[F])] =
     for {
       _ <- Logger[F].info(
         "Found special collections: " + specialCollections
@@ -44,8 +45,9 @@ object SpecialCollectionSetup {
       wrappedCollectionService = SpecialCollectionService[F](
         defaultCollection,
         collectionService,
+        bookService,
         specialCollections.flatMap(_.toCollectionHooks),
         scriptEngineManager
       )
-    } yield wrappedCollectionService
+    } yield (wrappedCollectionService, wrappedCollectionService)
 }

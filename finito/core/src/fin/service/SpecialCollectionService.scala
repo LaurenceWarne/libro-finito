@@ -46,10 +46,19 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
     } yield response
 
   override def startReading(args: MutationsStartReadingArgs): F[UserBook] =
-    wrappedBookService.startReading(args)
+    for {
+      response <- wrappedBookService.startReading(args)
+      bindings <- Sync[F].delay(new SimpleBindings)
+      _        <- processHooks(_.`type` === HookType.ReadStarted, bindings, args.book)
+    } yield response
 
   override def finishReading(args: MutationsFinishReadingArgs): F[UserBook] =
-    wrappedBookService.finishReading(args)
+    for {
+      response <- wrappedBookService.finishReading(args)
+      bindings <- Sync[F].delay(new SimpleBindings)
+      _ <-
+        processHooks(_.`type` === HookType.ReadCompleted, bindings, args.book)
+    } yield response
 
   override def deleteBookData(args: MutationsDeleteBookDataArgs): F[Unit] =
     wrappedBookService.deleteBookData(args)

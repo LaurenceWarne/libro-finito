@@ -45,15 +45,17 @@ object Main extends IOApp {
             bookInfoService      = GoogleBookInfoService[IO](client)
             collectionService    = CollectionServiceImpl(collectionRepo)
             bookManagmentService = BookManagementServiceImpl(bookRepo, clock)
-            wrappedCollectionService <- SpecialCollectionSetup.setup(
-              collectionService,
-              config.defaultCollection,
-              config.specialCollections
-            )
+            (wrappedBookManagementService, wrappedCollectionService) <-
+              SpecialCollectionSetup.setup(
+                collectionService,
+                bookManagmentService,
+                config.defaultCollection,
+                config.specialCollections
+              )
             _ <- logger.debug("Bootstrapping caliban...")
             interpreter <- CalibanSetup.interpreter[IO](
               bookInfoService,
-              bookManagmentService,
+              wrappedBookManagementService,
               wrappedCollectionService
             )
             server <-
