@@ -13,6 +13,7 @@ import fin.Types._
 import fin.implicits._
 
 import HookType._
+import Bindable._
 
 /**
   * This class manages special collection hooks on top of collection and
@@ -40,24 +41,28 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
   override def rateBook(args: MutationsRateBookArgs): F[UserBook] =
     for {
       response <- wrappedBookService.rateBook(args)
-      bindings <- Sync[F].delay(new SimpleBindings)
-      _        <- Sync[F].delay(bindings.put("rating", args.rating))
-      _        <- processHooks(_.`type` === HookType.Rate, bindings, args.book)
+      bindings = Map("rating" -> args.rating).asBindings
+      _ <- processHooks(_.`type` === HookType.Rate, bindings, args.book)
     } yield response
 
   override def startReading(args: MutationsStartReadingArgs): F[UserBook] =
     for {
       response <- wrappedBookService.startReading(args)
-      bindings <- Sync[F].delay(new SimpleBindings)
-      _        <- processHooks(_.`type` === HookType.ReadStarted, bindings, args.book)
+      _ <- processHooks(
+        _.`type` === HookType.ReadStarted,
+        SBindings.empty,
+        args.book
+      )
     } yield response
 
   override def finishReading(args: MutationsFinishReadingArgs): F[UserBook] =
     for {
       response <- wrappedBookService.finishReading(args)
-      bindings <- Sync[F].delay(new SimpleBindings)
-      _ <-
-        processHooks(_.`type` === HookType.ReadCompleted, bindings, args.book)
+      _ <- processHooks(
+        _.`type` === HookType.ReadCompleted,
+        SBindings.empty,
+        args.book
+      )
     } yield response
 
   override def deleteBookData(args: MutationsDeleteBookDataArgs): F[Unit] =
@@ -104,13 +109,12 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
       response <- wrappedCollectionService.addBookToCollection(
         args.copy(collection = collectionName.some)
       )
-      additionalBindings <- collectionBindings(collectionName, args.book)
       _ <- processHooks(
         h =>
           h.`type` === HookType.Add && args.collection.exists(
             _ =!= h.collection
           ),
-        additionalBindings,
+        Map("collection" -> collectionName).asBindings |+| args.book.asBindings,
         args.book
       )
     } yield response
@@ -122,7 +126,7 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
 
   private def processHooks(
       hookFilter: CollectionHook => Boolean,
-      additionalBindings: Bindings,
+      additionalBindings: SBindings,
       book: BookInput
   ): F[Unit] =
     for {
@@ -189,30 +193,16 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
         )
   }
 
-  private def collectionBindings(
-      collection: String,
-      book: BookInput
-  ): F[Bindings] = {
-    for {
-      bindings <- Sync[F].delay(new SimpleBindings)
-      _        <- Sync[F].delay(bindings.put("collection", collection))
-      _        <- Sync[F].delay(bindings.put("title", book.title))
-      _        <- Sync[F].delay(bindings.put("authors", book.authors))
-      _        <- Sync[F].delay(bindings.put("isbn", book.isbn))
-    } yield bindings
-  }
-
   private def processHook(
       hook: CollectionHook,
       engine: ScriptEngine,
-      bindings: Bindings
-  ): F[Option[ProcessResult]] =
+      bindings: SBindings
+  ): F[Option[ProcessResult]] = {
+    val allBindings = bindings.asJava
     for {
-      allBindings <- Sync[F].delay(new SimpleBindings)
-      _           <- Sync[F].delay(allBindings.putAll(bindings))
-      _           <- Sync[F].delay(engine.eval(hook.code, allBindings))
-      addStr      <- Sync[F].delay(allBindings.get("add"))
-      rmStr       <- Sync[F].delay(allBindings.get("remove"))
+      _      <- Sync[F].delay(engine.eval(hook.code, allBindings))
+      addStr <- Sync[F].delay(allBindings.get("add"))
+      rmStr  <- Sync[F].delay(allBindings.get("remove"))
       maybeAdd = Try(
         Option(addStr.asInstanceOf[LuaBoolean])
       ).toOption.flatten.map(_.booleanValue)
@@ -222,6 +212,7 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
     } yield maybeAdd
       .collect { case true => ProcessResult.Add }
       .orElse(maybeRemove.collect { case true => ProcessResult.Remove })
+  }
 }
 
 object SpecialCollectionService {
