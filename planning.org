@@ -24,7 +24,7 @@
 *** DONE db backend
 *** TODO Import Goodreads shelves
 *** TODO Import Calibre collections (what are they called??)
-*** TODO Implement langRestrict
+*** DONE Implement langRestrict
 *** TODO Add asc/desc to collection sorting
 *** DONE Implement adding to default collection
 

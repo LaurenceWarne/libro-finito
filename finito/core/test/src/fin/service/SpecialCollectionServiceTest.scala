@@ -3,7 +3,7 @@ package fin.service
 import javax.script.ScriptEngineManager
 
 import cats.effect.concurrent.Ref
-import cats.effect.{IO, Resource}
+import cats.effect.{Clock, IO, Resource}
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -56,13 +56,19 @@ object SpecialCollectionServiceTest extends IOSuite {
   override type Res = CollectionService[IO]
   override def sharedResource: Resource[IO, CollectionService[IO]] =
     for {
-      ref <- Resource.eval(Ref.of[IO, List[Collection]](List.empty))
-      wrappedService = CollectionServiceImpl(
-        new InMemoryCollectionRepository(ref)
+      colRef  <- Resource.eval(Ref.of[IO, List[Collection]](List.empty))
+      bookRef <- Resource.eval(Ref.of[IO, List[UserBook]](List.empty))
+      wrappedCollectionService = CollectionServiceImpl(
+        new InMemoryCollectionRepository(colRef)
+      )
+      wrappedBookService = BookManagementServiceImpl(
+        new InMemoryBookRepository(bookRef),
+        Clock[IO]
       )
       specialCollectionService = SpecialCollectionService(
         hook1Collection.some,
-        wrappedService,
+        wrappedCollectionService,
+        wrappedBookService,
         collectionHooks,
         scriptEngineManager
       )
@@ -73,7 +79,7 @@ object SpecialCollectionServiceTest extends IOSuite {
           hook3Collection
         )).traverse { collection =>
         Resource.eval(
-          wrappedService.createCollection(
+          wrappedCollectionService.createCollection(
             MutationsCreateCollectionArgs(collection, None)
           )
         )
@@ -173,7 +179,7 @@ object SpecialCollectionServiceTest extends IOSuite {
   test(
     "addBookToCollection errors when no default collection and no collection in args"
   ) { _ =>
-    val stubbedService = SpecialCollectionService(None, null, null, null)
+    val stubbedService = SpecialCollectionService(None, null, null, null, null)
     val book           = baseBook.copy(isbn = "isbn will never be added")
     val argsBook       = MutationsAddBookArgs(None, book)
     for {

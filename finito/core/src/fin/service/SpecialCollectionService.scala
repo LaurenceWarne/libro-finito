@@ -12,25 +12,58 @@ import org.luaj.vm2.LuaBoolean
 import fin.Types._
 import fin.implicits._
 
-import ProcessResult._
+import HookType._
 
+/**
+  * This class manages special collection hooks on top of collection and
+  * book management services.  Essentially, for each method, we run special
+  * collection hooks and then delegate to the appropriate service.
+  *
+  * @param maybeDefaultCollection the default collection
+  * @param wrappedCollectionService the wrapped collection service
+  * @param wrappedBookService the wrapped book management service
+  * @param collectionHooks collection hooks to run
+  * @param scriptEngineManager the script engine manager
+  */
 class SpecialCollectionService[F[_]: Sync: Logger] private (
     maybeDefaultCollection: Option[String],
-    wrappedService: CollectionService[F],
+    wrappedCollectionService: CollectionService[F],
+    wrappedBookService: BookManagementService[F],
     collectionHooks: List[CollectionHook],
     scriptEngineManager: ScriptEngineManager
-) extends CollectionService[F] {
+) extends CollectionService[F]
+    with BookManagementService[F] {
+
+  override def createBook(args: MutationsCreateBookArgs): F[UserBook] =
+    wrappedBookService.createBook(args)
+
+  override def rateBook(args: MutationsRateBookArgs): F[UserBook] =
+    for {
+      response <- wrappedBookService.rateBook(args)
+      bindings <- Sync[F].delay(new SimpleBindings)
+      _        <- Sync[F].delay(bindings.put("rating", args.rating))
+      _        <- processHooks(_.`type` === HookType.Rate, bindings, args.book)
+    } yield response
+
+  override def startReading(args: MutationsStartReadingArgs): F[UserBook] =
+    wrappedBookService.startReading(args)
+
+  override def finishReading(args: MutationsFinishReadingArgs): F[UserBook] =
+    wrappedBookService.finishReading(args)
+
+  override def deleteBookData(args: MutationsDeleteBookDataArgs): F[Unit] =
+    wrappedBookService.deleteBookData(args)
 
   override def collections: F[List[Collection]] =
-    wrappedService.collections
+    wrappedCollectionService.collections
 
   override def createCollection(
       args: MutationsCreateCollectionArgs
-  ): F[Collection] = wrappedService.createCollection(args)
+  ): F[Collection] = wrappedCollectionService.createCollection(args)
 
   override def collection(
       args: QueriesCollectionArgs
-  ): F[Collection] = wrappedService.collection(args)
+  ): F[Collection] = wrappedCollectionService.collection(args)
 
   override def deleteCollection(
       args: MutationsDeleteCollectionArgs
@@ -38,7 +71,7 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
     Sync[F].whenA(
       collectionHooks.exists(_.collection === args.name)
     )(Sync[F].raiseError(CannotDeleteSpecialCollectionError)) *>
-      wrappedService.deleteCollection(args)
+      wrappedCollectionService.deleteCollection(args)
 
   override def updateCollection(
       args: MutationsUpdateCollectionArgs
@@ -48,7 +81,7 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
         _.collection === args.currentName
       )
     )(Sync[F].raiseError(CannotChangeNameOfSpecialCollectionError)) *>
-      wrappedService.updateCollection(args)
+      wrappedCollectionService.updateCollection(args)
 
   override def addBookToCollection(
       args: MutationsAddBookArgs
@@ -59,31 +92,45 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
         maybeCollectionName,
         DefaultCollectionNotSupportedError
       )
-      resp <- wrappedService.addBookToCollection(
+      response <- wrappedCollectionService.addBookToCollection(
         args.copy(collection = collectionName.some)
       )
-      engine <- Sync[F].delay(scriptEngineManager.getEngineByName("luaj"))
-      _ <-
-        collectionHooks
-          .filter { hook =>
-            hook.`type` == HookType.Add && hook.collection != args.collection
-          }
-          .traverse(hook => {
-            for {
-              bindings     <- bindings(collectionName, args.book)
-              hookResponse <- processHook(hook, engine, bindings)
-              _ <- hookResponse.traverse {
-                case Add    => addHookCollection(hook, args.book)
-                case Remove => removeHookCollection(hook, args.book)
-              }
-            } yield ()
-          })
-    } yield resp
+      additionalBindings <- collectionBindings(collectionName, args.book)
+      _ <- processHooks(
+        h =>
+          h.`type` === HookType.Add && args.collection.exists(
+            _ =!= h.collection
+          ),
+        additionalBindings,
+        args.book
+      )
+    } yield response
   }
 
   override def removeBookFromCollection(
       args: MutationsRemoveBookArgs
-  ): F[Unit] = wrappedService.removeBookFromCollection(args)
+  ): F[Unit] = wrappedCollectionService.removeBookFromCollection(args)
+
+  private def processHooks(
+      hookFilter: CollectionHook => Boolean,
+      additionalBindings: Bindings,
+      book: BookInput
+  ): F[Unit] =
+    for {
+      engine <- Sync[F].delay(scriptEngineManager.getEngineByName("luaj"))
+      _ <-
+        collectionHooks
+          .filter(hookFilter)
+          .traverse(hook => {
+            for {
+              hookResponse <- processHook(hook, engine, additionalBindings)
+              _ <- hookResponse.traverse {
+                case ProcessResult.Add    => addHookCollection(hook, book)
+                case ProcessResult.Remove => removeHookCollection(hook, book)
+              }
+            } yield ()
+          })
+    } yield ()
 
   private def createCollectionIfNotExists(collection: String): F[Unit] =
     createCollection(MutationsCreateCollectionArgs(collection, None)).void
@@ -97,7 +144,7 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
       show"Adding $book to special collection '${hook.collection}'"
     ) *>
       createCollectionIfNotExists(hook.collection) *>
-      wrappedService
+      wrappedCollectionService
         .addBookToCollection(
           MutationsAddBookArgs(hook.collection.some, book)
         )
@@ -118,7 +165,7 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
     Logger[F].info(
       show"Removing $book from special collection '${hook.collection}'"
     ) *>
-      wrappedService
+      wrappedCollectionService
         .removeBookFromCollection(
           MutationsRemoveBookArgs(hook.collection, book.isbn)
         )
@@ -133,7 +180,10 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
         )
   }
 
-  private def bindings(collection: String, book: BookInput): F[Bindings] = {
+  private def collectionBindings(
+      collection: String,
+      book: BookInput
+  ): F[Bindings] = {
     for {
       bindings <- Sync[F].delay(new SimpleBindings)
       _        <- Sync[F].delay(bindings.put("collection", collection))
@@ -149,9 +199,11 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
       bindings: Bindings
   ): F[Option[ProcessResult]] =
     for {
-      _      <- Sync[F].delay(engine.eval(hook.code, bindings))
-      addStr <- Sync[F].delay(bindings.get("add"))
-      rmStr  <- Sync[F].delay(bindings.get("remove"))
+      allBindings <- Sync[F].delay(new SimpleBindings)
+      _           <- Sync[F].delay(allBindings.putAll(bindings))
+      _           <- Sync[F].delay(engine.eval(hook.code, allBindings))
+      addStr      <- Sync[F].delay(allBindings.get("add"))
+      rmStr       <- Sync[F].delay(allBindings.get("remove"))
       maybeAdd = Try(
         Option(addStr.asInstanceOf[LuaBoolean])
       ).toOption.flatten.map(_.booleanValue)
@@ -159,20 +211,22 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
         Option(rmStr.asInstanceOf[LuaBoolean])
       ).toOption.flatten.map(_.booleanValue)
     } yield maybeAdd
-      .collect { case true => Add }
-      .orElse(maybeRemove.collect { case true => Remove })
+      .collect { case true => ProcessResult.Add }
+      .orElse(maybeRemove.collect { case true => ProcessResult.Remove })
 }
 
 object SpecialCollectionService {
   def apply[F[_]: Sync: Logger](
       maybeDefaultCollection: Option[String],
-      wrappedService: CollectionService[F],
+      wrappedCollectionService: CollectionService[F],
+      wrappedBookService: BookManagementService[F],
       collectionHooks: List[CollectionHook],
       scriptEngineManager: ScriptEngineManager
   ) =
     new SpecialCollectionService[F](
       maybeDefaultCollection,
-      wrappedService,
+      wrappedCollectionService,
+      wrappedBookService,
       collectionHooks,
       scriptEngineManager
     )
