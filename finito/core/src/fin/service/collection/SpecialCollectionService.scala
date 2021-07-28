@@ -1,17 +1,11 @@
 package fin.service.collection
 
-import javax.script._
-
-import scala.util.Try
-
 import cats.effect.Sync
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
-import org.luaj.vm2.LuaBoolean
 
 import fin.Types._
 import fin.implicits._
-import fin.service.book.BookManagementService
 
 import HookType._
 import Bindable._
@@ -30,44 +24,9 @@ import Bindable._
 class SpecialCollectionService[F[_]: Sync: Logger] private (
     maybeDefaultCollection: Option[String],
     wrappedCollectionService: CollectionService[F],
-    wrappedBookService: BookManagementService[F],
     collectionHooks: List[CollectionHook],
-    scriptEngineManager: ScriptEngineManager
-) extends CollectionService[F]
-    with BookManagementService[F] {
-
-  override def createBook(args: MutationsCreateBookArgs): F[UserBook] =
-    wrappedBookService.createBook(args)
-
-  override def rateBook(args: MutationsRateBookArgs): F[UserBook] =
-    for {
-      response <- wrappedBookService.rateBook(args)
-      bindings = Map("rating" -> args.rating).asBindings
-      _ <- processHooks(_.`type` === HookType.Rate, bindings, args.book)
-    } yield response
-
-  override def startReading(args: MutationsStartReadingArgs): F[UserBook] =
-    for {
-      response <- wrappedBookService.startReading(args)
-      _ <- processHooks(
-        _.`type` === HookType.ReadStarted,
-        SBindings.empty,
-        args.book
-      )
-    } yield response
-
-  override def finishReading(args: MutationsFinishReadingArgs): F[UserBook] =
-    for {
-      response <- wrappedBookService.finishReading(args)
-      _ <- processHooks(
-        _.`type` === HookType.ReadCompleted,
-        SBindings.empty,
-        args.book
-      )
-    } yield response
-
-  override def deleteBookData(args: MutationsDeleteBookDataArgs): F[Unit] =
-    wrappedBookService.deleteBookData(args)
+    hookExecutionService: HookExecutionService[F]
+) extends CollectionService[F] {
 
   override def collections: F[List[Collection]] =
     wrappedCollectionService.collections
@@ -110,41 +69,27 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
       response <- wrappedCollectionService.addBookToCollection(
         args.copy(collection = collectionName.some)
       )
-      _ <- processHooks(
-        h =>
+      hookResponses <- hookExecutionService.processHooks(
+        collectionHooks.filter(h =>
           h.`type` === HookType.Add && args.collection.exists(
             _ =!= h.collection
-          ),
+          )
+        ),
         Map("collection" -> collectionName).asBindings |+| args.book.asBindings,
         args.book
       )
+      _ <- hookResponses.traverse {
+        case (hook, ProcessResult.Add) =>
+          addHookCollection(hook, args.book)
+        case (hook, ProcessResult.Remove) =>
+          removeHookCollection(hook, args.book)
+      }
     } yield response
   }
 
   override def removeBookFromCollection(
       args: MutationsRemoveBookArgs
   ): F[Unit] = wrappedCollectionService.removeBookFromCollection(args)
-
-  private def processHooks(
-      hookFilter: CollectionHook => Boolean,
-      additionalBindings: SBindings,
-      book: BookInput
-  ): F[Unit] =
-    for {
-      engine <- Sync[F].delay(scriptEngineManager.getEngineByName("luaj"))
-      _ <-
-        collectionHooks
-          .filter(hookFilter)
-          .traverse(hook => {
-            for {
-              hookResponse <- processHook(hook, engine, additionalBindings)
-              _ <- hookResponse.traverse {
-                case ProcessResult.Add    => addHookCollection(hook, book)
-                case ProcessResult.Remove => removeHookCollection(hook, book)
-              }
-            } yield ()
-          })
-    } yield ()
 
   private def createCollectionIfNotExists(collection: String): F[Unit] =
     createCollection(MutationsCreateCollectionArgs(collection, None)).void
@@ -193,51 +138,21 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
           )
         )
   }
-
-  private def processHook(
-      hook: CollectionHook,
-      engine: ScriptEngine,
-      bindings: SBindings
-  ): F[Option[ProcessResult]] = {
-    val allBindings = bindings.asJava
-    for {
-      _      <- Sync[F].delay(engine.eval(hook.code, allBindings))
-      addStr <- Sync[F].delay(allBindings.get("add"))
-      rmStr  <- Sync[F].delay(allBindings.get("remove"))
-      maybeAdd = Try(
-        Option(addStr.asInstanceOf[LuaBoolean])
-      ).toOption.flatten.map(_.booleanValue)
-      maybeRemove = Try(
-        Option(rmStr.asInstanceOf[LuaBoolean])
-      ).toOption.flatten.map(_.booleanValue)
-    } yield maybeAdd
-      .collect { case true => ProcessResult.Add }
-      .orElse(maybeRemove.collect { case true => ProcessResult.Remove })
-  }
 }
 
 object SpecialCollectionService {
   def apply[F[_]: Sync: Logger](
       maybeDefaultCollection: Option[String],
       wrappedCollectionService: CollectionService[F],
-      wrappedBookService: BookManagementService[F],
       collectionHooks: List[CollectionHook],
-      scriptEngineManager: ScriptEngineManager
+      hookExecutionService: HookExecutionService[F]
   ) =
     new SpecialCollectionService[F](
       maybeDefaultCollection,
       wrappedCollectionService,
-      wrappedBookService,
       collectionHooks,
-      scriptEngineManager
+      hookExecutionService
     )
-}
-
-sealed trait ProcessResult
-
-object ProcessResult {
-  case object Add    extends ProcessResult
-  case object Remove extends ProcessResult
 }
 
 case object CannotChangeNameOfSpecialCollectionError extends Throwable {

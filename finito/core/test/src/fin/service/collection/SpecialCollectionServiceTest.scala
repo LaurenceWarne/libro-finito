@@ -1,9 +1,7 @@
 package fin.service.collection
 
-import javax.script.ScriptEngineManager
-
 import cats.effect.concurrent.Ref
-import cats.effect.{Clock, IO, Resource}
+import cats.effect.{IO, Resource}
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -12,10 +10,9 @@ import weaver._
 import fin.BookConversions._
 import fin.Types._
 import fin.implicits._
-import fin.service.book._
+
 object SpecialCollectionServiceTest extends IOSuite {
 
-  val scriptEngineManager       = new ScriptEngineManager
   val otherCollection           = "other collection"
   val hook1Collection           = "default"
   val hook2Collection           = "cool"
@@ -54,25 +51,19 @@ object SpecialCollectionServiceTest extends IOSuite {
 
   implicit def unsafeLogger: Logger[IO] = Slf4jLogger.getLogger
 
-  override type Res = CollectionService[IO] with BookManagementService[IO]
-  override def sharedResource
-      : Resource[IO, CollectionService[IO] with BookManagementService[IO]] =
+  override type Res = CollectionService[IO]
+  override def sharedResource: Resource[IO, CollectionService[IO]] =
     for {
-      colRef  <- Resource.eval(Ref.of[IO, List[Collection]](List.empty))
-      bookRef <- Resource.eval(Ref.of[IO, List[UserBook]](List.empty))
+      colRef <- Resource.eval(Ref.of[IO, List[Collection]](List.empty))
       wrappedCollectionService = CollectionServiceImpl(
         new InMemoryCollectionRepository(colRef)
       )
-      wrappedBookService = BookManagementServiceImpl(
-        new InMemoryBookRepository(bookRef),
-        Clock[IO]
-      )
+      hookExecutionService = HookExecutionServiceImpl[IO]
       specialCollectionService = SpecialCollectionService(
         hook1Collection.some,
         wrappedCollectionService,
-        wrappedBookService,
         collectionHooks,
-        scriptEngineManager
+        hookExecutionService
       )
       _ <- (List(
           otherCollection,
@@ -181,7 +172,7 @@ object SpecialCollectionServiceTest extends IOSuite {
   test(
     "addBookToCollection errors when no default collection and no collection in args"
   ) { _ =>
-    val stubbedService = SpecialCollectionService(None, null, null, null, null)
+    val stubbedService = SpecialCollectionService(None, null, null, null)
     val book           = baseBook.copy(isbn = "isbn will never be added")
     val argsBook       = MutationsAddBookArgs(None, book)
     for {
@@ -254,22 +245,5 @@ object SpecialCollectionServiceTest extends IOSuite {
             .collection(QueriesCollectionArgs(collection))
             .attempt
       } yield expect(collection.isLeft)
-  }
-
-  test("rateBook adds for matching hook, but not for others") {
-    collectionService =>
-      val book     = baseBook.copy(isbn = "book to rate")
-      val rateArgs = MutationsRateBookArgs(book, 5)
-      for {
-        _ <- collectionService.rateBook(rateArgs)
-        hook1Response <-
-          collectionService.collection(QueriesCollectionArgs(hook1Collection))
-        hook3Response <-
-          collectionService.collection(QueriesCollectionArgs(hook3Collection))
-      } yield expect(
-        !hook1Response.books.contains(toUserBook(book))
-      ) and expect(
-        hook3Response.books.contains(toUserBook(book))
-      )
   }
 }

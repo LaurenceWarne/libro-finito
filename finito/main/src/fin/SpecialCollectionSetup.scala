@@ -1,7 +1,5 @@
 package fin
 
-import javax.script.ScriptEngineManager
-
 import cats.effect.Sync
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
@@ -42,13 +40,19 @@ object SpecialCollectionSetup {
                     .info(show"Collection '${collection.name}' already exists")
                 )
           }
-      scriptEngineManager <- Sync[F].delay(new ScriptEngineManager)
+      hookExecutionService = HookExecutionServiceImpl[F]
+      collectionHooks      = specialCollections.flatMap(_.toCollectionHooks)
       wrappedCollectionService = SpecialCollectionService[F](
         defaultCollection,
         collectionService,
-        bookService,
-        specialCollections.flatMap(_.toCollectionHooks),
-        scriptEngineManager
+        collectionHooks,
+        hookExecutionService
       )
-    } yield (wrappedCollectionService, wrappedCollectionService)
+      wrappedBookService = SpecialBookService[F](
+        collectionService,
+        bookService,
+        collectionHooks,
+        hookExecutionService
+      )
+    } yield (wrappedBookService, wrappedCollectionService)
 }
