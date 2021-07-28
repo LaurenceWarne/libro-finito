@@ -13,10 +13,13 @@ import fin.service.collection._
 
 object SpecialBookServiceTest extends IOSuite {
 
+  val triggerRating = 1337
+
   val onRateHookCollection      = "rated books collection"
   val onStartHookCollection     = "started books collection"
   val onFinishHookCollection    = "finished books collection"
   val hookAlwaysFalseCollection = "hook evals to always false"
+  val lazyCollection            = "lazy collection"
   val collectionHooks = List(
     CollectionHook(
       onRateHookCollection,
@@ -48,6 +51,11 @@ object SpecialBookServiceTest extends IOSuite {
       hookAlwaysFalseCollection,
       HookType.ReadCompleted,
       "add = false"
+    ),
+    CollectionHook(
+      lazyCollection,
+      HookType.Rate,
+      show"if rating == $triggerRating then add = true else add = false end"
     )
   )
 
@@ -116,4 +124,53 @@ object SpecialBookServiceTest extends IOSuite {
       )
   }
 
+  test("startReading adds for matching hook, but not for others") {
+    case (collectionService, bookService) =>
+      val book             = baseBook.copy(isbn = "book to start reading")
+      val startReadingArgs = MutationsStartReadingArgs(book, None)
+      for {
+        _ <- bookService.startReading(startReadingArgs)
+        startReadingHookResponse <- collectionService.collection(
+          QueriesCollectionArgs(onStartHookCollection)
+        )
+        alwaysFalseHookResponse <- collectionService.collection(
+          QueriesCollectionArgs(hookAlwaysFalseCollection)
+        )
+      } yield expect(
+        startReadingHookResponse.books.contains(toUserBook(book))
+      ) and expect(
+        !alwaysFalseHookResponse.books.contains(toUserBook(book))
+      )
+  }
+
+  test("finishReading adds for matching hook, but not for others") {
+    case (collectionService, bookService) =>
+      val book              = baseBook.copy(isbn = "book to finish reading")
+      val finishReadingArgs = MutationsFinishReadingArgs(book, None)
+      for {
+        _ <- bookService.finishReading(finishReadingArgs)
+        finishReadingHookResponse <- collectionService.collection(
+          QueriesCollectionArgs(onFinishHookCollection)
+        )
+        alwaysFalseHookResponse <- collectionService.collection(
+          QueriesCollectionArgs(hookAlwaysFalseCollection)
+        )
+      } yield expect(
+        finishReadingHookResponse.books.contains(toUserBook(book))
+      ) and expect(
+        !alwaysFalseHookResponse.books.contains(toUserBook(book))
+      )
+  }
+
+  test("rateBook creates collection if not exists") {
+    case (collectionService, bookService) =>
+      val book     = baseBook.copy(isbn = "book to trigger creation")
+      val rateArgs = MutationsRateBookArgs(book, triggerRating)
+      for {
+        _ <- bookService.rateBook(rateArgs)
+        rateHookResponse <- collectionService.collection(
+          QueriesCollectionArgs(lazyCollection)
+        )
+      } yield expect(rateHookResponse.books.contains(toUserBook(book)))
+  }
 }
