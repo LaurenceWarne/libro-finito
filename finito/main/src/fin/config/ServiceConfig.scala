@@ -54,8 +54,8 @@ object ServiceConfig {
           |    },
           |    {
           |      name = Currently Reading,
-          |      read-begun-hook = \"\"\"add = true\"\"\",
-          |      read-complete-hook = \"\"\"remove = true\"\"\"
+          |      read-started-hook = \"\"\"add = true\"\"\",
+          |      read-completed-hook = \"\"\"remove = true\"\"\"
           |    },
           |    {
           |      name = Favourites,
