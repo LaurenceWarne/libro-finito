@@ -43,9 +43,10 @@ object Main extends IOApp {
             bookRepo       = SqliteBookRepository[IO](xa)
             implicit0(logger: Logger[IO]) <- Slf4jLogger.create[IO]
             _                             <- logger.debug("Creating services...")
-            bookInfoService      = GoogleBookInfoService[IO](client)
-            collectionService    = CollectionServiceImpl[IO](collectionRepo)
-            bookManagmentService = BookManagementServiceImpl[IO](bookRepo, clock)
+            bookInfoService   = GoogleBookInfoService[IO](client)
+            collectionService = CollectionServiceImpl[IO](collectionRepo)
+            bookManagmentService =
+              BookManagementServiceImpl[IO](bookRepo, clock)
             (wrappedBookManagementService, wrappedCollectionService) <-
               SpecialCollectionSetup.setup[IO](
                 collectionService,
