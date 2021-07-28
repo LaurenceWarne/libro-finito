@@ -1,4 +1,4 @@
-package fin.service
+package fin.service.book
 
 import io.circe._
 import io.circe.generic.semiauto._

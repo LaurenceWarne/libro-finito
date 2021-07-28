@@ -1,4 +1,4 @@
-package fin.service
+package fin.service.collection
 
 import cats.effect.Sync
 import cats.implicits._

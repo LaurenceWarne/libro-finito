@@ -8,7 +8,8 @@ import io.chrisdavenport.log4cats.Logger
 
 import fin.Types._
 import fin.config.SpecialCollection
-import fin.service._
+import fin.service.book._
+import fin.service.collection._
 
 object SpecialCollectionSetup {
   def setup[F[_]: Sync: Logger](

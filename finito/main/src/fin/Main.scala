@@ -14,7 +14,8 @@ import zio.Runtime
 
 import fin.config._
 import fin.persistence._
-import fin.service._
+import fin.service.book._
+import fin.service.collection._
 
 object Main extends IOApp {
 
@@ -43,10 +44,10 @@ object Main extends IOApp {
             implicit0(logger: Logger[IO]) <- Slf4jLogger.create[IO]
             _                             <- logger.debug("Creating services...")
             bookInfoService      = GoogleBookInfoService[IO](client)
-            collectionService    = CollectionServiceImpl(collectionRepo)
-            bookManagmentService = BookManagementServiceImpl(bookRepo, clock)
+            collectionService    = CollectionServiceImpl[IO](collectionRepo)
+            bookManagmentService = BookManagementServiceImpl[IO](bookRepo, clock)
             (wrappedBookManagementService, wrappedCollectionService) <-
-              SpecialCollectionSetup.setup(
+              SpecialCollectionSetup.setup[IO](
                 collectionService,
                 bookManagmentService,
                 config.defaultCollection,

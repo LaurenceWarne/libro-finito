@@ -1,4 +1,4 @@
-package fin.service
+package fin.service.collection
 
 import javax.script.ScriptEngineManager
 
@@ -12,6 +12,7 @@ import weaver._
 import fin.BookConversions._
 import fin.Types._
 import fin.implicits._
+import fin.service.book._
 object SpecialCollectionServiceTest extends IOSuite {
 
   val scriptEngineManager       = new ScriptEngineManager

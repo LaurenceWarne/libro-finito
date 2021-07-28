@@ -4,7 +4,7 @@ import cats.implicits._
 import pureconfig._
 import pureconfig.generic.semiauto._
 
-import fin.service.{CollectionHook, HookType}
+import fin.service.collection.{CollectionHook, HookType}
 
 final case class ServiceConfig(
     databasePath: String,

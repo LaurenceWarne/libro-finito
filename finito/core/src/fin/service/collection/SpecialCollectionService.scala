@@ -1,4 +1,4 @@
-package fin.service
+package fin.service.collection
 
 import javax.script._
 
@@ -11,6 +11,7 @@ import org.luaj.vm2.LuaBoolean
 
 import fin.Types._
 import fin.implicits._
+import fin.service.book.BookManagementService
 
 import HookType._
 import Bindable._

@@ -1,4 +1,4 @@
-package fin.service
+package fin.service.collection
 
 import fin.Types._
 

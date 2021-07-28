@@ -1,4 +1,4 @@
-package fin.service
+package fin.service.book
 
 import java.time.{LocalDate, ZoneId}
 

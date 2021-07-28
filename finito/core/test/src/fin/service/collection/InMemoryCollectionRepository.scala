@@ -1,4 +1,4 @@
-package fin.service
+package fin.service.collection
 
 import cats.MonadError
 import cats.effect.concurrent.Ref

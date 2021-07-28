@@ -1,4 +1,4 @@
-package fin.service
+package fin.service.collection
 
 import java.util.HashMap
 import javax.script.{Bindings, SimpleBindings}

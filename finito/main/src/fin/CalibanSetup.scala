@@ -7,7 +7,8 @@ import cats.effect.Effect
 import cats.implicits._
 
 import fin.Operations._
-import fin.service.{BookInfoService, BookManagementService, CollectionService}
+import fin.service.book._
+import fin.service.collection._
 
 object CalibanSetup {
 

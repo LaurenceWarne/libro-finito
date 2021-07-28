@@ -1,4 +1,4 @@
-package fin.service
+package fin.service.book
 
 import cats.effect.Clock
 import cats.implicits._
