@@ -5,6 +5,7 @@ import cats.effect.{IO, Resource}
 import cats.implicits._
 import weaver._
 
+import fin._
 import fin.BookConversions._
 import fin.Types._
 import fin.implicits._

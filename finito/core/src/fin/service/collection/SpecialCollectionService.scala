@@ -4,7 +4,7 @@ import cats.effect.Sync
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 
-import fin.FinitoError
+import fin._
 import fin.Types._
 import fin.implicits._
 
@@ -154,18 +154,4 @@ object SpecialCollectionService {
       collectionHooks,
       hookExecutionService
     )
-}
-
-case object CannotChangeNameOfSpecialCollectionError extends FinitoError {
-  override def getMessage = "Cannot update the name of a special collection"
-  override def errorCode  = "CANNOT_CHANGE_NAME_OF_SPECIAL_COLLECTION"
-}
-
-case object CannotDeleteSpecialCollectionError extends FinitoError {
-  override def getMessage =
-    """
-     |Cannot delete a special collection!  In order to delete a special
-     |collection, first remove it's special collection definition from your
-     |config file, and then delete it.""".stripMargin.replace("\n", " ")
-  override def errorCode = "CANNOT_DELETE_OF_SPECIAL_COLLECTION"
 }

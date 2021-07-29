@@ -173,4 +173,31 @@ object SpecialBookServiceTest extends IOSuite {
         )
       } yield expect(rateHookResponse.books.contains(toUserBook(book)))
   }
+
+  test("rateBook silent error if add to special collection fails") {
+    case (collectionService, bookService) =>
+      val book     = baseBook.copy(isbn = "book to rate twice")
+      val rateArgs = MutationsRateBookArgs(book, 5)
+      for {
+        _ <- bookService.rateBook(rateArgs)
+        // We should get a failure here by adding it again
+        _ <- bookService.rateBook(rateArgs.copy(rating = 6))
+        rateHookResponse <- collectionService.collection(
+          QueriesCollectionArgs(onRateHookCollection)
+        )
+      } yield expect(rateHookResponse.books.contains(toUserBook(book)))
+  }
+
+  test("rateBook removes from collection") {
+    case (collectionService, bookService) =>
+      val book     = baseBook.copy(isbn = "book to rate good then bad")
+      val rateArgs = MutationsRateBookArgs(book, 5)
+      for {
+        _ <- bookService.rateBook(rateArgs)
+        _ <- bookService.rateBook(rateArgs.copy(rating = 2))
+        rateHookResponse <- collectionService.collection(
+          QueriesCollectionArgs(onRateHookCollection)
+        )
+      } yield expect(!rateHookResponse.books.contains(toUserBook(book)))
+  }
 }

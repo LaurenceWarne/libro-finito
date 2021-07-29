@@ -9,6 +9,7 @@ import org.http4s.client.Client
 import org.http4s.implicits._
 import weaver._
 
+import fin._
 import fin.Types._
 
 object GoogleBookInfoServiceTest extends SimpleIOSuite {

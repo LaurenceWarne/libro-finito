@@ -3,8 +3,8 @@ package fin.service.collection
 import cats.effect.Sync
 import cats.implicits._
 
+import fin._
 import fin.BookConversions._
-import fin.FinitoError
 import fin.Types._
 import fin.persistence.CollectionRepository
 
@@ -119,27 +119,4 @@ object CollectionServiceImpl {
 
   def apply[F[_]: Sync](collectionRepo: CollectionRepository[F]) =
     new CollectionServiceImpl[F](collectionRepo)
-}
-
-final case class CollectionDoesNotExistError(collection: String)
-    extends FinitoError {
-  override def getMessage = show"Collection '$collection' does not exist!"
-  override def errorCode  = "NOT_ENOUGH_ARGS_FOR_UPDATE"
-}
-
-final case class CollectionAlreadyExistsError(collection: String)
-    extends FinitoError {
-  override def getMessage = show"Collection '$collection' already exists!"
-  override def errorCode  = "NOT_ENOUGH_ARGS_FOR_UPDATE"
-}
-
-case object NotEnoughArgumentsForUpdateError extends FinitoError {
-  override def getMessage =
-    "At least one of 'newName' and 'preferredSort' must be specified"
-  override def errorCode = "NOT_ENOUGH_ARGS_FOR_UPDATE"
-}
-
-case object DefaultCollectionNotSupportedError extends FinitoError {
-  override def getMessage = "The default collection is not known!"
-  override def errorCode  = "DEFAULT_COLLECTION_NOT_SUPPORTED"
 }
