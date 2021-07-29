@@ -5,6 +5,7 @@ import cats.implicits._
 import cats.{Monad, MonadError}
 
 import fin.BookConversions._
+import fin.FinitoError
 import fin.Types._
 import fin.implicits._
 import fin.persistence.{BookRepository, Dates}
@@ -69,12 +70,15 @@ object BookManagementServiceImpl {
   ) = new BookManagementServiceImpl(bookRepo, clock)
 }
 
-final case class BookAlreadyBeingReadError(book: BookInput) extends Throwable {
+final case class BookAlreadyBeingReadError(book: BookInput)
+    extends FinitoError {
   override def getMessage =
     show"The book '${book.title}' is already being read!"
+  override def errorCode = "BOOK_ALREADY_BEING_READ"
 }
 
-final case class BookAlreadyExistsError(book: BookInput) extends Throwable {
+final case class BookAlreadyExistsError(book: BookInput) extends FinitoError {
   override def getMessage =
     show"A book with isbn ${book.isbn} already exists: $book!"
+  override def errorCode = "BOOK_ALREADY_EXISTS"
 }

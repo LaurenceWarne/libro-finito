@@ -9,6 +9,7 @@ import org.http4s.Uri
 import org.http4s.client._
 import org.http4s.implicits._
 
+import fin.FinitoError
 import fin.Types._
 
 import GoogleBooksAPIDecoding._
@@ -38,7 +39,7 @@ class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger] private (
       books <- booksFromUri(uri, isbnPartialFn)
       book <- MonadError[F, Throwable].fromOption(
         books.headOption,
-        new Exception(show"No books found for isbn: ${bookArgs.isbn}")
+        NoBooksFoundForIsbnError(bookArgs.isbn)
       )
     } yield book
   }
@@ -56,13 +57,8 @@ class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger] private (
         MonadError[F, Throwable]
           .fromEither(decode[GoogleResponse](json))
       _ <- Logger[F].debug("DECODED: " + googleResponse)
-    } yield googleResponse.items.collect(pf)
+    } yield googleResponse.items.getOrElse(List.empty).collect(pf)
   }
-}
-
-case object NoKeywordsSpecified extends Throwable {
-  override def getMessage: String =
-    "At least one of 'author keywords' and 'title keywords' must be specified."
 }
 
 /**
@@ -129,9 +125,20 @@ object GoogleBookInfoService {
           .mkString("+")
       ) +?? ("maxResults", booksArgs.maxResults)
         +?? ("langRestrict", booksArgs.langRestrict),
-      NoKeywordsSpecified
+      NoKeywordsSpecifiedError
     )
 
   def uriFromBookArgs(bookArgs: QueriesBookArgs): Uri =
     baseUri +? ("q", "isbn:" + bookArgs.isbn)
+}
+
+case object NoKeywordsSpecifiedError extends FinitoError {
+  override def getMessage =
+    "At least one of 'author keywords' and 'title keywords' must be specified."
+  override def errorCode = "NO_KEYWORDS_SPECIFIED"
+}
+
+final case class NoBooksFoundForIsbnError(isbn: String) extends FinitoError {
+  override def getMessage = show"No books found for isbn: '$isbn'"
+  override def errorCode  = "NO_BOOKS_FOR_ISBN"
 }

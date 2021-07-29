@@ -49,12 +49,12 @@ object GoogleBookInfoServiceTest extends SimpleIOSuite {
   }
 
   test("fromIsbn returns error when no items in response") {
+    val isbn                         = "arandomisbn"
     val client: Client[IO]           = mockedClient(Mocks.emptyResponse)
     val bookAPI: BookInfoService[IO] = GoogleBookInfoService(client)
     for {
-      response <- bookAPI.fromIsbn(QueriesBookArgs("arandomisbn", None)).attempt
-      // TODO why do I need the type hint here?
-    } yield expect(response.isLeft): Expectations
+      response <- bookAPI.fromIsbn(QueriesBookArgs(isbn, None)).attempt
+    } yield expect(response == NoBooksFoundForIsbnError(isbn).asLeft)
   }
 
   pureTest("uriFromQueriesBooksArgs returns correct uri") {
@@ -68,12 +68,20 @@ object GoogleBookInfoServiceTest extends SimpleIOSuite {
 
   pureTest("uriFromQueriesBooksArgs errors with empty strings") {
     val bookArgs = QueriesBooksArgs("".some, "".some, None, None)
-    expect(GoogleBookInfoService.uriFromBooksArgs(bookArgs).isLeft)
+    expect(
+      GoogleBookInfoService.uriFromBooksArgs(
+        bookArgs
+      ) == NoKeywordsSpecifiedError.asLeft
+    )
   }
 
   pureTest("uriFromQueriesBooksArgs errors with empty optionals") {
     val bookArgs = QueriesBooksArgs(None, None, None, None)
-    expect(GoogleBookInfoService.uriFromBooksArgs(bookArgs).isLeft)
+    expect(
+      GoogleBookInfoService.uriFromBooksArgs(
+        bookArgs
+      ) == NoKeywordsSpecifiedError.asLeft
+    )
   }
 
   pureTest(
@@ -220,7 +228,7 @@ object Mocks {
 
   def emptyResponse = """{
   "kind": "books#volumes",
-  "totalItems": 0,
+  "totalItems": 0
 }
 """
 

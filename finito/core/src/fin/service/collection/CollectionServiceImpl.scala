@@ -4,8 +4,8 @@ import cats.effect.Sync
 import cats.implicits._
 
 import fin.BookConversions._
+import fin.FinitoError
 import fin.Types._
-import fin.implicits._
 import fin.persistence.CollectionRepository
 
 import CollectionServiceImpl._
@@ -25,9 +25,7 @@ class CollectionServiceImpl[F[_]: Sync] private (
       _ <- maybeExistingCollection.fold(
         collectionRepo.createCollection(args.name, defaultSort)
       ) { collection =>
-        Sync[F].raiseError(
-          new Exception(show"Collection already exists: $collection")
-        )
+        Sync[F].raiseError(CollectionAlreadyExistsError(collection.name))
       }
     } yield Collection(
       args.name,
@@ -90,7 +88,7 @@ class CollectionServiceImpl[F[_]: Sync] private (
       maybeCollection <- collectionRepo.collection(collection)
       collection <- Sync[F].fromOption(
         maybeCollection,
-        new Exception(show"Collection '$collection' does not exist!")
+        CollectionDoesNotExistError(collection)
       )
     } yield collection
 
@@ -98,11 +96,7 @@ class CollectionServiceImpl[F[_]: Sync] private (
     for {
       maybeExistingCollection <- collectionRepo.collection(collection)
       _ <- Sync[F].whenA(maybeExistingCollection.nonEmpty)(
-        Sync[F].raiseError(
-          new Exception(
-            show"A collection with the name '${collection}' already exists!"
-          )
-        )
+        Sync[F].raiseError(CollectionAlreadyExistsError(collection))
       )
     } yield ()
 
@@ -127,11 +121,25 @@ object CollectionServiceImpl {
     new CollectionServiceImpl[F](collectionRepo)
 }
 
-case object NotEnoughArgumentsForUpdateError extends Throwable {
-  override def getMessage =
-    "At least one of 'newName' and 'preferredSort' must be specified"
+final case class CollectionDoesNotExistError(collection: String)
+    extends FinitoError {
+  override def getMessage = show"Collection '$collection' does not exist!"
+  override def errorCode  = "NOT_ENOUGH_ARGS_FOR_UPDATE"
 }
 
-case object DefaultCollectionNotSupportedError extends Throwable {
+final case class CollectionAlreadyExistsError(collection: String)
+    extends FinitoError {
+  override def getMessage = show"Collection '$collection' already exists!"
+  override def errorCode  = "NOT_ENOUGH_ARGS_FOR_UPDATE"
+}
+
+case object NotEnoughArgumentsForUpdateError extends FinitoError {
+  override def getMessage =
+    "At least one of 'newName' and 'preferredSort' must be specified"
+  override def errorCode = "NOT_ENOUGH_ARGS_FOR_UPDATE"
+}
+
+case object DefaultCollectionNotSupportedError extends FinitoError {
   override def getMessage = "The default collection is not known!"
+  override def errorCode  = "DEFAULT_COLLECTION_NOT_SUPPORTED"
 }

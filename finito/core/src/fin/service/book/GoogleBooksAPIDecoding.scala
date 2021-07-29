@@ -1,5 +1,6 @@
 package fin.service.book
 
+import cats.implicits._
 import io.circe._
 import io.circe.generic.semiauto._
 
@@ -21,7 +22,7 @@ object GoogleBooksAPIDecoding {
     deriveDecoder[GoogleResponse]
 }
 
-final case class GoogleResponse(items: List[GoogleVolume])
+final case class GoogleResponse(items: Option[List[GoogleVolume]])
 
 final case class GoogleVolume(volumeInfo: GoogleBookItem)
 
@@ -44,5 +45,5 @@ final case class GoogleIsbnInfo(
     identifier: String
 ) {
   def getIsbn13: String =
-    if (identifier.length == 10) "978" + identifier else identifier
+    if (identifier.length === 10) "978" + identifier else identifier
 }

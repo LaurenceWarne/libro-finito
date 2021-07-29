@@ -133,7 +133,7 @@ object BookManagementServiceImplTest extends IOSuite {
       book <-
         bookService.startReading(MutationsStartReadingArgs(popularBook, None))
     } yield expect(
-      book == toUserBook(
+      book === toUserBook(
         popularBook,
         startedReading = constantTime.some,
         lastRead = constantTime.some

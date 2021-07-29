@@ -47,7 +47,7 @@ object CollectionServiceImplTest extends IOSuite {
               MutationsCreateCollectionArgs(name, None)
             )
             .attempt
-      } yield expect(response.isLeft)
+      } yield expect(response == CollectionAlreadyExistsError(name).asLeft)
   }
 
   test("collection returns created collection") { collectionService =>
@@ -62,12 +62,13 @@ object CollectionServiceImplTest extends IOSuite {
   }
 
   test("collection errors on inexistant collection") { collectionService =>
+    val name = "not a collection!"
     for {
       response <-
         collectionService
-          .collection(QueriesCollectionArgs("not a collection!"))
+          .collection(QueriesCollectionArgs(name))
           .attempt
-    } yield expect(response.isLeft)
+    } yield expect(response == CollectionDoesNotExistError(name).asLeft)
   }
 
   test("collection returns collection sorted by title") { collectionService =>
@@ -173,18 +174,19 @@ object CollectionServiceImplTest extends IOSuite {
 
   test("updateCollection errors on inexistant collection") {
     collectionService =>
+      val name = "inexistant collection"
       for {
         response <-
           collectionService
             .updateCollection(
               MutationsUpdateCollectionArgs(
-                "inexistant collection",
+                name,
                 "new name".some,
                 None
               )
             )
             .attempt
-      } yield expect(response.isLeft)
+      } yield expect(response == CollectionDoesNotExistError(name).asLeft)
   }
 
   test("updateCollection errors if new name already exists") {
@@ -203,7 +205,7 @@ object CollectionServiceImplTest extends IOSuite {
               MutationsUpdateCollectionArgs(oldName, newName.some, None)
             )
             .attempt
-      } yield expect(response.isLeft)
+      } yield expect(response == CollectionAlreadyExistsError(newName).asLeft)
   }
 
   test("updateCollection errors if all arguments None") { collectionService =>
@@ -249,7 +251,7 @@ object CollectionServiceImplTest extends IOSuite {
               MutationsAddBookArgs(name.some, book)
             )
             .attempt
-      } yield expect(response.isLeft)
+      } yield expect(response == CollectionDoesNotExistError(name).asLeft)
   }
 
   test("addBookToCollection errors when collection not set") {
@@ -259,9 +261,7 @@ object CollectionServiceImplTest extends IOSuite {
           collectionService
             .addBookToCollection(MutationsAddBookArgs(None, book))
             .attempt
-      } yield expect(
-        response.swap.exists(_ == DefaultCollectionNotSupportedError)
-      )
+      } yield expect(response == DefaultCollectionNotSupportedError.asLeft)
   }
 
   test("removeBookFromCollection removes book") { collectionService =>
@@ -290,7 +290,7 @@ object CollectionServiceImplTest extends IOSuite {
               MutationsRemoveBookArgs(name, isbn)
             )
             .attempt
-      } yield expect(response.isLeft)
+      } yield expect(response == CollectionDoesNotExistError(name).asLeft)
   }
 
   test("removeBookFromCollection does not error when book not in collection") {

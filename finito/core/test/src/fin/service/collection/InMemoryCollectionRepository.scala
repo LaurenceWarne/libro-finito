@@ -72,7 +72,7 @@ class InMemoryCollectionRepository[F[_]](
       maybeCollection <- collection(collectionName)
       retrievedCollection <- MonadError[F, Throwable].fromOption(
         maybeCollection,
-        new Exception(show"Collection '$collectionName' does not exist!")
+        CollectionDoesNotExistError(collectionName)
       )
     } yield retrievedCollection
 }

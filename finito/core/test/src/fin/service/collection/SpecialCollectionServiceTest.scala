@@ -139,7 +139,11 @@ object SpecialCollectionServiceTest extends IOSuite {
               QueriesCollectionArgs(hookAlwaysFalseCollection)
             )
             .attempt
-      } yield expect(hookResponse.isLeft)
+      } yield expect(
+        hookResponse == CollectionDoesNotExistError(
+          hookAlwaysFalseCollection
+        ).asLeft
+      )
   }
 
   test("addBookToCollection creates special collection if not exists") {

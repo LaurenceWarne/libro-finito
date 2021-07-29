@@ -36,7 +36,7 @@
 *** TODO Decrease/investigate memory usage
 *** DONE Get better errors than "Effect Failure"
 *** TODO Caching middleware?
-*** TODO Add error classes for better testing than ~isLeft~
+*** DONE Add error classes for better testing than ~isLeft~
 *** DONE Add typeclass to put objects into ~Bindings~
 *** TODO Add logging to file in config directory
 *** TODO Add IOCaseApp for flags
