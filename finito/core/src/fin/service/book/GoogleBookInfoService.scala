@@ -9,8 +9,8 @@ import org.http4s.Uri
 import org.http4s.client._
 import org.http4s.implicits._
 
-import fin._
 import fin.Types._
+import fin._
 
 import GoogleBooksAPIDecoding._
 

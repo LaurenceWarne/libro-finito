@@ -3,9 +3,9 @@ package fin.service.collection
 import cats.effect.Sync
 import cats.implicits._
 
-import fin._
 import fin.BookConversions._
 import fin.Types._
+import fin._
 import fin.persistence.CollectionRepository
 
 import CollectionServiceImpl._

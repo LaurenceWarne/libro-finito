@@ -4,9 +4,9 @@ import cats.effect.Clock
 import cats.implicits._
 import cats.{Monad, MonadError}
 
-import fin._
 import fin.BookConversions._
 import fin.Types._
+import fin._
 import fin.persistence.{BookRepository, Dates}
 
 class BookManagementServiceImpl[F[_]] private (

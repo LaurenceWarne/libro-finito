@@ -4,9 +4,9 @@ import cats.MonadError
 import cats.effect.concurrent.Ref
 import cats.implicits._
 
-import fin._
 import fin.BookConversions._
 import fin.Types._
+import fin._
 import fin.persistence.CollectionRepository
 
 class InMemoryCollectionRepository[F[_]](

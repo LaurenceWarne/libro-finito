@@ -4,8 +4,8 @@ import cats.effect.Sync
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 
-import fin._
 import fin.Types._
+import fin._
 import fin.implicits._
 
 import HookType._
