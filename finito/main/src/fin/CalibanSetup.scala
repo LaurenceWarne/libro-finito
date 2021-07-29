@@ -10,6 +10,10 @@ import fin.Operations._
 import fin.service.book._
 import fin.service.collection._
 
+import CalibanError._
+import ResponseValue._
+import Value._
+
 object CalibanSetup {
 
   def interpreter[F[_]: Effect](
@@ -47,8 +51,24 @@ object CalibanSetup {
       interpreter: GraphQLInterpreter[R, CalibanError]
   ): GraphQLInterpreter[R, CalibanError] =
     interpreter.mapError {
-      case err @ ExecutionError(_, _, _, Some(wrappedError), _) =>
-        err.copy(msg = wrappedError.getMessage)
-      case err => err
+      case err @ ExecutionError(_, _, _, Some(wrappedError: FinitoError), _) =>
+        err.copy(
+          msg = wrappedError.getMessage,
+          extensions = ObjectValue(
+            List(("errorCode", StringValue(wrappedError.errorCode)))
+          ).some
+        )
+      case err: ValidationError =>
+        err.copy(extensions =
+          ObjectValue(List(("errorCode", StringValue("VALIDATION_ERROR")))).some
+        )
+      case err: ParsingError =>
+        err.copy(extensions =
+          ObjectValue(List(("errorCode", StringValue("PARSING_ERROR")))).some
+        )
+      case err: ExecutionError =>
+        err.copy(extensions =
+          ObjectValue(List(("errorCode", StringValue("UNKNOWN")))).some
+        )
     }
 }
