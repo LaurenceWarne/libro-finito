@@ -17,6 +17,11 @@ import fin.implicits._
 object BookManagementServiceImplTest extends IOSuite {
 
   val constantTime = LocalDate.parse("2021-11-30")
+  val testClock = TestClock[IO](
+    constantTime
+      .atStartOfDay(ZoneId.systemDefault())
+      .toEpochSecond * 1000L
+  )
 
   val book =
     BookInput(
@@ -31,14 +36,7 @@ object BookManagementServiceImplTest extends IOSuite {
   override def sharedResource: Resource[IO, BookManagementService[IO]] =
     Resource.eval(Ref.of[IO, List[UserBook]](List.empty).map { ref =>
       val repo = new InMemoryBookRepository(ref)
-      BookManagementServiceImpl(
-        repo,
-        TestClock[IO](
-          constantTime
-            .atStartOfDay(ZoneId.systemDefault())
-            .toEpochSecond * 1000L
-        )
-      )
+      BookManagementServiceImpl(repo, testClock)
     })
 
   test("createBook creates book") {
@@ -167,22 +165,24 @@ object BookManagementServiceImplTest extends IOSuite {
       )
   }
 
-  test("deleteBookData deletes book data") { bookService =>
+  test("deleteBookData deletes book data") { _ =>
     val bookToClear     = book.copy(isbn = "book to delete data from")
     val finishedReading = LocalDate.parse("2018-11-30")
+    val bookRef         = Ref.unsafe[IO, List[UserBook]](List.empty)
+    val repo            = new InMemoryBookRepository(bookRef)
+    val service         = BookManagementServiceImpl(repo, testClock)
+
     for {
-      _ <- bookService.finishReading(
+      _ <- service.finishReading(
         MutationsFinishReadingArgs(bookToClear, finishedReading.some)
       )
-      _ <-
-        bookService.startReading(MutationsStartReadingArgs(bookToClear, None))
-      _ <- bookService.rateBook(MutationsRateBookArgs(bookToClear, 3))
-      _ <- bookService.deleteBookData(
+      _ <- service.startReading(MutationsStartReadingArgs(bookToClear, None))
+      _ <- service.rateBook(MutationsRateBookArgs(bookToClear, 3))
+      _ <- service.deleteBookData(
         MutationsDeleteBookDataArgs(bookToClear.isbn)
       )
-    } yield expect(
-      true
-    )
+      book <- repo.retrieveBook(bookToClear.isbn)
+    } yield expect(book.exists(_ == toUserBook(bookToClear)))
   }
 }
 
