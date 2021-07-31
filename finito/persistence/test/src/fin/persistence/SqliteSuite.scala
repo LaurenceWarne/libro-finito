@@ -6,6 +6,8 @@ import cats.Show
 import cats.effect.{IO, Resource}
 import cats.implicits._
 import doobie.util.transactor.Transactor
+import doobie._
+import doobie.implicits._
 import weaver._
 
 trait SqliteSuite extends IOSuite {
@@ -36,4 +38,7 @@ trait SqliteSuite extends IOSuite {
   // See https://www.sqlite.org/faq.html#q5 of why generally it's a bad idea
   // to run sqlite writes in parallel
   override def maxParallelism = 1
+
+  def testDoobie(name: String)(block: => ConnectionIO[Expectations]) =
+    test(name)(block.transact(xa))
 }

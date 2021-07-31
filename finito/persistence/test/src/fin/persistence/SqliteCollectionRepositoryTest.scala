@@ -1,11 +1,11 @@
 package fin.persistence
 
-import cats.effect.{Clock, IO}
 import cats.implicits._
 
 import fin.BookConversions._
 import fin.Types._
 import fin.implicits._
+import java.time.LocalDate
 
 object SqliteCollectionRepositoryTest extends SqliteSuite {
 
@@ -17,9 +17,10 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
       "???",
       "uri"
     )
-  val repo = SqliteCollectionRepository(xa, Clock[IO])
+  val repo = SqliteCollectionRepository
+  val date = LocalDate.of(2021, 5, 22)
 
-  test("collection retrieves created collection") {
+  testDoobie("collection retrieves created collection") {
     val name = "retrieve_collection"
     for {
       _                   <- repo.createCollection(name, Sort.DateAdded)
@@ -31,7 +32,7 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
     )
   }
 
-  test("createCollection fails when name already exists") {
+  testDoobie("createCollection fails when name already exists") {
     val name = "duplicated_name"
     for {
       _        <- repo.createCollection(name, Sort.DateAdded)
@@ -39,7 +40,7 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
     } yield expect(response.isLeft)
   }
 
-  test("collections retrieves created collections") {
+  testDoobie("collections retrieves created collections") {
     val (name1, name2, name3) = ("collection1", "collection2", "collection3")
     for {
       _                    <- repo.createCollection(name1, Sort.DateAdded)
@@ -51,7 +52,7 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
     )
   }
 
-  test("updateCollection changes collection name and sort") {
+  testDoobie("updateCollection changes collection name and sort") {
     val oldName = "old_name"
     val newName = "new_name"
     val oldSort = Sort.DateAdded
@@ -67,7 +68,7 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
     )
   }
 
-  test(
+  testDoobie(
     "updateCollection changes collection name and sort for collection with books"
   ) {
     val oldName = "old_name with books"
@@ -76,7 +77,7 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
     val newSort = Sort.Title
     for {
       _                   <- repo.createCollection(oldName, oldSort)
-      _                   <- repo.addBookToCollection(oldName, book)
+      _                   <- repo.addBookToCollection(oldName, book, date)
       _                   <- repo.updateCollection(oldName, newName, newSort)
       retrievedCollection <- repo.collection(newName)
     } yield expect(
@@ -86,7 +87,7 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
     )
   }
 
-  test("updateCollection errors if name already exists") {
+  testDoobie("updateCollection errors if name already exists") {
     val oldName = "old_name_"
     val newName = "new_name_"
     val sort    = Sort.DateAdded
@@ -97,7 +98,7 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
     } yield expect(response.isLeft)
   }
 
-  test(
+  testDoobie(
     "updateCollection does not error if no experiment exists with name"
   ) {
     val name = "inexistant name"
@@ -106,12 +107,12 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
     } yield expect(response.isRight)
   }
 
-  test("AddToCollection adds book not already added") {
+  testDoobie("AddToCollection adds book not already added") {
     val name = "collection with books"
     val sort = Sort.DateAdded
     for {
       _                   <- repo.createCollection(name, sort)
-      _                   <- repo.addBookToCollection(name, book)
+      _                   <- repo.addBookToCollection(name, book, date)
       retrievedCollection <- repo.collection(name)
     } yield expect(
       retrievedCollection.exists(
@@ -120,15 +121,15 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
     )
   }
 
-  test("AddToCollection adds in another collection") {
+  testDoobie("AddToCollection adds in another collection") {
     val name1 = "collection with books 1"
     val name2 = "collection with books 2"
     val sort  = Sort.DateAdded
     for {
       _                   <- repo.createCollection(name1, sort)
       _                   <- repo.createCollection(name2, sort)
-      _                   <- repo.addBookToCollection(name1, book)
-      _                   <- repo.addBookToCollection(name2, book)
+      _                   <- repo.addBookToCollection(name1, book, date)
+      _                   <- repo.addBookToCollection(name2, book, date)
       retrievedCollection <- repo.collection(name2)
     } yield expect(
       retrievedCollection.exists(
@@ -137,14 +138,14 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
     )
   }
 
-  test("AddToCollection errors if collection does not exist") {
+  testDoobie("AddToCollection errors if collection does not exist") {
     val name = "inexistant collection #2"
     for {
-      response <- repo.addBookToCollection(name, book).attempt
+      response <- repo.addBookToCollection(name, book, date).attempt
     } yield expect(response.isLeft)
   }
 
-  test("deleteCollection successful with collection with no books") {
+  testDoobie("deleteCollection successful with collection with no books") {
     val name = "collection to delete"
     for {
       _               <- repo.createCollection(name, Sort.DateAdded)
@@ -153,35 +154,39 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
     } yield expect(maybeCollection.isEmpty)
   }
 
-  test("deleteCollection successful with collection with one book") {
+  testDoobie("deleteCollection successful with collection with one book") {
     val name  = "collection to delete with books"
     val book2 = book.copy(isbn = "isbn-d")
     for {
       _               <- repo.createCollection(name, Sort.DateAdded)
-      _               <- repo.addBookToCollection(name, book2)
+      _               <- repo.addBookToCollection(name, book2, date)
       _               <- repo.deleteCollection(name)
       maybeCollection <- repo.collection(name)
     } yield expect(maybeCollection.isEmpty)
   }
 
-  test("deleteCollection does not error when collection does not exist") {
+  testDoobie("deleteCollection does not error when collection does not exist") {
     for {
       response <- repo.deleteCollection("inexistant collection").attempt
     } yield expect(response.isRight)
   }
 
-  test("removeBookFromCollection successful with collection with one book") {
+  testDoobie(
+    "removeBookFromCollection successful with collection with one book"
+  ) {
     val name  = "collection with book to delete"
     val book2 = book.copy(isbn = "isbn-d")
     for {
       _               <- repo.createCollection(name, Sort.DateAdded)
-      _               <- repo.addBookToCollection(name, book2)
+      _               <- repo.addBookToCollection(name, book2, date)
       _               <- repo.removeBookFromCollection(name, book2.isbn)
       maybeCollection <- repo.collection(name)
     } yield expect(maybeCollection.exists(_.books.isEmpty))
   }
 
-  test("removeBookFromCollection successful when collection does not exist") {
+  testDoobie(
+    "removeBookFromCollection successful when collection does not exist"
+  ) {
     val isbn = "isbn-d"
     for {
       response <-
@@ -189,7 +194,9 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
     } yield expect(response.isRight)
   }
 
-  test("removeBookFromCollection successful when connection does not exist") {
+  testDoobie(
+    "removeBookFromCollection successful when connection does not exist"
+  ) {
     val name = "collection with no book"
     val isbn = "isbn-d"
     for {

@@ -2,9 +2,9 @@ package fin.persistence
 
 import java.time.LocalDate
 
-import cats.effect.IO
 import cats.implicits._
 import cats.kernel.Eq
+import doobie._
 import doobie.implicits._
 
 import fin.BookConversions._
@@ -16,8 +16,9 @@ object SqliteBookRepositoryTest extends SqliteSuite {
   import BookFragments._
 
   implicit val dateEq: Eq[LocalDate] = Eq.fromUniversalEquals
-  val repo                           = SqliteBookRepository(xa)
-  val date                           = LocalDate.parse("2020-03-20")
+
+  val repo = SqliteBookRepository
+  val date = LocalDate.parse("2020-03-20")
   val book =
     BookInput(
       "title",
@@ -27,14 +28,14 @@ object SqliteBookRepositoryTest extends SqliteSuite {
       "uri"
     )
 
-  test("createBook creates book") {
+  testDoobie("createBook creates book") {
     for {
       _         <- repo.createBook(book, date)
       maybeBook <- repo.retrieveBook(book.isbn)
     } yield expect(maybeBook.exists(_ === toUserBook(book)))
   }
 
-  test("rateBook rates book") {
+  testDoobie("rateBook rates book") {
     val bookToRate = book.copy(isbn = "rateme")
     val rating     = 5
     for {
@@ -44,7 +45,7 @@ object SqliteBookRepositoryTest extends SqliteSuite {
     } yield expect(maybeRating.exists(_ === rating))
   }
 
-  test("startReading starts book reading") {
+  testDoobie("startReading starts book reading") {
     val bookToRead = book.copy(isbn = "reading")
     for {
       _          <- repo.createBook(bookToRead, date)
@@ -53,7 +54,7 @@ object SqliteBookRepositoryTest extends SqliteSuite {
     } yield expect(maybeEpoch.exists(_ === date))
   }
 
-  test("finishReading finishes book reading") {
+  testDoobie("finishReading finishes book reading") {
     val finishedDate = LocalDate.parse("2020-03-24")
     val bookToFinish = book.copy(isbn = "finished")
     for {
@@ -67,7 +68,7 @@ object SqliteBookRepositoryTest extends SqliteSuite {
     )
   }
 
-  test("finishReading deletes row from currently_reading table") {
+  testDoobie("finishReading deletes row from currently_reading table") {
     val finishedDate = LocalDate.parse("2020-03-24")
     val bookToFinish = book.copy(isbn = "finished-and-delete")
     for {
@@ -78,7 +79,7 @@ object SqliteBookRepositoryTest extends SqliteSuite {
     } yield expect(maybeDate.isEmpty)
   }
 
-  test(
+  testDoobie(
     "finishReading sets started to null when no existing currently reading"
   ) {
     val finishedDate = LocalDate.parse("2020-03-24")
@@ -91,7 +92,7 @@ object SqliteBookRepositoryTest extends SqliteSuite {
     } yield expect(maybeRead.exists(_.isEmpty))
   }
 
-  test(
+  testDoobie(
     "finishReading ignores duplicate entries"
   ) {
     val finishedDate = LocalDate.parse("2020-03-24")
@@ -103,7 +104,7 @@ object SqliteBookRepositoryTest extends SqliteSuite {
     } yield expect(response.isRight)
   }
 
-  test("retrieveBook retrieves all parts of book") {
+  testDoobie("retrieveBook retrieves all parts of book") {
     val bookToUse          = book.copy(isbn = "megabook")
     val rating             = 3
     val startedReadingDate = LocalDate.parse("2020-03-28")
@@ -124,7 +125,7 @@ object SqliteBookRepositoryTest extends SqliteSuite {
     )
   }
 
-  test("deleteBookData deletes all book data") {
+  testDoobie("deleteBookData deletes all book data") {
     val bookToUse          = book.copy(isbn = "book to delete data from")
     val startedReadingDate = LocalDate.parse("2020-03-28")
     for {
@@ -145,7 +146,7 @@ object SqliteBookRepositoryTest extends SqliteSuite {
     )
   }
 
-  test("retrieveMultipleBooks retrieves all matching books") {
+  testDoobie("retrieveMultipleBooks retrieves all matching books") {
     val isbns                     = List("book1", "book2", "book3")
     val List(isbn1, isbn2, isbn3) = isbns
     val book1                     = book.copy(isbn = isbn1)
@@ -165,23 +166,20 @@ object SqliteBookRepositoryTest extends SqliteSuite {
     )
   }
 
-  private def retrieveRating(isbn: String): IO[Option[Int]] =
+  private def retrieveRating(isbn: String): ConnectionIO[Option[Int]] =
     fr"SELECT rating FROM rated_books WHERE isbn=$isbn".stripMargin
       .query[Int]
       .option
-      .transact(xa)
 
-  private def retrieveReading(isbn: String): IO[Option[LocalDate]] =
+  private def retrieveReading(isbn: String): ConnectionIO[Option[LocalDate]] =
     fr"SELECT started FROM currently_reading_books WHERE isbn=$isbn"
       .query[LocalDate]
       .option
-      .transact(xa)
 
   private def retrieveFinished(
       isbn: String
-  ): IO[Option[(Option[LocalDate], LocalDate)]] =
+  ): ConnectionIO[Option[(Option[LocalDate], LocalDate)]] =
     fr"SELECT started, finished FROM read_books WHERE isbn=$isbn"
       .query[(Option[LocalDate], LocalDate)]
       .option
-      .transact(xa)
 }

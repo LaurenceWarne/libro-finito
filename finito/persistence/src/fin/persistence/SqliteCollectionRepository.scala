@@ -3,99 +3,83 @@ package fin.persistence
 import java.time.LocalDate
 
 import cats.Monad
-import cats.effect.{Clock, Sync}
 import cats.implicits._
 import doobie._
 import doobie.implicits._
 import doobie.util.fragment.Fragment
-import doobie.util.transactor.Transactor
 
 import fin.SortConversions
 import fin.Types._
+import cats.effect.Async
 
-class SqliteCollectionRepository[F[_]: Sync] private (
-    xa: Transactor[F],
-    clock: Clock[F]
-) extends CollectionRepository[F] {
+object SqliteCollectionRepository extends CollectionRepository {
 
   import BookFragments._
 
   override def addBookToCollection(
       collectionName: String,
-      book: BookInput
-  ): F[Unit] = {
-    val transaction: LocalDate => ConnectionIO[Unit] = date =>
-      for {
-        exists <- BookFragments.retrieveByIsbn(book.isbn).query[String].option
-        _ <- Monad[ConnectionIO].whenA(exists.isEmpty) {
-          BookFragments.insert(book, date).update.run
-        }
-        _ <- BookFragments.addToCollection(collectionName, book.isbn).update.run
-      } yield ()
+      book: BookInput,
+      date: LocalDate
+  ): ConnectionIO[Unit] =
     for {
-      date <- Dates.currentDate(clock)
-      _    <- transaction(date).transact(xa)
+      exists <- BookFragments.retrieveByIsbn(book.isbn).query[String].option
+      _ <- Monad[ConnectionIO].whenA(exists.isEmpty) {
+        BookFragments.insert(book, date).update.run
+      }
+      _ <- BookFragments.addToCollection(collectionName, book.isbn).update.run
     } yield ()
-  }
 
   override def updateCollection(
       currentName: String,
       newName: String,
       preferredSort: Sort
-  ): F[Unit] = {
-    val transaction = for {
+  ): ConnectionIO[Unit] =
+    for {
       _ <- Fragments.create(newName, preferredSort).update.run
       _ <- Fragments.updateCollectonBooks(currentName, newName).update.run
       _ <- Fragments.delete(currentName).update.run
     } yield ()
-    transaction.transact(xa).void
-  }
 
-  override def collection(name: String): F[Option[Collection]] =
+  override def collection(name: String): ConnectionIO[Option[Collection]] =
     Fragments
       .fromName(name)
       .query[CollectionBookRow]
       .to[List]
-      .transact(xa)
-      .flatMap(rows => Sync[F].fromEither(toCollections(rows)))
+      .flatMap(rows => Async[ConnectionIO].fromEither(toCollections(rows)))
       .map(_.headOption)
 
-  override def collections: F[List[Collection]] =
+  override def collections: ConnectionIO[List[Collection]] =
     Fragments.retrieveCollections
       .query[CollectionBookRow]
       .to[List]
-      .transact(xa)
-      .flatMap(rows => Sync[F].fromEither(toCollections(rows)))
+      .flatMap(rows => Async[ConnectionIO].fromEither(toCollections(rows)))
 
   override def createCollection(
       name: String,
       preferredSort: Sort
-  ): F[Unit] = {
+  ): ConnectionIO[Unit] = {
     Fragments
       .create(name, preferredSort)
       .update
       .run
-      .transact(xa)
       .void
   }
 
-  override def deleteCollection(name: String): F[Unit] =
+  override def deleteCollection(name: String): ConnectionIO[Unit] =
     Fragments
       .delete(name)
       .update
       .run
-      .transact(xa)
       .void
 
   override def removeBookFromCollection(
       collectionName: String,
       isbn: String
-  ): F[Unit] =
+  ): ConnectionIO[Unit] =
     Fragments
       .deleteReference(collectionName, isbn)
       .update
       .run
-      .transact(xa)
       .void
 
   private def toCollections(
@@ -111,12 +95,6 @@ class SqliteCollectionRepository[F[_]: Sync] private (
             .map(Collection(name, books, _))
       }
   }
-}
-
-object SqliteCollectionRepository {
-
-  def apply[F[_]: Sync](xa: Transactor[F], clock: Clock[F]) =
-    new SqliteCollectionRepository[F](xa, clock)
 }
 
 object Fragments {

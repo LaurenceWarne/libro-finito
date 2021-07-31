@@ -3,88 +3,81 @@ package fin.persistence
 import java.time.LocalDate
 
 import cats.data.NonEmptyList
-import cats.effect.Sync
 import cats.implicits._
 import doobie.Fragments._
 import doobie._
 import doobie.implicits._
-import doobie.util.transactor.Transactor
 
 import fin.Types._
 
-class SqliteBookRepository[F[_]: Sync] private (
-    xa: Transactor[F]
-) extends BookRepository[F] {
+object SqliteBookRepository extends BookRepository {
 
   import BookFragments._
 
-  override def retrieveBook(isbn: String): F[Option[UserBook]] =
+  override def retrieveBook(isbn: String): ConnectionIO[Option[UserBook]] =
     BookFragments
       .retrieveBook(isbn)
       .query[BookRow]
       .option
-      .transact(xa)
       .nested
       .map(_.toBook)
       .value
 
-  override def retrieveMultipleBooks(isbns: List[String]): F[List[UserBook]] =
-    NonEmptyList.fromList(isbns).fold(List.empty[UserBook].pure[F]) { isbnNel =>
-      BookFragments
-        .retrieveMultipleBooks(isbnNel)
-        .query[BookRow]
-        .to[List]
-        .transact(xa)
-        .nested
-        .map(_.toBook)
-        .value
+  override def retrieveMultipleBooks(
+      isbns: List[String]
+  ): ConnectionIO[List[UserBook]] =
+    NonEmptyList.fromList(isbns).fold(List.empty[UserBook].pure[ConnectionIO]) {
+      isbnNel =>
+        BookFragments
+          .retrieveMultipleBooks(isbnNel)
+          .query[BookRow]
+          .to[List]
+          .nested
+          .map(_.toBook)
+          .value
     }
 
-  override def createBook(book: BookInput, date: LocalDate): F[Unit] =
-    BookFragments.insert(book, date).update.run.transact(xa).void
+  override def createBook(
+      book: BookInput,
+      date: LocalDate
+  ): ConnectionIO[Unit] =
+    BookFragments.insert(book, date).update.run.void
 
-  override def rateBook(book: BookInput, rating: Int): F[Unit] =
-    BookFragments.insertRating(book.isbn, rating).update.run.transact(xa).void
+  override def rateBook(book: BookInput, rating: Int): ConnectionIO[Unit] =
+    BookFragments.insertRating(book.isbn, rating).update.run.void
 
-  override def startReading(book: BookInput, date: LocalDate): F[Unit] =
+  override def startReading(
+      book: BookInput,
+      date: LocalDate
+  ): ConnectionIO[Unit] =
     BookFragments
       .insertCurrentlyReading(book.isbn, date)
       .update
       .run
-      .transact(xa)
       .void
 
-  override def finishReading(book: BookInput, date: LocalDate): F[Unit] = {
-    val transaction =
-      for {
-        maybeStarted <-
-          BookFragments
-            .retrieveStartedFromCurrentlyReading(book.isbn)
-            .query[LocalDate]
-            .option
-        _ <- maybeStarted.traverse { _ =>
-          BookFragments.deleteCurrentlyReading(book.isbn).update.run
-        }
-        _ <- BookFragments.insertRead(book.isbn, maybeStarted, date).update.run
-      } yield ()
-    transaction.transact(xa)
-  }
+  override def finishReading(
+      book: BookInput,
+      date: LocalDate
+  ): ConnectionIO[Unit] =
+    for {
+      maybeStarted <-
+        BookFragments
+          .retrieveStartedFromCurrentlyReading(book.isbn)
+          .query[LocalDate]
+          .option
+      _ <- maybeStarted.traverse { _ =>
+        BookFragments.deleteCurrentlyReading(book.isbn).update.run
+      }
+      _ <- BookFragments.insertRead(book.isbn, maybeStarted, date).update.run
+    } yield ()
 
-  override def deleteBookData(isbn: String): F[Unit] = {
-    val transaction =
-      for {
-        _ <- BookFragments.deleteCurrentlyReading(isbn).update.run
-        _ <- BookFragments.deleteRead(isbn).update.run
-        _ <- BookFragments.deleteRated(isbn).update.run
-      } yield ()
-    transaction.transact(xa)
-  }
-}
-
-object SqliteBookRepository {
-
-  def apply[F[_]: Sync](xa: Transactor[F]) =
-    new SqliteBookRepository[F](xa)
+  override def deleteBookData(isbn: String): ConnectionIO[Unit] =
+    for {
+      _ <- BookFragments.deleteCurrentlyReading(isbn).update.run
+      _ <- BookFragments.deleteRead(isbn).update.run
+      _ <- BookFragments.deleteRated(isbn).update.run
+    } yield ()
 }
 
 object BookFragments {
