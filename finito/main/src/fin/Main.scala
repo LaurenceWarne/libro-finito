@@ -43,7 +43,9 @@ object Main extends IOApp {
             bookRepo       = SqliteBookRepository[IO](xa)
             implicit0(logger: Logger[IO]) <- Slf4jLogger.create[IO]
             _                             <- logger.debug("Creating services...")
-            bookInfoService   = GoogleBookInfoService[IO](client)
+            bookInfoService = GoogleBookInfoService[IO](client)
+            wrappedInfoService =
+              BookInfoAugmentationService[IO](bookInfoService, bookRepo)
             collectionService = CollectionServiceImpl[IO](collectionRepo)
             bookManagmentService =
               BookManagementServiceImpl[IO](bookRepo, clock)
@@ -56,7 +58,7 @@ object Main extends IOApp {
               )
             _ <- logger.debug("Bootstrapping caliban...")
             interpreter <- CalibanSetup.interpreter[IO](
-              bookInfoService,
+              wrappedInfoService,
               wrappedBookManagementService,
               wrappedCollectionService
             )
