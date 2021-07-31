@@ -2,8 +2,10 @@ package fin.persistence
 
 import java.time.LocalDate
 
+import cats.data.NonEmptyList
 import cats.effect.Sync
 import cats.implicits._
+import doobie.Fragments._
 import doobie._
 import doobie.implicits._
 import doobie.util.transactor.Transactor
@@ -25,6 +27,18 @@ class SqliteBookRepository[F[_]: Sync] private (
       .nested
       .map(_.toBook)
       .value
+
+  override def retrieveMultipleBooks(isbns: List[String]): F[List[UserBook]] =
+    NonEmptyList.fromList(isbns).fold(List.empty[UserBook].pure[F]) { isbnNel =>
+      BookFragments
+        .retrieveMultipleBooks(isbnNel)
+        .query[BookRow]
+        .to[List]
+        .transact(xa)
+        .nested
+        .map(_.toBook)
+        .value
+    }
 
   override def createBook(book: BookInput, date: LocalDate): F[Unit] =
     BookFragments.insert(book, date).update.run.transact(xa).void
@@ -88,22 +102,10 @@ object BookFragments {
        |GROUP BY isbn""".stripMargin
 
   def retrieveBook(isbn: String): Fragment =
-    fr"""
-       |SELECT 
-       |  title,
-       |  authors,
-       |  description,
-       |  b.isbn,
-       |  thumbnail_uri,
-       |  added,
-       |  cr.started,
-       |  lr.finished,
-       |  r.rating
-       |FROM books b
-       |LEFT JOIN currently_reading_books cr ON b.isbn = cr.isbn
-       |LEFT JOIN (${lastRead}) lr ON b.isbn = lr.isbn
-       |LEFT JOIN rated_books r ON b.isbn = r.isbn
-       |WHERE b.isbn=$isbn""".stripMargin
+    selectBook ++ fr"WHERE b.isbn=$isbn"
+
+  def retrieveMultipleBooks(isbns: NonEmptyList[String]): Fragment =
+    selectBook ++ fr"WHERE" ++ in(fr"b.isbn", isbns)
 
   def retrieveByIsbn(isbn: String): Fragment =
     fr"SELECT * from books WHERE isbn=$isbn"
@@ -165,6 +167,23 @@ object BookFragments {
     fr"""
        |DELETE FROM rated_books
        |WHERE isbn = $isbn""".stripMargin
+
+  private def selectBook: Fragment =
+    fr"""
+       |SELECT 
+       |  title,
+       |  authors,
+       |  description,
+       |  b.isbn,
+       |  thumbnail_uri,
+       |  added,
+       |  cr.started,
+       |  lr.finished,
+       |  r.rating
+       |FROM books b
+       |LEFT JOIN currently_reading_books cr ON b.isbn = cr.isbn
+       |LEFT JOIN (${lastRead}) lr ON b.isbn = lr.isbn
+       |LEFT JOIN rated_books r ON b.isbn = r.isbn""".stripMargin
 }
 
 final case class BookRow(

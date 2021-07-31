@@ -20,6 +20,9 @@ class InMemoryBookRepository[F[_]: Monad](booksRef: Ref[F, List[UserBook]])
   override def retrieveBook(isbn: String): F[Option[UserBook]] =
     booksRef.get.map(_.find(_.isbn === isbn))
 
+  override def retrieveMultipleBooks(isbns: List[String]): F[List[UserBook]] =
+    booksRef.get.map(_.filter(isbns.contains))
+
   override def rateBook(book: BookInput, rating: Int): F[Unit] = {
     val userBook = toUserBook(book)
     for {

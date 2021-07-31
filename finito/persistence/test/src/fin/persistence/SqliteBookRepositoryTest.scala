@@ -145,6 +145,26 @@ object SqliteBookRepositoryTest extends SqliteSuite {
     )
   }
 
+  test("retrieveMultipleBooks retrieves all matching books") {
+    val isbns                     = List("book1", "book2", "book3")
+    val List(isbn1, isbn2, isbn3) = isbns
+    val book1                     = book.copy(isbn = isbn1)
+    val book2                     = book.copy(isbn = isbn2)
+    val book3                     = book.copy(isbn = isbn3)
+    for {
+      _     <- repo.createBook(book1, date)
+      _     <- repo.createBook(book2, date)
+      _     <- repo.createBook(book3, date)
+      books <- repo.retrieveMultipleBooks(isbns)
+    } yield expect(books.size == 3) and expect(
+      books.contains(toUserBook(book1))
+    ) and expect(
+      books.contains(toUserBook(book2))
+    ) and expect(
+      books.contains(toUserBook(book3))
+    )
+  }
+
   private def retrieveRating(isbn: String): IO[Option[Int]] =
     fr"SELECT rating FROM rated_books WHERE isbn=$isbn".stripMargin
       .query[Int]

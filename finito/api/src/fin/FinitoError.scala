@@ -31,7 +31,7 @@ case object CannotDeleteSpecialCollectionError extends FinitoError {
      |Cannot delete a special collection!  In order to delete a special
      |collection, first remove it's special collection definition from your
      |config file, and then delete it.""".stripMargin.replace("\n", " ")
-  override def errorCode = "CANNOT_DELETE_OF_SPECIAL_COLLECTION"
+  override def errorCode = "CANNOT_DELETE_SPECIAL_COLLECTION"
 }
 
 final case class CollectionDoesNotExistError(collection: String)
