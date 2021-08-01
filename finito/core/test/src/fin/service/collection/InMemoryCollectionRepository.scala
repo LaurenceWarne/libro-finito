@@ -1,18 +1,19 @@
 package fin.service.collection
 
-import cats.MonadError
+import java.time.LocalDate
+
 import cats.effect.concurrent.Ref
 import cats.implicits._
+import cats.{MonadError, MonadThrow}
 
 import fin.BookConversions._
 import fin.Types._
 import fin._
 import fin.persistence.CollectionRepository
 
-class InMemoryCollectionRepository[F[_]](
+class InMemoryCollectionRepository[F[_]: MonadThrow](
     collectionsRef: Ref[F, List[Collection]]
-)(implicit me: MonadError[F, Throwable])
-    extends CollectionRepository[F] {
+) extends CollectionRepository[F] {
 
   override def collections: F[List[Collection]] = collectionsRef.get
 
@@ -44,7 +45,8 @@ class InMemoryCollectionRepository[F[_]](
 
   override def addBookToCollection(
       collectionName: String,
-      book: BookInput
+      book: BookInput,
+      date: LocalDate
   ): F[Unit] =
     for {
       _ <- collectionOrError(collectionName)

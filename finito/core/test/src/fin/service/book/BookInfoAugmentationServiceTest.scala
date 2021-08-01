@@ -2,6 +2,7 @@ package fin.service.book
 
 import java.time.LocalDate
 
+import cats.arrow.FunctionK
 import cats.effect._
 import cats.effect.concurrent.Ref
 import cats.implicits._
@@ -22,9 +23,10 @@ object BookInfoAugmentationServiceTest extends SimpleIOSuite {
     val book1 = baseBook.copy(isbn = "isbn for search #1")
     val book2 = baseBook.copy(isbn = "isbn for search #2")
     val service =
-      BookInfoAugmentationService(
+      BookInfoAugmentationService[IO, IO](
         new MockedInfoService(toUserBook(book2)),
-        repo
+        repo,
+        FunctionK.id[IO]
       )
     val rating = 4
     for {
@@ -46,9 +48,10 @@ object BookInfoAugmentationServiceTest extends SimpleIOSuite {
   test("fromIsbn is augmented with data") {
     val book = baseBook.copy(isbn = "isbn for fromIsbn")
     val service =
-      BookInfoAugmentationService(
+      BookInfoAugmentationService[IO, IO](
         new MockedInfoService(toUserBook(book)),
-        repo
+        repo,
+        FunctionK.id[IO]
       )
     val rating = 4
     for {

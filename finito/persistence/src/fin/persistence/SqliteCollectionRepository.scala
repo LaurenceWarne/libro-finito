@@ -12,7 +12,7 @@ import fin.SortConversions
 import fin.Types._
 import cats.effect.Async
 
-object SqliteCollectionRepository extends CollectionRepository {
+object SqliteCollectionRepository extends CollectionRepository[ConnectionIO] {
 
   import BookFragments._
 

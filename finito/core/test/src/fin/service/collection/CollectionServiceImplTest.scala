@@ -1,7 +1,8 @@
 package fin.service.collection
 
+import cats.arrow.FunctionK
 import cats.effect.concurrent.Ref
-import cats.effect.{IO, Resource}
+import cats.effect.{Clock, IO, Resource}
 import cats.implicits._
 import weaver._
 
@@ -9,6 +10,7 @@ import fin.BookConversions._
 import fin.Types._
 import fin._
 import fin.implicits._
+
 object CollectionServiceImplTest extends IOSuite {
 
   val book =
@@ -23,7 +25,11 @@ object CollectionServiceImplTest extends IOSuite {
   override type Res = CollectionService[IO]
   override def sharedResource: Resource[IO, CollectionService[IO]] =
     Resource.eval(Ref.of[IO, List[Collection]](List.empty).map { ref =>
-      CollectionServiceImpl(new InMemoryCollectionRepository(ref))
+      CollectionServiceImpl[IO, IO](
+        new InMemoryCollectionRepository(ref),
+        Clock[IO],
+        FunctionK.id[IO]
+      )
     })
 
   test("createCollection creates collection") { collectionService =>

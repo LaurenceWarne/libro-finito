@@ -5,6 +5,7 @@ import java.time.{LocalDate, ZoneId}
 import scala.concurrent.duration.{MILLISECONDS, TimeUnit}
 
 import cats.Applicative
+import cats.arrow.FunctionK
 import cats.effect.concurrent.Ref
 import cats.effect.{Clock, IO, Resource}
 import cats.implicits._
@@ -37,7 +38,7 @@ object BookManagementServiceImplTest extends IOSuite {
   override def sharedResource: Resource[IO, BookManagementService[IO]] =
     Resource.eval(Ref.of[IO, List[UserBook]](List.empty).map { ref =>
       val repo = new InMemoryBookRepository(ref)
-      BookManagementServiceImpl(repo, testClock)
+      BookManagementServiceImpl[IO, IO](repo, testClock, FunctionK.id[IO])
     })
 
   test("createBook creates book") {
@@ -171,7 +172,8 @@ object BookManagementServiceImplTest extends IOSuite {
     val finishedReading = LocalDate.parse("2018-11-30")
     val bookRef         = Ref.unsafe[IO, List[UserBook]](List.empty)
     val repo            = new InMemoryBookRepository(bookRef)
-    val service         = BookManagementServiceImpl(repo, testClock)
+    val service =
+      BookManagementServiceImpl[IO, IO](repo, testClock, FunctionK.id[IO])
 
     for {
       _ <- service.finishReading(

@@ -1,53 +1,64 @@
 package fin.service.collection
 
-import cats.effect.Sync
+import java.time.LocalDate
+
+import cats.effect._
 import cats.implicits._
+import cats.{MonadThrow, ~>}
 
 import fin.BookConversions._
 import fin.Types._
 import fin._
-import fin.persistence.CollectionRepository
+import fin.persistence.{CollectionRepository, Dates}
 
 import CollectionServiceImpl._
 
-class CollectionServiceImpl[F[_]: Sync] private (
-    collectionRepo: CollectionRepository[F]
+class CollectionServiceImpl[F[_]: BracketThrow, G[_]: MonadThrow] private (
+    collectionRepo: CollectionRepository[G],
+    clock: Clock[F],
+    transact: G ~> F
 ) extends CollectionService[F] {
 
   override def collections: F[List[Collection]] =
-    collectionRepo.collections.nested.map(sortBooksFor).value
+    transact(collectionRepo.collections).nested.map(sortBooksFor).value
 
   override def createCollection(
       args: MutationsCreateCollectionArgs
-  ): F[Collection] =
-    for {
+  ): F[Collection] = {
+    val transaction = for {
       maybeExistingCollection <- collectionRepo.collection(args.name)
       _ <- maybeExistingCollection.fold(
         collectionRepo.createCollection(args.name, defaultSort)
       ) { collection =>
-        Sync[F].raiseError(CollectionAlreadyExistsError(collection.name))
+        MonadThrow[G].raiseError(
+          CollectionAlreadyExistsError(collection.name)
+        )
       }
     } yield Collection(
       args.name,
       args.books.fold(List.empty[UserBook])(_.map(toUserBook(_))),
       defaultSort
     )
+    transact(transaction)
+  }
 
   override def collection(
       args: QueriesCollectionArgs
-  ): F[Collection] = collectionOrError(args.name).map(sortBooksFor)
+  ): F[Collection] = transact(collectionOrError(args.name).map(sortBooksFor))
 
   override def deleteCollection(
       args: MutationsDeleteCollectionArgs
-  ): F[Unit] = collectionRepo.deleteCollection(args.name)
+  ): F[Unit] = transact(collectionRepo.deleteCollection(args.name))
 
   override def updateCollection(
       args: MutationsUpdateCollectionArgs
-  ): F[Collection] =
-    for {
+  ): F[Collection] = {
+    val transaction = for {
       collection <- collectionOrError(args.currentName)
-      _ <- Sync[F].whenA(args.newName.orElse(args.preferredSort).isEmpty) {
-        Sync[F].raiseError(NotEnoughArgumentsForUpdateError)
+      _ <- MonadThrow[G].whenA(
+        args.newName.orElse(args.preferredSort).isEmpty
+      ) {
+        MonadThrow[G].raiseError(NotEnoughArgumentsForUpdateError)
       }
       _ <- args.newName.traverse(errorIfCollectionExists)
       _ <- collectionRepo.updateCollection(
@@ -59,44 +70,54 @@ class CollectionServiceImpl[F[_]: Sync] private (
       name = args.newName.getOrElse(collection.name),
       preferredSort = args.preferredSort.getOrElse(collection.preferredSort)
     )
+    transact(transaction)
+  }
 
   override def addBookToCollection(
       args: MutationsAddBookArgs
-  ): F[Collection] =
-    for {
-      collectionName <-
-        Sync[F].fromOption(args.collection, DefaultCollectionNotSupportedError)
-      collection <- collectionOrError(collectionName)
-      _          <- collectionRepo.addBookToCollection(collectionName, args.book)
-    } yield collection.copy(books = toUserBook(args.book) :: collection.books)
+  ): F[Collection] = {
+    val transaction: LocalDate => G[Collection] = date =>
+      for {
+        collectionName <- MonadThrow[G].fromOption(
+          args.collection,
+          DefaultCollectionNotSupportedError
+        )
+        collection <- collectionOrError(collectionName)
+        _          <- collectionRepo.addBookToCollection(collectionName, args.book, date)
+      } yield collection.copy(books = toUserBook(args.book) :: collection.books)
+    Dates.currentDate(clock).flatMap(date => transact(transaction(date)))
+  }
 
   override def removeBookFromCollection(
       args: MutationsRemoveBookArgs
-  ): F[Unit] =
-    for {
-      collection <- collectionOrError(args.collection)
-      _ <- collectionRepo.removeBookFromCollection(
-        args.collection,
-        args.isbn
+  ): F[Unit] = {
+    val transaction =
+      for {
+        collection <- collectionOrError(args.collection)
+        _ <- collectionRepo.removeBookFromCollection(
+          args.collection,
+          args.isbn
+        )
+      } yield collection.copy(books =
+        collection.books.filterNot(_.isbn === args.isbn)
       )
-    } yield collection.copy(books =
-      collection.books.filterNot(_.isbn === args.isbn)
-    )
+    transact(transaction).void
+  }
 
-  private def collectionOrError(collection: String): F[Collection] =
+  private def collectionOrError(collection: String): G[Collection] =
     for {
       maybeCollection <- collectionRepo.collection(collection)
-      collection <- Sync[F].fromOption(
+      collection <- MonadThrow[G].fromOption(
         maybeCollection,
         CollectionDoesNotExistError(collection)
       )
     } yield collection
 
-  private def errorIfCollectionExists(collection: String): F[Unit] =
+  private def errorIfCollectionExists(collection: String): G[Unit] =
     for {
       maybeExistingCollection <- collectionRepo.collection(collection)
-      _ <- Sync[F].whenA(maybeExistingCollection.nonEmpty)(
-        Sync[F].raiseError(CollectionAlreadyExistsError(collection))
+      _ <- MonadThrow[G].whenA(maybeExistingCollection.nonEmpty)(
+        MonadThrow[G].raiseError(CollectionAlreadyExistsError(collection))
       )
     } yield ()
 
@@ -117,6 +138,10 @@ object CollectionServiceImpl {
 
   val defaultSort: Sort = Sort.DateAdded
 
-  def apply[F[_]: Sync](collectionRepo: CollectionRepository[F]) =
-    new CollectionServiceImpl[F](collectionRepo)
+  def apply[F[_]: BracketThrow, G[_]: MonadThrow](
+      collectionRepo: CollectionRepository[G],
+      clock: Clock[F],
+      transact: G ~> F
+  ) =
+    new CollectionServiceImpl[F, G](collectionRepo, clock, transact)
 }

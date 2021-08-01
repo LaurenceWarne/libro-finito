@@ -10,7 +10,7 @@ import doobie.implicits._
 
 import fin.Types._
 
-object SqliteBookRepository extends BookRepository {
+object SqliteBookRepository extends BookRepository[ConnectionIO] {
 
   import BookFragments._
 

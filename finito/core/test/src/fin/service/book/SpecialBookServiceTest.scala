@@ -1,5 +1,6 @@
 package fin.service.book
 
+import cats.arrow.FunctionK
 import cats.effect.concurrent.Ref
 import cats.effect.{Clock, IO, Resource}
 import cats.implicits._
@@ -76,13 +77,16 @@ object SpecialBookServiceTest extends IOSuite {
       : Resource[IO, (CollectionService[IO], BookManagementService[IO])] =
     for {
       colRef <- Resource.eval(Ref.of[IO, List[Collection]](List.empty))
-      wrappedCollectionService = CollectionServiceImpl(
-        new InMemoryCollectionRepository(colRef)
+      wrappedCollectionService = CollectionServiceImpl[IO, IO](
+        new InMemoryCollectionRepository(colRef),
+        Clock[IO],
+        FunctionK.id[IO]
       )
       bookRef <- Resource.eval(Ref.of[IO, List[UserBook]](List.empty))
-      wrappedBookService = BookManagementServiceImpl[IO](
+      wrappedBookService = BookManagementServiceImpl[IO, IO](
         new InMemoryBookRepository[IO](bookRef),
-        Clock[IO]
+        Clock[IO],
+        FunctionK.id[IO]
       )
       hookExecutionService = HookExecutionServiceImpl[IO]
       specialBookService = SpecialBookService[IO](

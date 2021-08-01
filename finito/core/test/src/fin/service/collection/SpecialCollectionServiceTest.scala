@@ -1,7 +1,8 @@
 package fin.service.collection
 
+import cats.arrow.FunctionK
 import cats.effect.concurrent.Ref
-import cats.effect.{IO, Resource}
+import cats.effect.{Clock, IO, Resource}
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
@@ -56,8 +57,10 @@ object SpecialCollectionServiceTest extends IOSuite {
   override def sharedResource: Resource[IO, CollectionService[IO]] =
     for {
       colRef <- Resource.eval(Ref.of[IO, List[Collection]](List.empty))
-      wrappedCollectionService = CollectionServiceImpl(
-        new InMemoryCollectionRepository(colRef)
+      wrappedCollectionService = CollectionServiceImpl[IO, IO](
+        new InMemoryCollectionRepository(colRef),
+        Clock[IO],
+        FunctionK.id[IO]
       )
       hookExecutionService = HookExecutionServiceImpl[IO]
       specialCollectionService = SpecialCollectionService(
