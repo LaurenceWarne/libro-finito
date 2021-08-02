@@ -83,7 +83,11 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
       retrievedCollection <- repo.collection(newName)
     } yield expect(
       retrievedCollection.exists(c =>
-        c === Collection(newName, List(toUserBook(book)), newSort)
+        c === Collection(
+          newName,
+          List(toUserBook(book, dateAdded = date.some)),
+          newSort
+        )
       )
     )
   }
@@ -117,7 +121,11 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
       retrievedCollection <- repo.collection(name)
     } yield expect(
       retrievedCollection.exists(
-        _ === Collection(name, List(toUserBook(book)), sort)
+        _ === Collection(
+          name,
+          List(toUserBook(book, dateAdded = date.some)),
+          sort
+        )
       )
     )
   }
@@ -134,7 +142,11 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
       retrievedCollection <- repo.collection(name2)
     } yield expect(
       retrievedCollection.exists(
-        _ === Collection(name2, List(toUserBook(book)), sort)
+        _ === Collection(
+          name2,
+          List(toUserBook(book, dateAdded = date.some)),
+          sort
+        )
       )
     )
   }

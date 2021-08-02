@@ -27,6 +27,7 @@
 *** DONE Implement langRestrict
 *** TODO Add asc/desc to collection sorting
 *** DONE Implement adding to default collection
+*** TODO Add integration tests
 
 ** Smaller Things
 *** DONE Add a logging framework
@@ -40,6 +41,7 @@
 *** DONE Add typeclass to put objects into ~Bindings~
 *** TODO Add logging to file in config directory
 *** TODO Add IOCaseApp for flags
+*** TODO Add tracing
 
 ** Bugs
 *** TODO Adding the same book to a collection results in an uhelpful sql error

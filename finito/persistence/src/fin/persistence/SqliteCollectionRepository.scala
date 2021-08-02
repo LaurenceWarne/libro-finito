@@ -178,6 +178,7 @@ final case class CollectionBookRow(
       description = description,
       isbn = isbn,
       thumbnailUri = thumbnailUri,
+      maybeAdded,
       maybeRating,
       maybeStarted,
       maybeFinished

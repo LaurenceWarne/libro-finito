@@ -26,6 +26,7 @@ type UserBook {
   description: String!
   isbn: String!
   thumbnailUri: String!
+  dateAdded: Date
   rating: Int
   startedReading: Date
   lastRead: Date

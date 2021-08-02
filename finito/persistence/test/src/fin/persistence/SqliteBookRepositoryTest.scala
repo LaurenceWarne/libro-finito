@@ -32,7 +32,9 @@ object SqliteBookRepositoryTest extends SqliteSuite {
     for {
       _         <- repo.createBook(book, date)
       maybeBook <- repo.retrieveBook(book.isbn)
-    } yield expect(maybeBook.exists(_ === toUserBook(book)))
+    } yield expect(
+      maybeBook.exists(_ === toUserBook(book, dateAdded = date.some))
+    )
   }
 
   testDoobie("rateBook rates book") {
@@ -116,7 +118,9 @@ object SqliteBookRepositoryTest extends SqliteSuite {
       maybeBook <- repo.retrieveBook(bookToUse.isbn)
     } yield expect(
       maybeBook.exists(
-        _ === toUserBook(bookToUse).copy(
+        _ === toUserBook(
+          bookToUse,
+          dateAdded = date.some,
           rating = rating.some,
           startedReading = startedReadingDate.some,
           lastRead = date.some
@@ -136,13 +140,7 @@ object SqliteBookRepositoryTest extends SqliteSuite {
       _         <- repo.deleteBookData(bookToUse.isbn)
       maybeBook <- repo.retrieveBook(bookToUse.isbn)
     } yield expect(
-      maybeBook.exists(
-        _ === toUserBook(bookToUse).copy(
-          rating = None,
-          startedReading = None,
-          lastRead = None
-        )
-      )
+      maybeBook.exists(_ === toUserBook(bookToUse, dateAdded = date.some))
     )
   }
 
@@ -158,11 +156,11 @@ object SqliteBookRepositoryTest extends SqliteSuite {
       _     <- repo.createBook(book3, date)
       books <- repo.retrieveMultipleBooks(isbns)
     } yield expect(books.size == 3) and expect(
-      books.contains(toUserBook(book1))
+      books.contains(toUserBook(book1, dateAdded = date.some))
     ) and expect(
-      books.contains(toUserBook(book2))
+      books.contains(toUserBook(book2, dateAdded = date.some))
     ) and expect(
-      books.contains(toUserBook(book3))
+      books.contains(toUserBook(book3, dateAdded = date.some))
     )
   }
 

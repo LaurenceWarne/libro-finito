@@ -197,6 +197,7 @@ final case class BookRow(
       description,
       isbn,
       thumbnailUri,
+      maybeAdded,
       maybeRating,
       maybeStarted,
       maybeFinished

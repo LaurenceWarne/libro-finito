@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS books(
 
 CREATE TABLE IF NOT EXISTS collections(
   name           TEXT NOT NULL PRIMARY KEY,
-  preferred_sort TEXT CHECK( preferred_sort IN ('DateAdded','Title','Author', 'Rating') ) COLLATE NOCASE NOT NULL
+  preferred_sort TEXT COLLATE NOCASE NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS collection_books(

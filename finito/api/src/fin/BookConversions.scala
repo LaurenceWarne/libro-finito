@@ -7,6 +7,7 @@ object BookConversions {
 
   def toUserBook(
       book: BookInput,
+      dateAdded: Option[LocalDate] = None,
       rating: Option[Int] = None,
       startedReading: Option[LocalDate] = None,
       lastRead: Option[LocalDate] = None
@@ -17,6 +18,7 @@ object BookConversions {
       book.description,
       book.isbn,
       book.thumbnailUri,
+      dateAdded,
       rating,
       startedReading,
       lastRead
