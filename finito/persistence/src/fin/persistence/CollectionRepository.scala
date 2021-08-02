@@ -1,7 +1,8 @@
 package fin.persistence
 
-import fin.Types._
 import java.time.LocalDate
+
+import fin.Types._
 
 trait CollectionRepository[F[_]] {
   def collections: F[List[Collection]]

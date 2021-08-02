@@ -1,11 +1,12 @@
 package fin.persistence
 
+import java.time.LocalDate
+
 import cats.implicits._
 
 import fin.BookConversions._
 import fin.Types._
 import fin.implicits._
-import java.time.LocalDate
 
 object SqliteCollectionRepositoryTest extends SqliteSuite {
 

@@ -5,9 +5,9 @@ import better.files._
 import cats.Show
 import cats.effect.{IO, Resource}
 import cats.implicits._
-import doobie.util.transactor.Transactor
 import doobie._
 import doobie.implicits._
+import doobie.util.transactor.Transactor
 import weaver._
 
 trait SqliteSuite extends IOSuite {

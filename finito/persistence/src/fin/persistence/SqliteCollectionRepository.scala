@@ -3,6 +3,7 @@ package fin.persistence
 import java.time.LocalDate
 
 import cats.Monad
+import cats.effect.Async
 import cats.implicits._
 import doobie._
 import doobie.implicits._
@@ -10,7 +11,6 @@ import doobie.util.fragment.Fragment
 
 import fin.SortConversions
 import fin.Types._
-import cats.effect.Async
 
 object SqliteCollectionRepository extends CollectionRepository[ConnectionIO] {
 

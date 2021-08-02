@@ -2,9 +2,11 @@ package fin
 
 import scala.concurrent.ExecutionContext.global
 
+import cats.arrow.FunctionK
 import cats.effect._
 import cats.implicits._
 import doobie._
+import doobie.implicits._
 import io.chrisdavenport.log4cats.Logger
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.client.blaze.BlazeClientBuilder
@@ -39,16 +41,27 @@ object Main extends IOApp {
               config.databasePassword
             )
             clock          = Clock[IO]
-            collectionRepo = SqliteCollectionRepository[IO](xa, clock)
-            bookRepo       = SqliteBookRepository[IO](xa)
+            collectionRepo = SqliteCollectionRepository
+            bookRepo       = SqliteBookRepository
             implicit0(logger: Logger[IO]) <- Slf4jLogger.create[IO]
             _                             <- logger.debug("Creating services...")
-            bookInfoService = GoogleBookInfoService[IO](client)
-            wrappedInfoService =
-              BookInfoAugmentationService[IO](bookInfoService, bookRepo)
-            collectionService = CollectionServiceImpl[IO](collectionRepo)
-            bookManagmentService =
-              BookManagementServiceImpl[IO](bookRepo, clock)
+            bookInfoService  = GoogleBookInfoService[IO](client)
+            connectionIOToIO = λ[FunctionK[ConnectionIO, IO]](_.transact(xa))
+            wrappedInfoService = BookInfoAugmentationService[IO, ConnectionIO](
+              bookInfoService,
+              bookRepo,
+              connectionIOToIO
+            )
+            collectionService = CollectionServiceImpl[IO, ConnectionIO](
+              collectionRepo,
+              clock,
+              connectionIOToIO
+            )
+            bookManagmentService = BookManagementServiceImpl[IO, ConnectionIO](
+              bookRepo,
+              clock,
+              connectionIOToIO
+            )
             (wrappedBookManagementService, wrappedCollectionService) <-
               SpecialCollectionSetup.setup[IO](
                 collectionService,

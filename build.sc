@@ -42,7 +42,11 @@ object finito extends Module {
     //def forkArgs   = Seq("-Xmx100m")
 
     def scalacPluginIvyDeps =
-      super.scalacPluginIvyDeps() ++ Agg(Deps.Compiler.betterMonadicFor)
+      super.scalacPluginIvyDeps() ++ Agg(
+        Deps.Compiler.betterMonadicFor,
+        Deps.Compiler.kindProjector
+      )
+
     def ivyDeps =
       Agg(
         Deps.betterFiles,
@@ -194,6 +198,7 @@ object Deps {
   object Compiler {
     val semanticDb       = ivy"org.scalameta::semanticdb-scalac:4.4.22"
     val betterMonadicFor = ivy"com.olegpy::better-monadic-for:0.3.1"
+    val kindProjector    = ivy"org.typelevel:::kind-projector:0.13.0"
   }
 
   object Scalafix {
