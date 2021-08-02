@@ -123,20 +123,23 @@ class CollectionServiceImpl[F[_]: BracketThrow, G[_]: MonadThrow] private (
 
   def sortBooksFor(collection: Collection): Collection =
     collection.copy(books = collection.books.sortWith {
-      case (b1, b2) =>
-        collection.preferredSort match {
-          case Sort.DateAdded =>
+      case (book1, book2) =>
+        val (b1, b2) =
+          if (collection.preferredSort.sortAscending) (book1, book2)
+          else (book2, book1)
+        (collection.preferredSort.`type` match {
+          case SortType.DateAdded =>
             b1.dateAdded.map(_.toEpochDay) < b2.dateAdded.map(_.toEpochDay)
-          case Sort.Title  => b1.title < b2.title
-          case Sort.Author => b1.authors < b2.authors
-          case Sort.Rating => b1.rating < b2.rating
-        }
+          case SortType.Title  => b1.title < b2.title
+          case SortType.Author => b1.authors < b2.authors
+          case SortType.Rating => b1.rating < b2.rating
+        })
     })
 }
 
 object CollectionServiceImpl {
 
-  val defaultSort: Sort = Sort.DateAdded
+  val defaultSort: Sort = Sort(SortType.DateAdded, true)
 
   def apply[F[_]: BracketThrow, G[_]: MonadThrow](
       collectionRepo: CollectionRepository[G],

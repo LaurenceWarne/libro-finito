@@ -8,8 +8,9 @@ CREATE TABLE IF NOT EXISTS books(
 );
 
 CREATE TABLE IF NOT EXISTS collections(
-  name           TEXT NOT NULL PRIMARY KEY,
-  preferred_sort TEXT COLLATE NOCASE NOT NULL
+  name           TEXT    NOT NULL PRIMARY KEY,
+  preferred_sort TEXT    COLLATE NOCASE NOT NULL,
+  sort_ascending BOOLEAN NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS collection_books(

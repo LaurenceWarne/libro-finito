@@ -86,7 +86,11 @@ object CollectionServiceImplTest extends IOSuite {
         MutationsCreateCollectionArgs(name, None)
       )
       _ <- collectionService.updateCollection(
-        MutationsUpdateCollectionArgs(name, None, Sort.Title.some)
+        MutationsUpdateCollectionArgs(
+          name,
+          None,
+          Sort(SortType.Title, true).some
+        )
       )
       _ <- collectionService.addBookToCollection(
         MutationsAddBookArgs(name.some, book)
@@ -101,6 +105,36 @@ object CollectionServiceImplTest extends IOSuite {
     )
   }
 
+  test("collection returns collection sorted by title desc") {
+    collectionService =>
+      val name  = "sorted backwards collection"
+      val book2 = book.copy(title = "alphabetically before 2")
+      val book3 = book.copy(title = "book after")
+      for {
+        _ <- collectionService.createCollection(
+          MutationsCreateCollectionArgs(name, None)
+        )
+        _ <- collectionService.updateCollection(
+          MutationsUpdateCollectionArgs(
+            name,
+            None,
+            Sort(SortType.Title, false).some
+          )
+        )
+        _ <- collectionService.addBookToCollection(
+          MutationsAddBookArgs(name.some, book3)
+        )
+        _ <- collectionService.addBookToCollection(
+          MutationsAddBookArgs(name.some, book2)
+        )
+        retrievedCollection <-
+          collectionService.collection(QueriesCollectionArgs(name))
+        _ = println(retrievedCollection)
+      } yield expect(
+        retrievedCollection.books === List(book3, book2).map(toUserBook(_))
+      )
+  }
+
   test("collection returns collection sorted by author") { collectionService =>
     val name  = "sorted collection 2"
     val book2 = book.copy(authors = List("aauthor", "bauthor"))
@@ -109,7 +143,11 @@ object CollectionServiceImplTest extends IOSuite {
         MutationsCreateCollectionArgs(name, None)
       )
       _ <- collectionService.updateCollection(
-        MutationsUpdateCollectionArgs(name, None, Sort.Author.some)
+        MutationsUpdateCollectionArgs(
+          name,
+          None,
+          Sort(SortType.Author, true).some
+        )
       )
       _ <- collectionService.addBookToCollection(
         MutationsAddBookArgs(name.some, book)
@@ -166,7 +204,7 @@ object CollectionServiceImplTest extends IOSuite {
   test("updateCollection udpates collection name and sort") {
     collectionService =>
       val (oldName, newName) = ("old name", "new name")
-      val newSort            = Sort.Author
+      val newSort            = Sort(SortType.Author, true)
       for {
         _ <-
           collectionService
@@ -283,7 +321,13 @@ object CollectionServiceImplTest extends IOSuite {
       collection <- collectionService.removeBookFromCollection(
         MutationsRemoveBookArgs(name, book.isbn)
       )
-    } yield expect(collection === Collection(name, List.empty, Sort.DateAdded))
+    } yield expect(
+      collection === Collection(
+        name,
+        List.empty,
+        Sort(SortType.DateAdded, true)
+      )
+    )
   }
 
   test("removeBookFromCollection errors on inexistant collection") {

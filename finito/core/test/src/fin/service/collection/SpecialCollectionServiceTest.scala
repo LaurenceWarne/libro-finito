@@ -211,7 +211,7 @@ object SpecialCollectionServiceTest extends IOSuite {
   test(
     "updateCollection successful if name not specified for special collection"
   ) { collectionService =>
-    val newSort = Sort.Author
+    val newSort = Sort(SortType.Author, true)
     for {
       _ <-
         collectionService

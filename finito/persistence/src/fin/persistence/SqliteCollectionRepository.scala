@@ -35,7 +35,11 @@ object SqliteCollectionRepository extends CollectionRepository[ConnectionIO] {
       preferredSort: Sort
   ): ConnectionIO[Unit] =
     for {
-      _ <- Fragments.create(newName, preferredSort).update.run
+      _ <-
+        Fragments
+          .create(newName, preferredSort.`type`, preferredSort.sortAscending)
+          .update
+          .run
       _ <- Fragments.updateCollectonBooks(currentName, newName).update.run
       _ <- Fragments.delete(currentName).update.run
     } yield ()
@@ -59,7 +63,7 @@ object SqliteCollectionRepository extends CollectionRepository[ConnectionIO] {
       preferredSort: Sort
   ): ConnectionIO[Unit] = {
     Fragments
-      .create(name, preferredSort)
+      .create(name, preferredSort.`type`, preferredSort.sortAscending)
       .update
       .run
       .void
@@ -86,26 +90,29 @@ object SqliteCollectionRepository extends CollectionRepository[ConnectionIO] {
       rows: List[CollectionBookRow]
   ): Either[Throwable, List[Collection]] = {
     rows
-      .groupMapReduce(c => (c.name, c.preferredSort))(_.toBook.toList)(_ ++ _)
+      .groupMapReduce(c => (c.name, c.preferredSort, c.sortAscending))(
+        _.toBook.toList
+      )(_ ++ _)
       .toList
       .traverse {
-        case ((name, preferredSort), books) =>
+        case ((name, preferredSort, sortAscending), books) =>
           SortConversions
             .fromString(preferredSort)
-            .map(Collection(name, books, _))
+            .map(t => Collection(name, books, Sort(t, sortAscending)))
       }
   }
 }
 
 object Fragments {
 
-  implicit val sortPut: Put[Sort] = Put[String].contramap(_.toString)
+  implicit val sortPut: Put[SortType] = Put[String].contramap(_.toString)
 
   val retrieveCollections =
     fr"""
        |SELECT 
        |  c.name,
        |  c.preferred_sort,
+       |  c.sort_ascending,
        |  b.isbn,
        |  b.title, 
        |  b.authors,
@@ -125,10 +132,14 @@ object Fragments {
   def fromName(name: String): Fragment =
     retrieveCollections ++ fr"WHERE name = $name"
 
-  def create(name: String, preferredSort: Sort): Fragment =
+  def create(
+      name: String,
+      preferredSort: SortType,
+      sortAscending: Boolean
+  ): Fragment =
     fr"""
-       |INSERT INTO collections (name, preferred_sort)
-       |VALUES ($name, $preferredSort)""".stripMargin
+       |INSERT INTO collections (name, preferred_sort, sort_ascending)
+       |VALUES ($name, $preferredSort, $sortAscending)""".stripMargin
 
   def delete(name: String): Fragment =
     fr"DELETE FROM collections WHERE name = $name"
@@ -155,6 +166,7 @@ object Fragments {
 final case class CollectionBookRow(
     name: String,
     preferredSort: String,
+    sortAscending: Boolean,
     maybeIsbn: Option[String],
     maybeTitle: Option[String],
     maybeAuthors: Option[String],

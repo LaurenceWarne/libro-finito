@@ -5,12 +5,12 @@ import cats.implicits._
 import fin.Types._
 
 object SortConversions {
-  def fromString(sort: String): Either[InvalidSortStringError, Sort] =
-    sort.toLowerCase match {
-      case "dateadded"     => Sort.DateAdded.asRight
-      case "title"         => Sort.Title.asRight
-      case "author"        => Sort.Author.asRight
-      case "rating"        => Sort.Rating.asRight
+  def fromString(sortType: String): Either[InvalidSortStringError, SortType] =
+    sortType.toLowerCase match {
+      case "dateadded"     => SortType.DateAdded.asRight
+      case "title"         => SortType.Title.asRight
+      case "author"        => SortType.Author.asRight
+      case "rating"        => SortType.Rating.asRight
       case unmatchedString => InvalidSortStringError(unmatchedString).asLeft
     }
 }
