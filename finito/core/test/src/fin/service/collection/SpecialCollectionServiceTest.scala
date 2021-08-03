@@ -199,6 +199,7 @@ object SpecialCollectionServiceTest extends IOSuite {
               MutationsUpdateCollectionArgs(
                 hook1Collection,
                 "a new name".some,
+                None,
                 None
               )
             )
@@ -219,7 +220,8 @@ object SpecialCollectionServiceTest extends IOSuite {
             MutationsUpdateCollectionArgs(
               hook1Collection,
               None,
-              newSort.some
+              newSort.`type`.some,
+              newSort.sortAscending.some
             )
           )
       hookResponse <-

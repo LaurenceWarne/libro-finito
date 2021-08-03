@@ -55,20 +55,25 @@ class CollectionServiceImpl[F[_]: BracketThrow, G[_]: MonadThrow] private (
   ): F[Collection] = {
     val transaction = for {
       collection <- collectionOrError(args.currentName)
-      _ <- MonadThrow[G].whenA(
-        args.newName.orElse(args.preferredSort).isEmpty
+      _ <- MonadThrow[G].unlessA(
+        List(args.newName, args.preferredSortType, args.sortAscending)
+          .exists(_.nonEmpty)
       ) {
         MonadThrow[G].raiseError(NotEnoughArgumentsForUpdateError)
       }
       _ <- args.newName.traverse(errorIfCollectionExists)
+      sort = Sort(
+        args.preferredSortType.getOrElse(collection.preferredSort.`type`),
+        args.sortAscending.getOrElse(collection.preferredSort.sortAscending)
+      )
       _ <- collectionRepo.updateCollection(
         args.currentName,
         args.newName.getOrElse(collection.name),
-        args.preferredSort.getOrElse(collection.preferredSort)
+        sort
       )
     } yield collection.copy(
       name = args.newName.getOrElse(collection.name),
-      preferredSort = args.preferredSort.getOrElse(collection.preferredSort)
+      preferredSort = sort
     )
     transact(transaction)
   }

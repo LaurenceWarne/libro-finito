@@ -89,7 +89,8 @@ object CollectionServiceImplTest extends IOSuite {
         MutationsUpdateCollectionArgs(
           name,
           None,
-          Sort(SortType.Title, true).some
+          SortType.Title.some,
+          true.some
         )
       )
       _ <- collectionService.addBookToCollection(
@@ -118,7 +119,8 @@ object CollectionServiceImplTest extends IOSuite {
           MutationsUpdateCollectionArgs(
             name,
             None,
-            Sort(SortType.Title, false).some
+            SortType.Title.some,
+            false.some
           )
         )
         _ <- collectionService.addBookToCollection(
@@ -146,7 +148,8 @@ object CollectionServiceImplTest extends IOSuite {
         MutationsUpdateCollectionArgs(
           name,
           None,
-          Sort(SortType.Author, true).some
+          SortType.Author.some,
+          true.some
         )
       )
       _ <- collectionService.addBookToCollection(
@@ -203,17 +206,22 @@ object CollectionServiceImplTest extends IOSuite {
 
   test("updateCollection udpates collection name and sort") {
     collectionService =>
-      val (oldName, newName) = ("old name", "new name")
-      val newSort            = Sort(SortType.Author, true)
+      val (oldName, newName)           = ("old name", "new name")
+      val (newSortType, sortAscending) = (SortType.Author, true)
       for {
         _ <-
           collectionService
             .createCollection(MutationsCreateCollectionArgs(oldName, None))
         collection <- collectionService.updateCollection(
-          MutationsUpdateCollectionArgs(oldName, newName.some, newSort.some)
+          MutationsUpdateCollectionArgs(
+            oldName,
+            newName.some,
+            newSortType.some,
+            sortAscending.some
+          )
         )
       } yield expect(collection.name === newName) and expect(
-        collection.preferredSort === newSort
+        collection.preferredSort === Sort(newSortType, sortAscending)
       )
   }
 
@@ -227,6 +235,7 @@ object CollectionServiceImplTest extends IOSuite {
               MutationsUpdateCollectionArgs(
                 name,
                 "new name".some,
+                None,
                 None
               )
             )
@@ -247,7 +256,7 @@ object CollectionServiceImplTest extends IOSuite {
         response <-
           collectionService
             .updateCollection(
-              MutationsUpdateCollectionArgs(oldName, newName.some, None)
+              MutationsUpdateCollectionArgs(oldName, newName.some, None, None)
             )
             .attempt
       } yield expect(response == CollectionAlreadyExistsError(newName).asLeft)
@@ -262,7 +271,7 @@ object CollectionServiceImplTest extends IOSuite {
       response <-
         collectionService
           .updateCollection(
-            MutationsUpdateCollectionArgs(name, None, None)
+            MutationsUpdateCollectionArgs(name, None, None, None)
           )
           .attempt
     } yield expect(response == NotEnoughArgumentsForUpdateError.asLeft)

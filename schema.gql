@@ -66,7 +66,10 @@ type Mutations {
   """
   deleteCollection(name: String!): Boolean
   updateCollection(
-    currentName: String!, newName: String, preferredSort: Sort
+    currentName: String!,
+    newName: String,
+    preferredSortType: SortType,
+    sortAscending: Boolean
   ): Collection!
   addBook(collection: String, book: BookInput!): Collection!
   removeBook(collection: String!, isbn: String!): Boolean

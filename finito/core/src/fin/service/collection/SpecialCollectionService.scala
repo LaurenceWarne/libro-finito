@@ -12,15 +12,14 @@ import HookType._
 import Bindable._
 
 /**
-  * This class manages special collection hooks on top of collection and
-  * book management services.  Essentially, for each method, we run special
-  * collection hooks and then delegate to the appropriate service.
+  * This class manages special collection hooks on top of a collection
+  * service.  Essentially, for each method, we run special
+  * collection hooks and then delegate to the service.
   *
   * @param maybeDefaultCollection the default collection
   * @param wrappedCollectionService the wrapped collection service
-  * @param wrappedBookService the wrapped book management service
   * @param collectionHooks collection hooks to run
-  * @param scriptEngineManager the script engine manager
+  * @param hookExecutionService the hook execution service
   */
 class SpecialCollectionService[F[_]: Sync: Logger] private (
     maybeDefaultCollection: Option[String],
