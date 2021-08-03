@@ -50,7 +50,10 @@ object ServiceConfig {
           |    {
           |      name = My Books,
           |      lazy = false,
-          |      add-hook = \"\"\"add = true\"\"\"
+          |      add-hook = \"\"\"add = true\"\"\",
+          |      read-started-hook = \"\"\"add = true\"\"\",
+          |      read-completed-hook = \"\"\"add = true\"\"\",
+          |      rate-hook = \"\"\"add = true\"\"\"
           |    },
           |    {
           |      name = Currently Reading,
