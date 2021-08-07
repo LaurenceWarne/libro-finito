@@ -225,6 +225,25 @@ object CollectionServiceImplTest extends IOSuite {
       )
   }
 
+  test("updateCollection udpates collection sort asc/desc") {
+    collectionService =>
+      val name          = "collection with sort asc to update"
+      val sortAscending = false
+      for {
+        _ <-
+          collectionService
+            .createCollection(MutationsCreateCollectionArgs(name, None))
+        collection <- collectionService.updateCollection(
+          MutationsUpdateCollectionArgs(
+            name,
+            None,
+            None,
+            sortAscending.some
+          )
+        )
+      } yield expect(collection.preferredSort.sortAscending === false)
+  }
+
   test("updateCollection errors on inexistant collection") {
     collectionService =>
       val name = "inexistant collection"

@@ -34,15 +34,15 @@ object SqliteCollectionRepository extends CollectionRepository[ConnectionIO] {
       newName: String,
       preferredSort: Sort
   ): ConnectionIO[Unit] =
-    for {
-      _ <-
-        Fragments
-          .create(newName, preferredSort.`type`, preferredSort.sortAscending)
-          .update
-          .run
-      _ <- Fragments.updateCollectonBooks(currentName, newName).update.run
-      _ <- Fragments.delete(currentName).update.run
-    } yield ()
+    if (currentName == newName)
+      Fragments.updateSort(currentName, preferredSort).update.run.void
+    else
+      Fragments
+        .create(newName, preferredSort.`type`, preferredSort.sortAscending)
+        .update
+        .run *>
+        Fragments.updateCollectonBooks(currentName, newName).update.run *>
+        Fragments.delete(currentName).update.run.void
 
   override def collection(name: String): ConnectionIO[Option[Collection]] =
     Fragments
@@ -152,6 +152,16 @@ object Fragments {
        |DELETE FROM collection_books
        |WHERE collection_name = $name
        |AND isbn = $isbn""".stripMargin
+
+  def updateSort(
+      name: String,
+      sort: Sort
+  ): Fragment =
+    fr"""
+       |UPDATE collections
+       |SET preferred_sort = ${sort.`type`},
+       | sort_ascending = ${sort.sortAscending}
+       |WHERE name = $name""".stripMargin
 
   def updateCollectonBooks(
       currentName: String,

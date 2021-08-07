@@ -70,6 +70,21 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
     )
   }
 
+  testDoobie("updateCollection changes only sort") {
+    val name    = "name with sort to change"
+    val oldSort = Sort(SortType.DateAdded, true)
+    val newSort = Sort(SortType.Title, false)
+    for {
+      _                   <- repo.createCollection(name, oldSort)
+      _                   <- repo.updateCollection(name, name, newSort)
+      retrievedCollection <- repo.collection(name)
+    } yield expect(
+      retrievedCollection.exists(c =>
+        c.name === name && c.preferredSort === newSort
+      )
+    )
+  }
+
   testDoobie(
     "updateCollection changes collection name and sort for collection with books"
   ) {
