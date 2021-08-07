@@ -48,7 +48,9 @@ final case class CollectionAlreadyExistsError(collection: String)
 
 case object NotEnoughArgumentsForUpdateError extends FinitoError {
   override def getMessage =
-    "At least one of 'newName' and 'preferredSort' must be specified"
+    """
+     |At least one of 'newName', 'preferredSortType' or 'sortAscending'
+     |must be specified""".stripMargin.replace("\n", " ")
   override def errorCode = "NOT_ENOUGH_ARGS_FOR_UPDATE"
 }
 

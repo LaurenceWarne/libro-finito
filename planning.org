@@ -28,6 +28,7 @@
 *** DONE Add asc/desc to collection sorting
 *** DONE Implement adding to default collection
 *** TODO Add integration tests
+*** TODO Make isbn return multiple books
 
 ** Smaller Things
 *** DONE Add a logging framework
