@@ -53,6 +53,8 @@ object finito extends Module {
         Deps.Caliban.cats,
         Deps.Caliban.core,
         Deps.Caliban.http4s,
+        Deps.CaseApp.core,
+        Deps.CaseApp.cats,
         Deps.Circe.core,
         Deps.Circe.generic,
         Deps.Circe.parser,
@@ -189,7 +191,7 @@ object Deps {
   val weaver           = ivy"com.disneystreaming::weaver-cats:0.6.4"
   val sqlite           = ivy"org.xerial:sqlite-jdbc:3.34.0"
   val flyway           = ivy"org.flywaydb:flyway-core:7.10.0"
-  val pureconfig       = ivy"com.github.pureconfig::pureconfig:0.16.0"
+  val pureconfig       = ivy"com.github.pureconfig::pureconfig:0.15.0"
   val betterFiles      = ivy"com.github.pathikrit::better-files:3.9.1"
   val enumeratum       = ivy"com.beachape::enumeratum:1.7.0"
   // https://github.com/luaj/luaj/issues/91 ):
@@ -229,5 +231,11 @@ object Deps {
     val core    = ivy"io.circe::circe-core:$version"
     val generic = ivy"io.circe::circe-generic:$version"
     val parser  = ivy"io.circe::circe-parser:$version"
+  }
+
+  object CaseApp {
+    val version = "2.0.6"
+    val core    = ivy"com.github.alexarchambault::case-app:$version"
+    val cats    = ivy"com.github.alexarchambault::case-app-cats:$version"
   }
 }

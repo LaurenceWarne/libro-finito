@@ -2,9 +2,11 @@ package fin
 
 import scala.concurrent.ExecutionContext.global
 
-import cats.arrow.FunctionK
-import cats.effect._
-import cats.implicits._
+import caseapp._
+import caseapp.cats._
+import _root_.cats.arrow.FunctionK
+import _root_.cats.effect._
+import _root_.cats.implicits._
 import doobie._
 import doobie.implicits._
 import io.chrisdavenport.log4cats.Logger
@@ -19,16 +21,15 @@ import fin.persistence._
 import fin.service.book._
 import fin.service.collection._
 
-object Main extends IOApp {
-
+object Main extends IOCaseApp[CliOptions] {
   implicit val runtime = Runtime.default
 
-  override def run(args: List[String]): IO[ExitCode] = {
+  def run(options: CliOptions, arg: RemainingArgs): IO[ExitCode] = {
     val server =
       (BlazeClientBuilder[IO](global).resource, Blocker[IO]).tupled.use {
         case (client, blocker) =>
           for {
-            config <- Config.get[IO]
+            config <- Config.get[IO](options.config)
             uri = show"jdbc:sqlite:${config.databasePath}"
             xa = Transactor.fromDriverManager[IO](
               config.databaseDriver,
