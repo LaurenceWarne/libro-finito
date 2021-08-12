@@ -1,15 +1,23 @@
 package fin.config
 
 import better.files._
+import cats.Show
 import cats.effect.Sync
 import cats.implicits._
+import io.chrisdavenport.log4cats.Logger
 import pureconfig.ConfigSource
 
 object Config {
-  def get[F[_]: Sync](configDirectoryStr: String): F[ServiceConfig] = {
-    val configDirectory = File(configDirectoryStr)
+
+  implicit val fileShow: Show[File] = Show.fromToString
+
+  def get[F[_]: Sync: Logger](configDirectoryStr: String): F[ServiceConfig] = {
+    val expandedDirectoryStr =
+      configDirectoryStr.replaceFirst("^~", File.home.toString)
     for {
-      _ <- initializeConfigLocation(configDirectory)
+      configDirectory <- Sync[F].delay(File(expandedDirectoryStr))
+      _               <- Logger[F].info(show"Using config directory $configDirectory")
+      _               <- initializeConfigLocation(configDirectory)
       configResponse =
         ConfigSource
           .file((configDirectory / "service.conf").toString)

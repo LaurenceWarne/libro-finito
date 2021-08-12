@@ -2,11 +2,11 @@ package fin
 
 import scala.concurrent.ExecutionContext.global
 
-import caseapp._
-import caseapp.cats._
 import _root_.cats.arrow.FunctionK
 import _root_.cats.effect._
 import _root_.cats.implicits._
+import caseapp._
+import caseapp.cats._
 import doobie._
 import doobie.implicits._
 import io.chrisdavenport.log4cats.Logger
@@ -29,7 +29,8 @@ object Main extends IOCaseApp[CliOptions] {
       (BlazeClientBuilder[IO](global).resource, Blocker[IO]).tupled.use {
         case (client, blocker) =>
           for {
-            config <- Config.get[IO](options.config)
+            implicit0(logger: Logger[IO]) <- Slf4jLogger.create[IO]
+            config                        <- Config.get[IO](options.config)
             uri = show"jdbc:sqlite:${config.databasePath}"
             xa = Transactor.fromDriverManager[IO](
               config.databaseDriver,
@@ -44,8 +45,7 @@ object Main extends IOCaseApp[CliOptions] {
             clock          = Clock[IO]
             collectionRepo = SqliteCollectionRepository
             bookRepo       = SqliteBookRepository
-            implicit0(logger: Logger[IO]) <- Slf4jLogger.create[IO]
-            _                             <- logger.debug("Creating services...")
+            _ <- logger.debug("Creating services...")
             bookInfoService  = GoogleBookInfoService[IO](client)
             connectionIOToIO = λ[FunctionK[ConnectionIO, IO]](_.transact(xa))
             wrappedInfoService = BookInfoAugmentationService[IO, ConnectionIO](
