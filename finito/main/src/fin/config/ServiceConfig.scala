@@ -44,7 +44,7 @@ object ServiceConfig {
           |  database-user = "",
           |  database-password = "",
           |  database-driver = org.sqlite.JDBC,
-          |  port = 8080,
+          |  port = 56848,
           |  default-collection = My Books,
           |  special-collections = [
           |    {
