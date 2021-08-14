@@ -32,16 +32,12 @@ class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger] private (
       books <- booksFromUri(uri, searchPartialFn)
     } yield books
 
-  def fromIsbn(bookArgs: QueriesBookArgs): F[UserBook] = {
+  def fromIsbn(bookArgs: QueriesBookArgs): F[List[UserBook]] = {
     val uri = uriFromBookArgs(bookArgs)
     for {
       _     <- Logger[F].info(uri.toString)
       books <- booksFromUri(uri, isbnPartialFn)
-      book <- MonadError[F, Throwable].fromOption(
-        books.headOption,
-        NoBooksFoundForIsbnError(bookArgs.isbn)
-      )
-    } yield book
+    } yield books
   }
 
   private def booksFromUri(

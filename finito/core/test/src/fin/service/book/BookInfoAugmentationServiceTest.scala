@@ -59,8 +59,9 @@ object BookInfoAugmentationServiceTest extends SimpleIOSuite {
       _            <- repo.rateBook(book, rating)
       _            <- repo.startReading(book, date)
       bookResponse <- service.fromIsbn(QueriesBookArgs(book.isbn, None))
+      List(userBook) = bookResponse
     } yield expect(
-      bookResponse === toUserBook(
+      userBook === toUserBook(
         book,
         rating = rating.some,
         startedReading = date.some
@@ -74,5 +75,6 @@ class MockedInfoService(book: UserBook) extends BookInfoService[IO] {
   override def search(booksArgs: QueriesBooksArgs): IO[List[UserBook]] =
     List(book).pure[IO]
 
-  override def fromIsbn(bookArgs: QueriesBookArgs): IO[UserBook] = book.pure[IO]
+  override def fromIsbn(bookArgs: QueriesBookArgs): IO[List[UserBook]] =
+    List(book).pure[IO]
 }

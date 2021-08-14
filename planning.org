@@ -28,7 +28,7 @@
 *** DONE Add asc/desc to collection sorting
 *** DONE Implement adding to default collection
 *** TODO Add integration tests
-*** TODO Make isbn return multiple books
+*** DONE Make isbn return multiple books
 
 ** Smaller Things
 *** DONE Add a logging framework
@@ -43,6 +43,7 @@
 *** TODO Add logging to file in config directory
 *** TODO Add IOCaseApp for flags
 *** TODO Add tracing
+*** TODO Add cli option for just outputting the default config
 
 ** Bugs
 *** TODO Adding the same book to a collection results in an uhelpful sql error

@@ -44,18 +44,10 @@ object GoogleBookInfoServiceTest extends SimpleIOSuite {
     val client: Client[IO]           = mockedClient(Mocks.isbnResponse(isbn))
     val bookAPI: BookInfoService[IO] = GoogleBookInfoService(client)
     for {
-      book <- bookAPI.fromIsbn(QueriesBookArgs(isbn, None))
+      response <- bookAPI.fromIsbn(QueriesBookArgs(isbn, None))
+      List(book) = response
       // TODO why do I need the type hint here?
     } yield expect(book.isbn === "978" + isbn): Expectations
-  }
-
-  test("fromIsbn returns error when no items in response") {
-    val isbn                         = "arandomisbn"
-    val client: Client[IO]           = mockedClient(Mocks.emptyResponse)
-    val bookAPI: BookInfoService[IO] = GoogleBookInfoService(client)
-    for {
-      response <- bookAPI.fromIsbn(QueriesBookArgs(isbn, None)).attempt
-    } yield expect(response == NoBooksFoundForIsbnError(isbn).asLeft)
   }
 
   pureTest("uriFromQueriesBooksArgs returns correct uri") {

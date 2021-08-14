@@ -18,5 +18,5 @@ trait BookInfoService[F[_]] {
     * @param bookArgs isbn data
     * @return a book with the given isbn
     */
-  def fromIsbn(bookArgs: QueriesBookArgs): F[UserBook]
+  def fromIsbn(bookArgs: QueriesBookArgs): F[List[UserBook]]
 }

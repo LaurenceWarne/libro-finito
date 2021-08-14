@@ -25,11 +25,15 @@ class BookInfoAugmentationService[F[_]: BracketThrow, G[_]] private (
       userBooks.find(_.isbn === book.isbn).getOrElse(book)
     )
 
-  override def fromIsbn(bookArgs: QueriesBookArgs): F[UserBook] =
+  override def fromIsbn(bookArgs: QueriesBookArgs): F[List[UserBook]] =
     for {
-      book     <- wrappedInfoService.fromIsbn(bookArgs)
-      userBook <- transact(bookRepo.retrieveBook(bookArgs.isbn))
-    } yield userBook.getOrElse(book)
+      matchingBooks <- wrappedInfoService.fromIsbn(bookArgs)
+      userBooks <- transact(
+        bookRepo.retrieveMultipleBooks(matchingBooks.map(_.isbn))
+      )
+    } yield matchingBooks.map(book =>
+      userBooks.find(_.isbn === book.isbn).getOrElse(book)
+    )
 }
 
 object BookInfoAugmentationService {

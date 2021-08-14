@@ -16,7 +16,7 @@ The server may be configured in a number of ways by via a file whose expected lo
 ```hocon
 {
   database-path = ~/.config/libro-finito/db.sqlite,
-  port = 8080,
+  port = 56848,
   default-collection = My Books,
   special-collections = [
     {
