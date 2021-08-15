@@ -88,7 +88,13 @@ class CollectionServiceImpl[F[_]: BracketThrow, G[_]: MonadThrow] private (
           DefaultCollectionNotSupportedError
         )
         collection <- collectionOrError(collectionName)
-        _          <- collectionRepo.addBookToCollection(collectionName, args.book, date)
+        _ <-
+          if (collection.books.exists(_.isbn === args.book.isbn))
+            MonadThrow[G].raiseError(
+              BookAlreadyInCollectionError(collection.name, args.book.title)
+            )
+          else MonadThrow[G].unit
+        _ <- collectionRepo.addBookToCollection(collectionName, args.book, date)
       } yield collection.copy(books = toUserBook(args.book) :: collection.books)
     Dates.currentDate(clock).flatMap(date => transact(transaction(date)))
   }

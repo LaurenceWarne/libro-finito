@@ -79,8 +79,9 @@ object CollectionServiceImplTest extends IOSuite {
   }
 
   test("collection returns collection sorted by title") { collectionService =>
-    val name  = "sorted collection"
-    val book2 = book.copy(title = "alphabetically before")
+    val name = "sorted collection"
+    val book2 =
+      book.copy(isbn = "different isbn", title = "alphabetically before")
     for {
       _ <- collectionService.createCollection(
         MutationsCreateCollectionArgs(name, None)
@@ -109,8 +110,8 @@ object CollectionServiceImplTest extends IOSuite {
   test("collection returns collection sorted by title desc") {
     collectionService =>
       val name  = "sorted backwards collection"
-      val book2 = book.copy(title = "alphabetically before 2")
-      val book3 = book.copy(title = "book after")
+      val book2 = book.copy(isbn = "isbn2", title = "alphabetically before 2")
+      val book3 = book.copy(isbn = "isbn3", title = "book after")
       for {
         _ <- collectionService.createCollection(
           MutationsCreateCollectionArgs(name, None)
@@ -139,7 +140,7 @@ object CollectionServiceImplTest extends IOSuite {
 
   test("collection returns collection sorted by author") { collectionService =>
     val name  = "sorted collection 2"
-    val book2 = book.copy(authors = List("aauthor", "bauthor"))
+    val book2 = book.copy(isbn = "isbn2", authors = List("aauthor", "bauthor"))
     for {
       _ <- collectionService.createCollection(
         MutationsCreateCollectionArgs(name, None)
@@ -327,7 +328,7 @@ object CollectionServiceImplTest extends IOSuite {
       } yield expect(response == CollectionDoesNotExistError(name).asLeft)
   }
 
-  test("addBookToCollection errors when collection not set") {
+  test("addBookToCollection errors when default collection not set") {
     collectionService =>
       for {
         response <-
@@ -335,6 +336,25 @@ object CollectionServiceImplTest extends IOSuite {
             .addBookToCollection(MutationsAddBookArgs(None, book))
             .attempt
       } yield expect(response == DefaultCollectionNotSupportedError.asLeft)
+  }
+
+  test("addBookToCollection errors when book already in collection") {
+    collectionService =>
+      val name = "collection with double book"
+      for {
+        _ <-
+          collectionService
+            .createCollection(MutationsCreateCollectionArgs(name, None))
+        _ <-
+          collectionService
+            .addBookToCollection(MutationsAddBookArgs(name.some, book))
+        response <-
+          collectionService
+            .addBookToCollection(MutationsAddBookArgs(name.some, book))
+            .attempt
+      } yield expect(
+        response == BookAlreadyInCollectionError(name, book.title).asLeft
+      )
   }
 
   test("removeBookFromCollection removes book") { collectionService =>

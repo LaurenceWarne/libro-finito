@@ -35,7 +35,7 @@
 *** DONE Log when decoding fails (ie with title: hi, author: there)
 *** DONE Sort out logging middleware
 *** DONE Add scalafix (for imports, etc)
-*** TODO Decrease/investigate memory usage
+*** DONE Decrease/investigate memory usage
 *** DONE Get better errors than "Effect Failure"
 *** DONE Add error classes for better testing than ~isLeft~
 *** DONE Add typeclass to put objects into ~Bindings~
@@ -45,5 +45,5 @@
 *** TODO Add cli option for just outputting the default config
 
 ** Bugs
-*** TODO Adding the same book to a collection results in an uhelpful sql error
+*** DONE Adding the same book to a collection results in an uhelpful sql error
 *** DONE Author search of 'tolkien' returns an error (bad google data?)

@@ -59,6 +59,15 @@ case object DefaultCollectionNotSupportedError extends FinitoError {
   override def errorCode  = "DEFAULT_COLLECTION_NOT_SUPPORTED"
 }
 
+final case class BookAlreadyInCollectionError(
+    collectionName: String,
+    bookTitle: String
+) extends FinitoError {
+  override def getMessage =
+    show"The book '$bookTitle' is already in '$collectionName'!"
+  override def errorCode = "BOOK_ALREADY_IN_COLLECTION"
+}
+
 final case class BookAlreadyBeingReadError(book: BookInput)
     extends FinitoError {
   override def getMessage =
