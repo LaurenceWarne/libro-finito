@@ -37,14 +37,13 @@
 *** DONE Add scalafix (for imports, etc)
 *** TODO Decrease/investigate memory usage
 *** DONE Get better errors than "Effect Failure"
-*** TODO Caching middleware?
 *** DONE Add error classes for better testing than ~isLeft~
 *** DONE Add typeclass to put objects into ~Bindings~
 *** TODO Add logging to file in config directory
-*** TODO Add IOCaseApp for flags
+*** DONE Add IOCaseApp for flags
 *** TODO Add tracing
 *** TODO Add cli option for just outputting the default config
 
 ** Bugs
 *** TODO Adding the same book to a collection results in an uhelpful sql error
-*** TODO Author search of 'tolkien' returns an error (bad google data?)
+*** DONE Author search of 'tolkien' returns an error (bad google data?)

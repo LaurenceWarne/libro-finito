@@ -27,8 +27,8 @@ final case class GoogleResponse(items: Option[List[GoogleVolume]])
 final case class GoogleVolume(volumeInfo: GoogleBookItem)
 
 final case class GoogleBookItem(
-    title: String,
     // These are optional... because the API sometimes decides not to return them...
+    title: Option[String],
     authors: Option[List[String]],
     description: Option[String],
     imageLinks: Option[GoogleImageLinks],

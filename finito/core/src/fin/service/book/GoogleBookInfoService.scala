@@ -46,7 +46,6 @@ class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger] private (
   ): F[List[UserBook]] = {
     for {
       json <- client.expect[String](uri)
-      _    <- Logger[F].info(decode[GoogleResponse](json).toString)
       // We would have to use implicitly[MonadError[F, Throwable]] without
       // import cats.effect.syntax._
       googleResponse <-
@@ -65,7 +64,7 @@ object GoogleBookInfoService {
   val searchPartialFn: PartialFunction[GoogleVolume, UserBook] = {
     case GoogleVolume(
           GoogleBookItem(
-            title,
+            Some(title),
             Some(authors),
             maybeDescription,
             Some(GoogleImageLinks(_, largeThumbnail)),
@@ -91,7 +90,7 @@ object GoogleBookInfoService {
   val isbnPartialFn: PartialFunction[GoogleVolume, UserBook] = {
     case GoogleVolume(bookItem) =>
       UserBook(
-        bookItem.title,
+        bookItem.title.getOrElse("???"),
         bookItem.authors.getOrElse(List("???")),
         bookItem.description.getOrElse("No Description!"),
         bookItem.industryIdentifiers
