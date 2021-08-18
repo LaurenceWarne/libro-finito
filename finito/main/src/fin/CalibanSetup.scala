@@ -3,6 +3,7 @@ package fin
 import caliban.CalibanError.ExecutionError
 import caliban._
 import caliban.interop.cats.implicits._
+import caliban.wrappers.ApolloTracing.apolloTracing
 import cats.effect.Effect
 import cats.implicits._
 
@@ -21,7 +22,7 @@ object CalibanSetup {
       bookManagementService: BookManagementService[F],
       collectionService: CollectionService[F]
   )(implicit
-      runtime: zio.Runtime[Any]
+      runtime: zio.Runtime[zio.clock.Clock]
   ): F[GraphQLInterpreter[Any, CalibanError]] = {
     val queries = Queries[F](
       booksArgs => bookInfoService.search(booksArgs),
@@ -44,7 +45,10 @@ object CalibanSetup {
       _ => ???
     )
     val api = GraphQL.graphQL(RootResolver(queries, mutations))
-    api.interpreterAsync[F].map(withErrors(_))
+    (api @@ apolloTracing)
+      .interpreterAsync[F]
+      .map(_.provide(runtime.environment))
+      .map(withErrors(_))
   }
 
   // 'Effect failure' is from this line:

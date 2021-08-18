@@ -41,7 +41,7 @@
 *** DONE Add typeclass to put objects into ~Bindings~
 *** TODO Add logging to file in config directory
 *** DONE Add IOCaseApp for flags
-*** TODO Add tracing
+*** DONE Add tracing
 *** TODO Add cli option for just outputting the default config
 
 ** Bugs
