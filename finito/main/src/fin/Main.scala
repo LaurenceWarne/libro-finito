@@ -14,6 +14,7 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
+import org.sqlite.{SQLiteConfig, SQLiteDataSource}
 import zio.Runtime
 
 import fin.config._
@@ -26,17 +27,21 @@ object Main extends IOCaseApp[CliOptions] {
 
   def run(options: CliOptions, arg: RemainingArgs): IO[ExitCode] = {
     val server =
-      (BlazeClientBuilder[IO](global).resource, Blocker[IO]).tupled.use {
-        case (client, blocker) =>
+      (
+        BlazeClientBuilder[IO](global).resource,
+        Blocker[IO],
+        ExecutionContexts.fixedThreadPool[IO](4)
+      ).tupled.use {
+        case (client, blocker, ec) =>
           for {
             implicit0(logger: Logger[IO]) <- Slf4jLogger.create[IO]
             config                        <- Config.get[IO](options.config)
             uri = show"jdbc:sqlite:${config.databasePath}"
-            xa = Transactor.fromDriverManager[IO](
-              config.databaseDriver,
-              uri,
-              DbProperties.properties
-            )
+            ds  = new SQLiteDataSource()
+            cfg = new SQLiteConfig(DbProperties.properties)
+            _ <- IO(ds.setConfig(cfg))
+            _ <- IO(ds.setUrl(uri))
+            xa = Transactor.fromDataSource[IO](ds, ec, blocker)
             _ <- FlywaySetup.init[IO](
               uri,
               config.databaseUser,
