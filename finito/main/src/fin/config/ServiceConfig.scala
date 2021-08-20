@@ -10,7 +10,6 @@ final case class ServiceConfig(
     databasePath: String,
     databaseUser: String,
     databasePassword: String,
-    databaseDriver: String,
     port: Int,
     defaultCollection: Option[String],
     specialCollections: List[SpecialCollection]
@@ -43,7 +42,6 @@ object ServiceConfig {
           |  database-path = $configDirectory/db.sqlite,
           |  database-user = "",
           |  database-password = "",
-          |  database-driver = org.sqlite.JDBC,
           |  port = 56848,
           |  default-collection = My Books,
           |  special-collections = [

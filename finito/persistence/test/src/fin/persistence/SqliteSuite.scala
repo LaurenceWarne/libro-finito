@@ -1,7 +1,5 @@
 package fin.persistence
 
-import javax.sql.DataSource
-
 import better.files.Dsl._
 import better.files._
 import cats.Show
@@ -9,7 +7,6 @@ import cats.effect.{Blocker, IO, Resource}
 import cats.implicits._
 import doobie._
 import doobie.implicits._
-import org.sqlite.{SQLiteConfig, SQLiteDataSource}
 import weaver._
 
 trait SqliteSuite extends IOSuite {
@@ -18,19 +15,14 @@ trait SqliteSuite extends IOSuite {
   val dbFile                = pwd / "tmp.db"
   val (uri, user, password) = (show"jdbc:sqlite:$dbFile", "", "")
 
-  def dataSource: DataSource = {
-    val ds  = new SQLiteDataSource()
-    val cfg = new SQLiteConfig(DbProperties.properties)
-    ds.setConfig(cfg)
-    ds.setUrl(uri)
-    ds
-  }
-
   def transactor: Resource[IO, Transactor[IO]] = {
-    val ds = dataSource
     (Blocker[IO], ExecutionContexts.fixedThreadPool[IO](4)).tupled.map {
       case (blocker, ec) =>
-        Transactor.fromDataSource[IO](ds, ec, blocker)
+        TransactorSetup.sqliteTransactor[IO](
+          uri,
+          ec,
+          blocker
+        )
     }
   }
 

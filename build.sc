@@ -59,6 +59,7 @@ object finito extends Module {
         Deps.Circe.generic,
         Deps.Circe.parser,
         Deps.Doobie.core,
+        Deps.Doobie.hikari,
         Deps.Http4s.http4sBlazeClient,
         Deps.Http4s.http4sBlazeServer,
         Deps.Http4s.http4sDsl,
@@ -123,6 +124,7 @@ object finito extends Module {
         Deps.Circe.generic,
         Deps.Circe.parser,
         Deps.Doobie.core,
+        Deps.Doobie.hikari,
         Deps.flyway,
         Deps.sqlite
       )
@@ -217,6 +219,7 @@ object Deps {
   object Doobie {
     val version = "0.12.1"
     val core    = ivy"org.tpolecat::doobie-core:$version"
+    val hikari  = ivy"org.tpolecat::doobie-hikari:$version"
   }
 
   object Http4s {

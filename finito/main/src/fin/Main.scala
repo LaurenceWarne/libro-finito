@@ -14,7 +14,6 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
-import org.sqlite.{SQLiteConfig, SQLiteDataSource}
 import zio.Runtime
 
 import fin.config._
@@ -37,11 +36,11 @@ object Main extends IOCaseApp[CliOptions] {
             implicit0(logger: Logger[IO]) <- Slf4jLogger.create[IO]
             config                        <- Config.get[IO](options.config)
             uri = show"jdbc:sqlite:${config.databasePath}"
-            ds  = new SQLiteDataSource()
-            cfg = new SQLiteConfig(DbProperties.properties)
-            _ <- IO(ds.setConfig(cfg))
-            _ <- IO(ds.setUrl(uri))
-            xa = Transactor.fromDataSource[IO](ds, ec, blocker)
+            xa = TransactorSetup.sqliteTransactor[IO](
+              uri,
+              ec,
+              blocker
+            )
             _ <- FlywaySetup.init[IO](
               uri,
               config.databaseUser,

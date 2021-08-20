@@ -13,7 +13,7 @@ object DbProperties {
 
   def properties: Properties = {
     val props = new Properties()
-    props.setProperty("foreign_keys", "true")
+    props.setProperty("connectionInitSql", "PRAGMA foreign_keys=1")
     props
   }
 }
