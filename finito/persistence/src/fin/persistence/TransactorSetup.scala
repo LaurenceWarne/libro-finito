@@ -1,13 +1,11 @@
 package fin.persistence
 
-import doobie._
-import cats.effect.Blocker
-import doobie.hikari._
-import cats.effect.Async
-import com.zaxxer.hikari.HikariConfig
-import com.zaxxer.hikari.HikariDataSource
-import cats.effect.ContextShift
 import scala.concurrent.ExecutionContext
+
+import cats.effect.{Async, Blocker, ContextShift}
+import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import doobie._
+import doobie.hikari._
 
 object TransactorSetup {
   def sqliteTransactor[F[_]: Async](
