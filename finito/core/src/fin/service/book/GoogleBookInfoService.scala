@@ -5,7 +5,7 @@ import cats.effect.ConcurrentEffect
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
 import io.circe.parser.decode
-import org.http4s.Uri
+import org.http4s._
 import org.http4s.client._
 import org.http4s.implicits._
 
@@ -44,8 +44,9 @@ class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger] private (
       uri: Uri,
       pf: PartialFunction[GoogleVolume, UserBook]
   ): F[List[UserBook]] = {
+    val request = Request[F](uri = uri, headers = headers)
     for {
-      json <- client.expect[String](uri)
+      json <- client.expect[String](request)
       // We would have to use implicitly[MonadError[F, Throwable]] without
       // import cats.effect.syntax._
       googleResponse <-
@@ -60,6 +61,11 @@ class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger] private (
   * Utilities for decoding responses from the google books API
   */
 object GoogleBookInfoService {
+
+  val headers = Headers.of(
+    Header("Accept-Encoding", "gzip"),
+    Header("User-Agent", "finito (gzip)")
+  )
 
   val searchPartialFn: PartialFunction[GoogleVolume, UserBook] = {
     case GoogleVolume(

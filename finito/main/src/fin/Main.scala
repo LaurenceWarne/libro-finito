@@ -14,6 +14,7 @@ import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.implicits._
 import org.http4s.server.blaze.BlazeServerBuilder
+import org.http4s.client.middleware.GZip
 import zio.Runtime
 
 import fin.config._
@@ -50,7 +51,7 @@ object Main extends IOCaseApp[CliOptions] {
             collectionRepo = SqliteCollectionRepository
             bookRepo       = SqliteBookRepository
             _ <- logger.debug("Creating services...")
-            bookInfoService  = GoogleBookInfoService[IO](client)
+            bookInfoService  = GoogleBookInfoService[IO](GZip()(client))
             connectionIOToIO = λ[FunctionK[ConnectionIO, IO]](_.transact(xa))
             wrappedInfoService = BookInfoAugmentationService[IO, ConnectionIO](
               bookInfoService,
