@@ -1,6 +1,6 @@
 package fin.service.book
 
-import cats.MonadError
+import cats.MonadThrow
 import cats.effect.ConcurrentEffect
 import cats.implicits._
 import io.chrisdavenport.log4cats.Logger
@@ -27,7 +27,7 @@ class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger] private (
 
   def search(booksArgs: QueriesBooksArgs): F[List[UserBook]] =
     for {
-      uri   <- MonadError[F, Throwable].fromEither(uriFromBooksArgs(booksArgs))
+      uri   <- MonadThrow[F].fromEither(uriFromBooksArgs(booksArgs))
       _     <- Logger[F].info(uri.toString)
       books <- booksFromUri(uri, searchPartialFn)
     } yield books
@@ -47,12 +47,10 @@ class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger] private (
     val request = Request[F](uri = uri, headers = headers)
     for {
       json <- client.expect[String](request)
-      // We would have to use implicitly[MonadError[F, Throwable]] without
+      // We would have to use implicitly[MonadThrow[F]] without
       // import cats.effect.syntax._
-      googleResponse <-
-        MonadError[F, Throwable]
-          .fromEither(decode[GoogleResponse](json))
-      _ <- Logger[F].debug("DECODED: " + googleResponse)
+      googleResponse <- MonadThrow[F].fromEither(decode[GoogleResponse](json))
+      _              <- Logger[F].debug("DECODED: " + googleResponse)
     } yield googleResponse.items.getOrElse(List.empty).collect(pf)
   }
 }
@@ -126,7 +124,8 @@ object GoogleBookInfoService {
         (booksArgs.titleKeywords.filterNot(_.isEmpty).map("intitle:" + _) ++
           booksArgs.authorKeywords.map("inauthor:" + _))
           .mkString("+")
-      ) +?? ("maxResults", booksArgs.maxResults)
+      ) +? ("fields", GoogleBooksAPIDecoding.fieldsSelector)
+        +?? ("maxResults", booksArgs.maxResults)
         +?? ("langRestrict", booksArgs.langRestrict),
       NoKeywordsSpecifiedError
     )

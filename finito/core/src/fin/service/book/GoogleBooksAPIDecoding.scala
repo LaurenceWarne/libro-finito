@@ -20,6 +20,9 @@ object GoogleBooksAPIDecoding {
 
   implicit val googleResponseDecoder: Decoder[GoogleResponse] =
     deriveDecoder[GoogleResponse]
+
+  val fieldsSelector =
+    "items/volumeInfo(title,authors,description,imageLinks,industryIdentifiers)"
 }
 
 final case class GoogleResponse(items: Option[List[GoogleVolume]])
