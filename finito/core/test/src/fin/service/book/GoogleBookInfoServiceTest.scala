@@ -6,7 +6,6 @@ import fs2.Stream
 import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
 import org.http4s.Response
 import org.http4s.client.Client
-import org.http4s.implicits._
 import weaver._
 
 import fin.Types._
@@ -39,6 +38,28 @@ object GoogleBookInfoServiceTest extends SimpleIOSuite {
       expect(book.description === description)
   }
 
+  test("search errors with empty strings") {
+    val client: Client[IO]           = mockedClient(Mocks.booksResponse("", "", ""))
+    val bookAPI: BookInfoService[IO] = GoogleBookInfoService(client)
+    for {
+      response <-
+        bookAPI
+          .search(QueriesBooksArgs("".some, "".some, None, None))
+          .attempt
+    } yield expect(response == NoKeywordsSpecifiedError.asLeft)
+  }
+
+  test("search errors with empty optionals") {
+    val client: Client[IO]           = mockedClient(Mocks.booksResponse("", "", ""))
+    val bookAPI: BookInfoService[IO] = GoogleBookInfoService(client)
+    for {
+      response <-
+        bookAPI
+          .search(QueriesBooksArgs(None, None, None, None))
+          .attempt
+    } yield expect(response == NoKeywordsSpecifiedError.asLeft)
+  }
+
   test("fromIsbn parses title, author and description from json") {
     val isbn                         = "1568658079"
     val client: Client[IO]           = mockedClient(Mocks.isbnResponse(isbn))
@@ -48,61 +69,6 @@ object GoogleBookInfoServiceTest extends SimpleIOSuite {
       List(book) = response
       // TODO why do I need the type hint here?
     } yield expect(book.isbn === "978" + isbn): Expectations
-  }
-
-  pureTest("uriFromQueriesBooksArgs returns correct uri") {
-    val bookArgs =
-      QueriesBooksArgs("title".some, "some author".some, 5.some, None)
-    val Right(uri) = GoogleBookInfoService.uriFromBooksArgs(bookArgs)
-    expect(
-      uri === uri"https://www.googleapis.com/books/v1/volumes?q=intitle%3Atitle%2Binauthor%3Asome%20author&maxResults=5"
-    )
-  }
-
-  pureTest("uriFromQueriesBooksArgs errors with empty strings") {
-    val bookArgs = QueriesBooksArgs("".some, "".some, None, None)
-    expect(
-      GoogleBookInfoService.uriFromBooksArgs(
-        bookArgs
-      ) == NoKeywordsSpecifiedError.asLeft
-    )
-  }
-
-  pureTest("uriFromQueriesBooksArgs errors with empty optionals") {
-    val bookArgs = QueriesBooksArgs(None, None, None, None)
-    expect(
-      GoogleBookInfoService.uriFromBooksArgs(
-        bookArgs
-      ) == NoKeywordsSpecifiedError.asLeft
-    )
-  }
-
-  pureTest(
-    "uriFromQueriesBooksArgs returns uri with no title with None for title"
-  ) {
-    val bookArgs   = QueriesBooksArgs(None, "author".some, None, None)
-    val Right(uri) = GoogleBookInfoService.uriFromBooksArgs(bookArgs)
-    expect(
-      uri === uri"https://www.googleapis.com/books/v1/volumes?q=inauthor%3Aauthor"
-    )
-  }
-
-  pureTest(
-    "uriFromQueriesBooksArgs returns uri with no author with None for author"
-  ) {
-    val bookArgs   = QueriesBooksArgs("title".some, None, None, None)
-    val Right(uri) = GoogleBookInfoService.uriFromBooksArgs(bookArgs)
-    expect(
-      uri === uri"https://www.googleapis.com/books/v1/volumes?q=intitle%3Atitle"
-    )
-  }
-
-  pureTest("uriFromQueriesBookArgs returns correct uri") {
-    val bookArgs = QueriesBookArgs("1568658079", None)
-    val uri      = GoogleBookInfoService.uriFromBookArgs(bookArgs)
-    expect(
-      uri === uri"https://www.googleapis.com/books/v1/volumes?q=isbn%3A1568658079"
-    )
   }
 }
 
