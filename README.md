@@ -9,6 +9,8 @@ Its main features are searching for books and aggregating books into user define
 
 It's sole entry point is a graphql API located [here](/schema.gql).
 
+Also check out the [changelog](/CHANGELOG.md).
+
 # Configuration
 
 The server may be configured in a number of ways by via a file whose expected location is `~/.config/libro-finito/service.conf`:
