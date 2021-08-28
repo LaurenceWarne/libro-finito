@@ -89,7 +89,7 @@ object GoogleBookInfoService {
   }
 
   private val emptyThumbnailUri =
-    "https://user-images.githubusercontent.com/101482/29592647-40da86ca-875a-11e7-8bc3-941700b0a323.png"
+    "https://user-images.githubusercontent.com/17688577/131221362-c9fdb33a-e833-4469-8705-2c99a2b00fe3.png"
 
   val isbnPartialFn: PartialFunction[GoogleVolume, UserBook] = {
     case GoogleVolume(bookItem) =>

@@ -9,7 +9,7 @@ Its main features are searching for books and aggregating books into user define
 
 It's sole entry point is a graphql API located [here](/schema.gql).
 
-Also check out the [changelog](/CHANGELOG.md).
+Also check out the [Changelog](/CHANGELOG.md).
 
 # Configuration
 
