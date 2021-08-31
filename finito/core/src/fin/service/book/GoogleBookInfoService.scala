@@ -60,9 +60,9 @@ class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger] private (
   */
 object GoogleBookInfoService {
 
-  val headers = Headers.of(
-    Header("Accept-Encoding", "gzip"),
-    Header("User-Agent", "finito (gzip)")
+  val headers = Headers(
+    ("Accept-Encoding", "gzip"),
+    ("User-Agent", "finito (gzip)")
   )
 
   val searchPartialFn: PartialFunction[GoogleVolume, UserBook] = {

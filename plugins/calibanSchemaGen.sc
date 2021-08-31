@@ -5,10 +5,10 @@ import mill._, scalalib._, scalafmt._
 import mill.api.PathRef
 import zio.Runtime
 
-trait CalibanSchemaModule extends ScalaModule {
+trait CalibanModule {
 
   def schemaPath: String
-  def schemaOutputFileName          = "Schema.scala"
+  def outputFileName                = "Schema.scala"
   def fmtPath: String               = ".scalafmt.conf"
   def headers: List[Options.Header] = List.empty
   def packageName: String
@@ -17,6 +17,9 @@ trait CalibanSchemaModule extends ScalaModule {
   def scalarMappings: Map[String, String] = Map.empty
   def imports: List[String]               = List.empty
   def abstractEffectType: Boolean         = false
+}
+
+trait CalibanSchemaModule extends ScalaModule with CalibanModule {
 
   override def generatedSources =
     T {
@@ -26,7 +29,7 @@ trait CalibanSchemaModule extends ScalaModule {
 
   def schema: T[PathRef] =
     T {
-      val outputPath = T.dest / schemaOutputFileName
+      val outputPath = T.dest / outputFileName
       val options = Options(
         schemaPath,
         outputPath.toString,
@@ -41,6 +44,36 @@ trait CalibanSchemaModule extends ScalaModule {
       )
       Runtime.default.unsafeRun(
         Codegen.generate(options, GenType.Schema).unit
+      )
+      PathRef(outputPath)
+    }
+}
+
+trait CalibanClientModule extends ScalaModule with CalibanModule {
+
+  override def generatedSources =
+    T {
+      val schemaPathRef = schema()
+      super.generatedSources() :+ schemaPathRef
+    }
+
+  def schema: T[PathRef] =
+    T {
+      val outputPath = T.dest / outputFileName
+      val options = Options(
+        schemaPath,
+        outputPath.toString,
+        Some(fmtPath),
+        Some(headers),
+        Some(packageName),
+        Some(genView),
+        Some(effect),
+        Some(scalarMappings),
+        Some(imports),
+        Some(abstractEffectType)
+      )
+      Runtime.default.unsafeRun(
+        Codegen.generate(options, GenType.Client).unit
       )
       PathRef(outputPath)
     }

@@ -14,7 +14,7 @@ import mill.eval.Evaluator
 import com.goyeau.mill.git.GitVersionModule
 import com.goyeau.mill.scalafix.ScalafixModule
 import coursier.maven.MavenRepository
-import calibanSchemaGen.CalibanSchemaModule
+import calibanSchemaGen.{CalibanClientModule, CalibanSchemaModule}
 
 val finitoVersion = GitVersionModule.version()
 
@@ -22,37 +22,19 @@ object finito extends Module {
 
   object main extends LibroFinitoModule with BuildInfo with DockerModule {
 
-    object docker extends DockerConfig {
-      val port      = "56848/tcp"
-      def baseImage = "openjdk:8"
+    object docker extends DockerConfig
 
-      def dockerfile: T[String] =
-        T {
-          val jarName = assembly().path.last
-          val labelRhs = labels()
-            .map {
-              case (k, v) =>
-                val lineBrokenValue = v
-                  .replace("\r\n", "\\\r\n")
-                  .replace("\n", "\\\n")
-                  .replace("\r", "\\\r")
-                s""""$k"="$lineBrokenValue""""
-            }
-            .mkString(" ")
+    object it extends Tests with LibroFinitoTest with CalibanClientModule {
 
-          val labelLine = if (labels().isEmpty) "" else s"LABEL $labelRhs"
+      def schemaPath  = "schema.gql"
+      def packageName = "fin"
 
-          s"""
-            |FROM ${baseImage()}
-            |$labelLine
-            |COPY $jarName /$jarName
-            |EXPOSE $port
-            |ENTRYPOINT ["java", "-jar", "/$jarName"]""".stripMargin
-        }
-    }
-
-    object it extends Tests with LibroFinitoTest {
-      def ivyDeps = super.ivyDeps() ++ Agg(Deps.testContainers)
+      def ivyDeps =
+        super.ivyDeps() ++ Agg(
+          Deps.Caliban.client,
+          Deps.sttpHttp4s,
+          Deps.testContainers
+        )
     }
 
     def buildInfoPackageName = Some("fin")
@@ -73,8 +55,6 @@ object finito extends Module {
         os.move(super.assembly().path, newPath)
         PathRef(newPath)
       }
-
-    //def forkArgs   = Seq("-Xmx100m")
 
     def scalacPluginIvyDeps =
       super.scalacPluginIvyDeps() ++ Agg(
@@ -234,6 +214,7 @@ object Deps {
   // https://github.com/luaj/luaj/issues/91 ):
   val luaj           = ivy"org.luaj:luaj-jse:3.0.1"
   val testContainers = ivy"com.dimafeng::testcontainers-scala:0.39.7"
+  val sttpHttp4s     = ivy"com.softwaremill.sttp.client3::http4s-ce2-backend:3.3.13"
 
   object Compiler {
     val semanticDb       = ivy"org.scalameta::semanticdb-scalac:4.4.22"
@@ -250,6 +231,7 @@ object Deps {
     val core    = ivy"com.github.ghostdogpr::caliban:$version"
     val http4s  = ivy"com.github.ghostdogpr::caliban-http4s:$version"
     val cats    = ivy"com.github.ghostdogpr::caliban-cats:$version"
+    val client  = ivy"com.github.ghostdogpr::caliban-client:$version"
   }
 
   object Doobie {
@@ -259,7 +241,7 @@ object Deps {
   }
 
   object Http4s {
-    val version           = "0.21.22"
+    val version           = "0.22.2"
     val http4sDsl         = ivy"org.http4s::http4s-dsl:$version"
     val http4sBlazeServer = ivy"org.http4s::http4s-blaze-server:$version"
     val http4sBlazeClient = ivy"org.http4s::http4s-blaze-client:$version"
