@@ -17,6 +17,8 @@ import coursier.maven.MavenRepository
 import calibanSchemaGen.{CalibanClientModule, CalibanSchemaModule}
 
 val finitoVersion = GitVersionModule.version()
+val schemaPath    = "schema.gql"
+val packageName   = "fin"
 
 object finito extends Module {
 
@@ -26,8 +28,8 @@ object finito extends Module {
 
     object it extends Tests with LibroFinitoTest with CalibanClientModule {
 
-      def schemaPath  = "schema.gql"
-      def packageName = "fin"
+      def schemaPath  = schemaPath
+      def packageName = packageName
 
       def ivyDeps =
         super.ivyDeps() ++ Agg(
@@ -37,7 +39,7 @@ object finito extends Module {
         )
     }
 
-    def buildInfoPackageName = Some("fin")
+    def buildInfoPackageName = Some(packageName)
 
     def buildInfoMembers: T[Map[String, String]] =
       T {
@@ -89,8 +91,8 @@ object finito extends Module {
 
   object api extends LibroFinitoModuleNoLinting with CalibanSchemaModule {
 
-    def schemaPath         = "schema.gql"
-    def packageName        = "fin"
+    def schemaPath         = schemaPath
+    def packageName        = packageName
     def abstractEffectType = true
     def scalarMappings     = Map("Date" -> "java.time.LocalDate")
 
