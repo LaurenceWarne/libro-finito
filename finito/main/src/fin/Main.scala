@@ -84,7 +84,7 @@ object Main extends IOCaseApp[CliOptions] {
             server <-
               BlazeServerBuilder[IO](global)
                 .withBanner(Seq(Banner.value))
-                .bindHttp(config.port, "localhost")
+                .bindHttp(config.port, config.host)
                 .withHttpApp(Routes.routes(interpreter, blocker).orNotFound)
                 .serve
                 .compile

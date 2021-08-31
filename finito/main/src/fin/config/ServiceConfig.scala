@@ -10,6 +10,7 @@ final case class ServiceConfig(
     databasePath: String,
     databaseUser: String,
     databasePassword: String,
+    host: String,
     port: Int,
     defaultCollection: Option[String],
     specialCollections: List[SpecialCollection]
@@ -36,13 +37,16 @@ object ServiceConfig {
   implicit val confReader: ConfigReader[ServiceConfig] =
     deriveReader[ServiceConfig]
 
+  val defaultPort: Int = 56848
+
   def default(configDirectory: String) =
     ConfigSource.string(
       show"""{
           |  database-path = $configDirectory/db.sqlite,
           |  database-user = "",
           |  database-password = "",
-          |  port = 56848,
+          |  host = "0.0.0.0",
+          |  port = $defaultPort,
           |  default-collection = My Books,
           |  special-collections = [
           |    {

@@ -1,9 +1,9 @@
 // build.sc
 import $ivy.`com.lihaoyi::mill-contrib-buildinfo:$MILL_VERSION`
+import $ivy.`com.lihaoyi::mill-contrib-docker:$MILL_VERSION`
 import $ivy.`com.lihaoyi::mill-contrib-scoverage:$MILL_VERSION`
 import $ivy.`com.goyeau::mill-scalafix:0.2.4`
 import $ivy.`com.goyeau::mill-git:0.2.2`
-import $ivy.`com.lihaoyi::mill-contrib-docker:$MILL_VERSION`
 import $file.plugins.calibanSchemaGen
 import mill._, scalalib._, scalafmt._
 import mill.scalalib.publish._
@@ -22,7 +22,38 @@ object finito extends Module {
 
   object main extends LibroFinitoModule with BuildInfo with DockerModule {
 
-    object docker extends DockerConfig
+    object docker extends DockerConfig {
+      val port      = "56848/tcp"
+      def baseImage = "openjdk:8"
+
+      def dockerfile: T[String] =
+        T {
+          val jarName = assembly().path.last
+          val labelRhs = labels()
+            .map {
+              case (k, v) =>
+                val lineBrokenValue = v
+                  .replace("\r\n", "\\\r\n")
+                  .replace("\n", "\\\n")
+                  .replace("\r", "\\\r")
+                s""""$k"="$lineBrokenValue""""
+            }
+            .mkString(" ")
+
+          val labelLine = if (labels().isEmpty) "" else s"LABEL $labelRhs"
+
+          s"""
+            |FROM ${baseImage()}
+            |$labelLine
+            |COPY $jarName /$jarName
+            |EXPOSE $port
+            |ENTRYPOINT ["java", "-jar", "/$jarName"]""".stripMargin
+        }
+    }
+
+    object it extends Tests with LibroFinitoTest {
+      def ivyDeps = super.ivyDeps() ++ Agg(Deps.testContainers)
+    }
 
     def buildInfoPackageName = Some("fin")
 
@@ -201,7 +232,8 @@ object Deps {
   val betterFiles      = ivy"com.github.pathikrit::better-files:3.9.1"
   val enumeratum       = ivy"com.beachape::enumeratum:1.7.0"
   // https://github.com/luaj/luaj/issues/91 ):
-  val luaj = ivy"org.luaj:luaj-jse:3.0.1"
+  val luaj           = ivy"org.luaj:luaj-jse:3.0.1"
+  val testContainers = ivy"com.dimafeng::testcontainers-scala:0.39.7"
 
   object Compiler {
     val semanticDb       = ivy"org.scalameta::semanticdb-scalac:4.4.22"
