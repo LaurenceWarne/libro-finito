@@ -16,6 +16,7 @@ object IntegrationTests extends IOSuite {
 
   import Client._
   import Client.Mutations._
+  import Client.Queries._
 
   type ClientBackend = SttpBackend[IO, Fs2Streams[IO]]
 
@@ -57,10 +58,26 @@ object IntegrationTests extends IOSuite {
   testUsingUri("createCollection, updateCollection, collection") {
     case (uri, backend) =>
       val collectionName = "my collection"
-      val request        = createCollection(collectionName)(Collection.name)
+      val newName        = "my new collection"
+      val createRequest  = createCollection(collectionName)(Collection.name)
       for {
-        response <- request.toRequest(uri).send(backend).map(_.body)
-        _ = println(response)
-      } yield success
+        // CREATE
+        createResponse <- createRequest.toRequest(uri).send(backend).map(_.body)
+        createName     <- IO.fromEither(createResponse)
+        // UPDATE
+        updateRequest =
+          updateCollection(collectionName, newName.some)(Collection.name)
+        updateResponse <- updateRequest.toRequest(uri).send(backend).map(_.body)
+        updateName     <- IO.fromEither(updateResponse)
+        // RETRIEVE
+        retrieveRequest = collection(newName)(Collection.name)
+        retrieveResponse <-
+          retrieveRequest.toRequest(uri).send(backend).map(_.body)
+        retrieveName <- IO.fromEither(retrieveResponse)
+      } yield expect(createName === collectionName) and expect(
+        updateName === newName
+      ) and expect(
+        retrieveName === newName
+      )
   }
 }
