@@ -3,10 +3,12 @@ import $ivy.`com.lihaoyi::mill-contrib-buildinfo:$MILL_VERSION`
 import $ivy.`com.lihaoyi::mill-contrib-scoverage:$MILL_VERSION`
 import $ivy.`com.goyeau::mill-scalafix:0.2.4`
 import $ivy.`com.goyeau::mill-git:0.2.2`
+import $ivy.`com.lihaoyi::mill-contrib-docker:$MILL_VERSION`
 import $file.plugins.calibanSchemaGen
 import mill._, scalalib._, scalafmt._
 import mill.scalalib.publish._
 import mill.contrib.buildinfo.BuildInfo
+import mill.contrib.docker.DockerModule
 import mill.contrib.scoverage.{ScoverageModule, ScoverageReport}
 import mill.eval.Evaluator
 import com.goyeau.mill.git.GitVersionModule
@@ -18,7 +20,9 @@ val finitoVersion = GitVersionModule.version()
 
 object finito extends Module {
 
-  object main extends LibroFinitoModule with BuildInfo {
+  object main extends LibroFinitoModule with BuildInfo with DockerModule {
+
+    object docker extends DockerConfig
 
     def buildInfoPackageName = Some("fin")
 
