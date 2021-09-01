@@ -2,11 +2,11 @@ package fin.service.book
 
 import java.time.{LocalDate, ZoneId}
 
-import scala.concurrent.duration.{MILLISECONDS, TimeUnit}
+import scala.concurrent.duration.{MILLISECONDS}
 
 import cats.Applicative
 import cats.arrow.FunctionK
-import cats.effect.concurrent.Ref
+import cats.effect.Ref
 import cats.effect.{Clock, IO, Resource}
 import cats.implicits._
 import weaver._
@@ -15,6 +15,7 @@ import fin.BookConversions._
 import fin.Types._
 import fin._
 import fin.implicits._
+import scala.concurrent.duration.FiniteDuration
 
 object BookManagementServiceImplTest extends IOSuite {
 
@@ -196,9 +197,11 @@ object BookManagementServiceImplTest extends IOSuite {
   */
 final case class TestClock[F[_]: Applicative](epoch: Long) extends Clock[F] {
 
-  override def realTime(unit: TimeUnit): F[Long] =
-    unit.convert(epoch, MILLISECONDS).pure[F]
+  override def applicative = implicitly[Applicative[F]]
 
-  override def monotonic(unit: TimeUnit): F[Long] =
-    unit.convert(epoch, MILLISECONDS).pure[F]
+  override def realTime: F[FiniteDuration] =
+    FiniteDuration(epoch, MILLISECONDS).pure[F]
+
+  override def monotonic: F[FiniteDuration] =
+    FiniteDuration(epoch, MILLISECONDS).pure[F]
 }

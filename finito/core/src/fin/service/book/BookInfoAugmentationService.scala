@@ -1,13 +1,13 @@
 package fin.service.book
 
-import cats.effect._
+import cats.Monad
 import cats.implicits._
 import cats.~>
 
 import fin.Types._
 import fin.persistence.BookRepository
 
-class BookInfoAugmentationService[F[_]: BracketThrow, G[_]] private (
+class BookInfoAugmentationService[F[_]: Monad, G[_]] private (
     wrappedInfoService: BookInfoService[F],
     bookRepo: BookRepository[G],
     transact: G ~> F
@@ -37,7 +37,7 @@ class BookInfoAugmentationService[F[_]: BracketThrow, G[_]] private (
 }
 
 object BookInfoAugmentationService {
-  def apply[F[_]: BracketThrow, G[_]](
+  def apply[F[_]: Monad, G[_]](
       wrappedInfoService: BookInfoService[F],
       bookRepo: BookRepository[G],
       transact: G ~> F

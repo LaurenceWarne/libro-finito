@@ -13,7 +13,7 @@ import fin.persistence.{CollectionRepository, Dates}
 
 import CollectionServiceImpl._
 
-class CollectionServiceImpl[F[_]: BracketThrow, G[_]: MonadThrow] private (
+class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
     collectionRepo: CollectionRepository[G],
     clock: Clock[F],
     transact: G ~> F
@@ -152,7 +152,7 @@ object CollectionServiceImpl {
 
   val defaultSort: Sort = Sort(SortType.DateAdded, true)
 
-  def apply[F[_]: BracketThrow, G[_]: MonadThrow](
+  def apply[F[_]: MonadThrow, G[_]: MonadThrow](
       collectionRepo: CollectionRepository[G],
       clock: Clock[F],
       transact: G ~> F

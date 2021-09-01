@@ -11,7 +11,7 @@ import fin.Types._
 import fin._
 import fin.persistence.{BookRepository, Dates}
 
-class BookManagementServiceImpl[F[_]: BracketThrow, G[_]: MonadThrow] private (
+class BookManagementServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
     bookRepo: BookRepository[G],
     clock: Clock[F],
     transact: G ~> F
@@ -84,7 +84,7 @@ class BookManagementServiceImpl[F[_]: BracketThrow, G[_]: MonadThrow] private (
 }
 
 object BookManagementServiceImpl {
-  def apply[F[_]: BracketThrow, G[_]: MonadThrow](
+  def apply[F[_]: MonadThrow, G[_]: MonadThrow](
       bookRepo: BookRepository[G],
       clock: Clock[F],
       transact: G ~> F

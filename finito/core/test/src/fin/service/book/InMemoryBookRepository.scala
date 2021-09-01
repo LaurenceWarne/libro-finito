@@ -3,7 +3,7 @@ package fin.service.book
 import java.time.LocalDate
 
 import cats.Monad
-import cats.effect.concurrent.Ref
+import cats.effect.Ref
 import cats.implicits._
 
 import fin.BookConversions._

@@ -16,9 +16,9 @@ import com.goyeau.mill.scalafix.ScalafixModule
 import coursier.maven.MavenRepository
 import calibanSchemaGen.{CalibanClientModule, CalibanSchemaModule}
 
-val finitoVersion = GitVersionModule.version()
-val schemaPath    = "schema.gql"
-val packageName   = "fin"
+val finitoVersion  = GitVersionModule.version()
+val gqlSchemaPath  = "schema.gql"
+val finPackageName = "fin"
 
 object finito extends Module {
 
@@ -28,8 +28,8 @@ object finito extends Module {
 
     object it extends Tests with LibroFinitoTest with CalibanClientModule {
 
-      def schemaPath  = schemaPath
-      def packageName = packageName
+      def schemaPath  = gqlSchemaPath
+      def packageName = finPackageName
 
       def ivyDeps =
         super.ivyDeps() ++ Agg(
@@ -39,7 +39,7 @@ object finito extends Module {
         )
     }
 
-    def buildInfoPackageName = Some(packageName)
+    def buildInfoPackageName = Some(finPackageName)
 
     def buildInfoMembers: T[Map[String, String]] =
       T {
@@ -80,9 +80,9 @@ object finito extends Module {
         Deps.Http4s.http4sBlazeClient,
         Deps.Http4s.http4sBlazeServer,
         Deps.Http4s.http4sDsl,
-        Deps.catsEffect,
-        Deps.catsLogging,
-        Deps.catsLoggingCore,
+        Deps.CatsEffect.catsEffect,
+        Deps.CatsLogging.slf4j,
+        Deps.CatsLogging.core,
         Deps.flyway,
         Deps.logback,
         Deps.pureconfig
@@ -91,8 +91,8 @@ object finito extends Module {
 
   object api extends LibroFinitoModuleNoLinting with CalibanSchemaModule {
 
-    def schemaPath         = schemaPath
-    def packageName        = packageName
+    def schemaPath         = gqlSchemaPath
+    def packageName        = finPackageName
     def abstractEffectType = true
     def scalarMappings     = Map("Date" -> "java.time.LocalDate")
 
@@ -100,7 +100,7 @@ object finito extends Module {
       Agg(
         Deps.Caliban.core,
         Deps.Caliban.cats,
-        Deps.catsEffect
+        Deps.CatsEffect.catsEffect
       )
   }
 
@@ -109,7 +109,7 @@ object finito extends Module {
     def moduleDeps = Seq(api, persistence)
 
     def ivyDeps =
-      Agg(
+      super.ivyDeps() ++ Agg(
         Deps.Caliban.cats,
         Deps.Caliban.core,
         Deps.Caliban.http4s,
@@ -118,14 +118,15 @@ object finito extends Module {
         Deps.Circe.parser,
         Deps.enumeratum,
         Deps.Http4s.http4sBlazeClient,
-        Deps.Http4s.http4sBlazeServer,
         Deps.Http4s.http4sDsl,
-        Deps.catsEffect,
-        Deps.catsLogging,
+        Deps.CatsEffect.catsEffect,
+        Deps.CatsLogging.core,
         Deps.luaj
       )
 
-    object test extends Tests with ScoverageTests with LibroFinitoTest
+    object test extends Tests with ScoverageTests with LibroFinitoTest {
+      def ivyDeps = super.ivyDeps() ++ Agg(Deps.CatsLogging.slf4j)
+    }
   }
 
   object persistence extends LibroFinitoModule {
@@ -133,10 +134,10 @@ object finito extends Module {
     def moduleDeps = Seq(api)
 
     def ivyDeps =
-      Agg(
+      super.ivyDeps() ++ Agg(
         Deps.betterFiles,
-        Deps.catsEffect,
-        Deps.catsLogging,
+        Deps.CatsEffect.catsEffect,
+        Deps.CatsLogging.core,
         Deps.Circe.core,
         Deps.Circe.generic,
         Deps.Circe.parser,
@@ -197,17 +198,19 @@ trait LibroFinitoTest
 }
 
 object Options {
-  val scalacOptions = Seq("-deprecation", "-Ywarn-unused", "-Xfatal-warnings")
+  val scalacOptions = Seq(
+    "-deprecation",
+    "-Ywarn-unused",
+    "-Xfatal-warnings"
+    //"-P:semanticdb:synthetics:on"
+  )
 }
 
 object Deps {
   val scalaVersion     = "2.13.6"
   val scoverageVersion = "1.4.8"
-  val catsEffect       = ivy"org.typelevel::cats-effect:2.5.0"
-  val catsLoggingCore  = ivy"io.chrisdavenport::log4cats-core:1.1.1"
-  val catsLogging      = ivy"io.chrisdavenport::log4cats-slf4j:1.1.1"
   val logback          = ivy"ch.qos.logback:logback-classic:1.1.3"
-  val weaver           = ivy"com.disneystreaming::weaver-cats:0.6.4"
+  val weaver           = ivy"com.disneystreaming::weaver-cats:0.7.4"
   val sqlite           = ivy"org.xerial:sqlite-jdbc:3.34.0"
   val flyway           = ivy"org.flywaydb:flyway-core:7.10.0"
   val pureconfig       = ivy"com.github.pureconfig::pureconfig:0.15.0"
@@ -228,8 +231,19 @@ object Deps {
     val organizeImports = ivy"com.github.liancheng::organize-imports:0.4.0"
   }
 
+  object CatsEffect {
+    val version    = "3.2.5"
+    val catsEffect = ivy"org.typelevel::cats-effect:$version"
+  }
+
+  object CatsLogging {
+    val version = "2.1.1"
+    val core    = ivy"org.typelevel::log4cats-core:$version"
+    val slf4j   = ivy"org.typelevel::log4cats-slf4j:$version"
+  }
+
   object Caliban {
-    val version = "1.1.0"
+    val version = "1.1.1"
     val core    = ivy"com.github.ghostdogpr::caliban:$version"
     val http4s  = ivy"com.github.ghostdogpr::caliban-http4s:$version"
     val cats    = ivy"com.github.ghostdogpr::caliban-cats:$version"
@@ -237,13 +251,13 @@ object Deps {
   }
 
   object Doobie {
-    val version = "0.12.1"
+    val version = "1.0.0-RC1"
     val core    = ivy"org.tpolecat::doobie-core:$version"
     val hikari  = ivy"org.tpolecat::doobie-hikari:$version"
   }
 
   object Http4s {
-    val version           = "0.22.2"
+    val version           = "0.23.1"
     val http4sDsl         = ivy"org.http4s::http4s-dsl:$version"
     val http4sBlazeServer = ivy"org.http4s::http4s-blaze-server:$version"
     val http4sBlazeClient = ivy"org.http4s::http4s-blaze-client:$version"
@@ -257,7 +271,7 @@ object Deps {
   }
 
   object CaseApp {
-    val version = "2.0.6"
+    val version = "2.1.0-M6"
     val core    = ivy"com.github.alexarchambault::case-app:$version"
     val cats    = ivy"com.github.alexarchambault::case-app-cats:$version"
   }

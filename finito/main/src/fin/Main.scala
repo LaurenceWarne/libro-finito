@@ -9,8 +9,8 @@ import caseapp._
 import caseapp.cats._
 import doobie._
 import doobie.implicits._
-import io.chrisdavenport.log4cats.Logger
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.client.middleware.GZip
 import org.http4s.implicits._

@@ -3,7 +3,7 @@ package fin.persistence
 import better.files.Dsl._
 import better.files._
 import cats.Show
-import cats.effect.{Blocker, IO, Resource}
+import cats.effect.{IO, Resource}
 import cats.implicits._
 import doobie._
 import doobie.implicits._
@@ -16,13 +16,11 @@ trait SqliteSuite extends IOSuite {
   val (uri, user, password) = (show"jdbc:sqlite:$dbFile", "", "")
 
   def transactor: Resource[IO, Transactor[IO]] = {
-    (Blocker[IO], ExecutionContexts.fixedThreadPool[IO](4)).tupled.map {
-      case (blocker, ec) =>
-        TransactorSetup.sqliteTransactor[IO](
-          uri,
-          ec,
-          blocker
-        )
+    ExecutionContexts.fixedThreadPool[IO](4).flatMap { ec =>
+      TransactorSetup.sqliteTransactor[IO](
+        uri,
+        ec
+      )
     }
   }
 

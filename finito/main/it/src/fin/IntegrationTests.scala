@@ -80,4 +80,25 @@ object IntegrationTests extends IOSuite {
         retrieveName === newName
       )
   }
+
+  // testUsingUri("createCollection, addBook, collection") {
+  //   case (uri, backend) =>
+  //     val collectionName = "my collection with books"
+  //     val createRequest  = createCollection(collectionName)(Collection.name)
+  //     for {
+  //       // CREATE
+  //       createResponse <- createRequest.toRequest(uri).send(backend).map(_.body)
+  //       createName     <- IO.fromEither(createResponse)
+  //       // ADD BOOK
+  //       addBookRequest = addBook()
+  //       addBookResponse <-
+  //         addBookRequest.toRequest(uri).send(backend).map(_.body)
+  //       addBookName <- IO.fromEither(addBookResponse)
+  //       // RETRIEVE
+  //       retrieveRequest = collection(newName)(Collection.name)
+  //       retrieveResponse <-
+  //         retrieveRequest.toRequest(uri).send(backend).map(_.body)
+  //       retrieveName <- IO.fromEither(retrieveResponse)
+  //     } yield expect(createName === collectionName)
+  // }
 }

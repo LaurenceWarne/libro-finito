@@ -1,7 +1,7 @@
 package fin.service.collection
 
 import cats.arrow.FunctionK
-import cats.effect.concurrent.Ref
+import cats.effect.Ref
 import cats.effect.{Clock, IO, Resource}
 import cats.implicits._
 import weaver._

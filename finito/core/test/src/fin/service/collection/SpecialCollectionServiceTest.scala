@@ -1,11 +1,11 @@
 package fin.service.collection
 
 import cats.arrow.FunctionK
-import cats.effect.concurrent.Ref
+import cats.effect.Ref
 import cats.effect.{Clock, IO, Resource}
 import cats.implicits._
-import io.chrisdavenport.log4cats.Logger
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import weaver._
 
 import fin.BookConversions._

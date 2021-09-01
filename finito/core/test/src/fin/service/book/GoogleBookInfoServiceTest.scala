@@ -3,7 +3,7 @@ package fin.service.book
 import cats.effect._
 import cats.implicits._
 import fs2.Stream
-import io.chrisdavenport.log4cats.slf4j.Slf4jLogger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.http4s.Response
 import org.http4s.client.Client
 import weaver._
@@ -13,7 +13,7 @@ import fin._
 
 object GoogleBookInfoServiceTest extends SimpleIOSuite {
 
-  implicit val logger = Slf4jLogger.unsafeCreate[IO]
+  implicit val logger = Slf4jLogger.getLogger[IO]
 
   def mockedClient(response: String): Client[IO] =
     Client.apply[IO](_ =>

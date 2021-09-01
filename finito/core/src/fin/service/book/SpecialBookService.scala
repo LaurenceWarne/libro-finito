@@ -2,7 +2,7 @@ package fin.service.book
 
 import cats.effect.Sync
 import cats.implicits._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 
 import fin.Types._
 import fin.implicits._

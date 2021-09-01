@@ -3,8 +3,6 @@ package fin.persistence
 import java.time.LocalDate
 import java.util.Properties
 
-import scala.concurrent.duration.DAYS
-
 import cats.Functor
 import cats.effect.Clock
 import cats.implicits._
@@ -21,7 +19,6 @@ object DbProperties {
 object Dates {
 
   def currentDate[F[_]: Functor](clock: Clock[F]): F[LocalDate] =
-    clock
-      .realTime(DAYS)
-      .map(LocalDate.ofEpochDay(_))
+    clock.realTime
+      .map(fd => LocalDate.ofEpochDay(fd.toDays))
 }

@@ -4,7 +4,7 @@ import better.files._
 import cats.Show
 import cats.effect.Sync
 import cats.implicits._
-import io.chrisdavenport.log4cats.Logger
+import org.typelevel.log4cats.Logger
 import pureconfig.ConfigSource
 
 object Config {

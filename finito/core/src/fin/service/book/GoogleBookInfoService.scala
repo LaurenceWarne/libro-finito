@@ -1,9 +1,9 @@
 package fin.service.book
 
 import cats.MonadThrow
-import cats.effect.ConcurrentEffect
 import cats.implicits._
-import io.chrisdavenport.log4cats.Logger
+import cats.effect.Concurrent
+import org.typelevel.log4cats.Logger
 import io.circe.parser.decode
 import org.http4s._
 import org.http4s.client._
@@ -19,7 +19,7 @@ import GoogleBooksAPIDecoding._
   *
   * @param client http client
   */
-class GoogleBookInfoService[F[_]: ConcurrentEffect: Logger] private (
+class GoogleBookInfoService[F[_]: Concurrent: Logger] private (
     client: Client[F]
 ) extends BookInfoService[F] {
 
@@ -111,7 +111,7 @@ object GoogleBookInfoService {
 
   private val baseUri = uri"https://www.googleapis.com/books/v1/volumes"
 
-  def apply[F[_]: ConcurrentEffect: Logger](client: Client[F]) =
+  def apply[F[_]: Concurrent: Logger](client: Client[F]) =
     new GoogleBookInfoService[F](client)
 
   def uriFromBooksArgs(booksArgs: QueriesBooksArgs): Either[Throwable, Uri] =

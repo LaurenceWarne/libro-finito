@@ -4,7 +4,7 @@ import java.time.LocalDate
 
 import cats.arrow.FunctionK
 import cats.effect._
-import cats.effect.concurrent.Ref
+import cats.effect.Ref
 import cats.implicits._
 import weaver._
 

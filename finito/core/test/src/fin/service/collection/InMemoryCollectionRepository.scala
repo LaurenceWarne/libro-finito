@@ -2,7 +2,7 @@ package fin.service.collection
 
 import java.time.LocalDate
 
-import cats.effect.concurrent.Ref
+import cats.effect.Ref
 import cats.implicits._
 import cats.{MonadError, MonadThrow}
 

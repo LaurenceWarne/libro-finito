@@ -3,7 +3,7 @@ package fin.persistence
 import java.time.LocalDate
 
 import cats.Monad
-import cats.effect.Async
+import cats.MonadThrow
 import cats.implicits._
 import doobie._
 import doobie.implicits._
@@ -49,14 +49,14 @@ object SqliteCollectionRepository extends CollectionRepository[ConnectionIO] {
       .fromName(name)
       .query[CollectionBookRow]
       .to[List]
-      .flatMap(rows => Async[ConnectionIO].fromEither(toCollections(rows)))
+      .flatMap(rows => MonadThrow[ConnectionIO].fromEither(toCollections(rows)))
       .map(_.headOption)
 
   override def collections: ConnectionIO[List[Collection]] =
     Fragments.retrieveCollections
       .query[CollectionBookRow]
       .to[List]
-      .flatMap(rows => Async[ConnectionIO].fromEither(toCollections(rows)))
+      .flatMap(rows => MonadThrow[ConnectionIO].fromEither(toCollections(rows)))
 
   override def createCollection(
       name: String,
