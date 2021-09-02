@@ -202,7 +202,6 @@ object Options {
     "-deprecation",
     "-Ywarn-unused",
     "-Xfatal-warnings"
-    //"-P:semanticdb:synthetics:on"
   )
 }
 

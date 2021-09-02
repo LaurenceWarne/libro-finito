@@ -25,26 +25,34 @@ object IntegrationTests extends IOSuite {
   def backend: Resource[IO, ClientBackend] =
     Http4sBackend.usingDefaultBlazeClientBuilder[IO]()
 
+  def container: Resource[IO, GenericContainer] =
+    Resource.make(
+      for {
+        container <- IO(
+          GenericContainer(
+            "finito-main",
+            exposedPorts = Seq(ServiceConfig.defaultPort),
+            waitStrategy = Wait
+              .forHttp("/version")
+              .forPort(ServiceConfig.defaultPort)
+          )
+        )
+        _ <- IO(container.start())
+      } yield container
+    )(container => IO(container.stop()))
+
   override type Res = (ClientBackend, GenericContainer)
   override def sharedResource: Resource[IO, (ClientBackend, GenericContainer)] =
-    backend
-      .product(
-        Resource
-          .make(
-            for {
-              container <- IO(
-                GenericContainer(
-                  "finito-main",
-                  exposedPorts = Seq(ServiceConfig.defaultPort),
-                  waitStrategy = Wait
-                    .forHttp("/version")
-                    .forPort(ServiceConfig.defaultPort)
-                )
-              )
-              _ <- IO(container.start())
-            } yield container
-          )(container => IO(container.stop))
-      )
+    backend.product(container)
+  override def maxParallelism = 1
+
+  val bookTemplate = BookInput(
+    "my title",
+    List("my author"),
+    "my desc",
+    "isbn",
+    "my thumbnail"
+  )
 
   def testUsingUri(
       name: String
@@ -82,24 +90,31 @@ object IntegrationTests extends IOSuite {
       )
   }
 
-  // testUsingUri("createCollection, addBook, collection") {
-  //   case (uri, backend) =>
-  //     val collectionName = "my collection with books"
-  //     val createRequest  = createCollection(collectionName)(Collection.name)
-  //     for {
-  //       // CREATE
-  //       createResponse <- createRequest.toRequest(uri).send(backend).map(_.body)
-  //       createName     <- IO.fromEither(createResponse)
-  //       // ADD BOOK
-  //       addBookRequest = addBook()
-  //       addBookResponse <-
-  //         addBookRequest.toRequest(uri).send(backend).map(_.body)
-  //       addBookName <- IO.fromEither(addBookResponse)
-  //       // RETRIEVE
-  //       retrieveRequest = collection(newName)(Collection.name)
-  //       retrieveResponse <-
-  //         retrieveRequest.toRequest(uri).send(backend).map(_.body)
-  //       retrieveName <- IO.fromEither(retrieveResponse)
-  //     } yield expect(createName === collectionName)
-  // }
+  testUsingUri("createCollection, addBook, collection") {
+    case (uri, backend) =>
+      val collectionName = "my collection with books"
+      val book           = bookTemplate.copy(isbn = "create/add/retrieve")
+
+      val createRequest = createCollection(collectionName)(Collection.name)
+      for {
+        // CREATE
+        _ <- createRequest.toRequest(uri).send(backend)
+        // ADD BOOK
+        addBookRequest = addBook(collectionName.some, book)(
+          Collection.name ~ Collection.books(UserBook.isbn)
+        )
+        addBookResponse <-
+          addBookRequest.toRequest(uri).send(backend).map(_.body)
+        // RETRIEVE
+        retrieveRequest = collection(collectionName)(
+          Collection.name ~ Collection.books(UserBook.isbn)
+        )
+        retrieveResponse <-
+          retrieveRequest.toRequest(uri).send(backend).map(_.body)
+      } yield expect(
+        addBookResponse.exists(_ === (collectionName, List(book.isbn)))
+      ) and expect(
+        retrieveResponse.exists(_ === (collectionName, List(book.isbn)))
+      )
+  }
 }
