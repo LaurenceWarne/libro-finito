@@ -4,13 +4,15 @@ import cats.effect._
 import cats.implicits._
 import com.dimafeng.testcontainers._
 import org.testcontainers.containers.wait.strategy.Wait
-import weaver._
-import fin.config.ServiceConfig
-import sttp.model.Uri
-import Uri._
+import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3.SttpBackend
 import sttp.client3.http4s._
-import sttp.capabilities.fs2.Fs2Streams
+import sttp.model.Uri
+import weaver._
+
+import fin.config.ServiceConfig
+
+import Uri._
 
 object IntegrationTests extends IOSuite {
 
@@ -20,13 +22,12 @@ object IntegrationTests extends IOSuite {
 
   type ClientBackend = SttpBackend[IO, Fs2Streams[IO]]
 
-  def backend(blocker: Blocker): Resource[IO, ClientBackend] =
-    Http4sBackend.usingDefaultBlazeClientBuilder[IO](blocker)
+  def backend: Resource[IO, ClientBackend] =
+    Http4sBackend.usingDefaultBlazeClientBuilder[IO]()
 
   override type Res = (ClientBackend, GenericContainer)
   override def sharedResource: Resource[IO, (ClientBackend, GenericContainer)] =
-    Blocker[IO]
-      .flatMap(backend)
+    backend
       .product(
         Resource
           .make(

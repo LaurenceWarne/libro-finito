@@ -2,12 +2,11 @@ package fin.service.book
 
 import java.time.{LocalDate, ZoneId}
 
-import scala.concurrent.duration.{MILLISECONDS}
+import scala.concurrent.duration.{FiniteDuration, MILLISECONDS}
 
 import cats.Applicative
 import cats.arrow.FunctionK
-import cats.effect.Ref
-import cats.effect.{Clock, IO, Resource}
+import cats.effect._
 import cats.implicits._
 import weaver._
 
@@ -15,7 +14,6 @@ import fin.BookConversions._
 import fin.Types._
 import fin._
 import fin.implicits._
-import scala.concurrent.duration.FiniteDuration
 
 object BookManagementServiceImplTest extends IOSuite {
 

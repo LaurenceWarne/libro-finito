@@ -3,8 +3,7 @@ package fin.service.book
 import java.time.LocalDate
 
 import cats.arrow.FunctionK
-import cats.effect._
-import cats.effect.Ref
+import cats.effect.{Ref, _}
 import cats.implicits._
 import weaver._
 

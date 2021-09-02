@@ -3,9 +3,9 @@ package fin.service.book
 import cats.effect._
 import cats.implicits._
 import fs2.Stream
-import org.typelevel.log4cats.slf4j.Slf4jLogger
 import org.http4s.Response
 import org.http4s.client.Client
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import weaver._
 
 import fin.Types._

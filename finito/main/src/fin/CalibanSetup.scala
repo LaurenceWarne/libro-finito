@@ -1,11 +1,14 @@
 package fin
 
+import scala.annotation.nowarn
+
 import caliban.CalibanError.ExecutionError
 import caliban._
 import caliban.interop.cats.implicits._
 import caliban.wrappers.ApolloTracing.apolloTracing
 import caliban.wrappers.Wrappers
-import cats.effect.Effect
+import cats.effect.Async
+import cats.effect.std.Dispatcher
 import cats.implicits._
 
 import fin.Operations._
@@ -18,12 +21,15 @@ import Value._
 
 object CalibanSetup {
 
-  def interpreter[F[_]: Effect](
+  type Env = zio.clock.Clock with zio.console.Console
+
+  def interpreter[F[_]: Async](
       bookInfoService: BookInfoService[F],
       bookManagementService: BookManagementService[F],
       collectionService: CollectionService[F]
   )(implicit
-      runtime: zio.Runtime[zio.clock.Clock with zio.console.Console]
+      runtime: zio.Runtime[Env],
+      @nowarn dispatcher: Dispatcher[F]
   ): F[GraphQLInterpreter[Any, CalibanError]] = {
     val queries = Queries[F](
       booksArgs => bookInfoService.search(booksArgs),

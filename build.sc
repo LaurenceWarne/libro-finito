@@ -213,13 +213,13 @@ object Deps {
   val weaver           = ivy"com.disneystreaming::weaver-cats:0.7.4"
   val sqlite           = ivy"org.xerial:sqlite-jdbc:3.34.0"
   val flyway           = ivy"org.flywaydb:flyway-core:7.10.0"
-  val pureconfig       = ivy"com.github.pureconfig::pureconfig:0.15.0"
+  val pureconfig       = ivy"com.github.pureconfig::pureconfig:0.16.0"
   val betterFiles      = ivy"com.github.pathikrit::better-files:3.9.1"
   val enumeratum       = ivy"com.beachape::enumeratum:1.7.0"
   // https://github.com/luaj/luaj/issues/91 ):
   val luaj           = ivy"org.luaj:luaj-jse:3.0.1"
   val testContainers = ivy"com.dimafeng::testcontainers-scala:0.39.7"
-  val sttpHttp4s     = ivy"com.softwaremill.sttp.client3::http4s-ce2-backend:3.3.13"
+  val sttpHttp4s     = ivy"com.softwaremill.sttp.client3::http4s-backend:3.3.14"
 
   object Compiler {
     val semanticDb       = ivy"org.scalameta::semanticdb-scalac:4.4.22"

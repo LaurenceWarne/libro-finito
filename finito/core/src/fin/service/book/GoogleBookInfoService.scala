@@ -1,13 +1,13 @@
 package fin.service.book
 
 import cats.MonadThrow
-import cats.implicits._
 import cats.effect.Concurrent
-import org.typelevel.log4cats.Logger
+import cats.implicits._
 import io.circe.parser.decode
 import org.http4s._
 import org.http4s.client._
 import org.http4s.implicits._
+import org.typelevel.log4cats.Logger
 
 import fin.Types._
 import fin._

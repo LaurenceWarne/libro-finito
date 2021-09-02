@@ -2,7 +2,8 @@ package fin
 
 import caliban.{CalibanError, GraphQLInterpreter, Http4sAdapter}
 import cats.data.{Kleisli, OptionT}
-import cats.effect.{Blocker, ContextShift, IO}
+import cats.effect.IO
+import cats.effect.std.Dispatcher
 import fs2.Stream
 import org.http4s.server.Router
 import org.http4s.server.middleware.Logger
@@ -11,14 +12,13 @@ import org.http4s.{HttpRoutes, Response, StaticFile}
 object Routes {
 
   def routes(
-      interpreter: GraphQLInterpreter[Any, CalibanError],
-      blocker: Blocker
+      interpreter: GraphQLInterpreter[Any, CalibanError]
   )(implicit
       runtime: zio.Runtime[Any],
-      cs: ContextShift[IO]
+      dispatcher: Dispatcher[IO]
   ): HttpRoutes[IO] = {
     val serviceRoutes =
-      Http4sAdapter.makeHttpServiceF[IO, CalibanError](interpreter)
+      Http4sAdapter.makeHttpServiceF[IO, Any, CalibanError](interpreter)
     val loggedRoutes =
       Logger.httpRoutes(logHeaders = true, logBody = true)(serviceRoutes)
     Router[IO](
@@ -30,7 +30,7 @@ object Routes {
       "/api/graphql" -> loggedRoutes,
       "/graphiql" -> Kleisli.liftF(
         StaticFile
-          .fromResource("/graphql-playground.html", blocker, None)
+          .fromResource("/graphql-playground.html", None)
       )
     )
   }

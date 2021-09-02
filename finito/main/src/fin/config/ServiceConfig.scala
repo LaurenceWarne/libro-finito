@@ -14,7 +14,9 @@ final case class ServiceConfig(
     port: Int,
     defaultCollection: Option[String],
     specialCollections: List[SpecialCollection]
-)
+) {
+  def databaseUri: String = show"jdbc:sqlite:$databasePath"
+}
 
 final case class SpecialCollection(
     name: String,

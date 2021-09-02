@@ -2,9 +2,8 @@ package fin.persistence
 
 import java.time.LocalDate
 
-import cats.Monad
-import cats.MonadThrow
 import cats.implicits._
+import cats.{Monad, MonadThrow}
 import doobie._
 import doobie.implicits._
 import doobie.util.fragment.Fragment

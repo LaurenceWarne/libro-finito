@@ -1,8 +1,7 @@
 package fin.service.book
 
-import cats.Monad
 import cats.implicits._
-import cats.~>
+import cats.{Monad, ~>}
 
 import fin.Types._
 import fin.persistence.BookRepository

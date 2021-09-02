@@ -1,8 +1,7 @@
 package fin.service.book
 
 import cats.arrow.FunctionK
-import cats.effect.Ref
-import cats.effect.{Clock, IO, Resource}
+import cats.effect._
 import cats.implicits._
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
