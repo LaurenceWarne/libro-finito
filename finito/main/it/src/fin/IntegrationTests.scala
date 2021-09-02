@@ -1,5 +1,9 @@
 package fin
 
+import java.time.LocalDate
+
+import caliban.client.Operations._
+import caliban.client.SelectionBuilder
 import cats.effect._
 import cats.implicits._
 import com.dimafeng.testcontainers._
@@ -68,25 +72,25 @@ object IntegrationTests extends IOSuite {
     case (uri, backend) =>
       val collectionName = "my collection"
       val newName        = "my new collection"
-      val createRequest  = createCollection(collectionName)(Collection.name)
+      val createRequest = createCollection(collectionName)(
+        Collection.view(UserBook.view, Sort.view)
+      )
       for {
-        // CREATE
-        createResponse <- createRequest.toRequest(uri).send(backend).map(_.body)
-        createName     <- IO.fromEither(createResponse)
+        // CREATE COLLECTION
+        createResponse <- send(uri, backend)(createRequest)
         // UPDATE
-        updateRequest =
-          updateCollection(collectionName, newName.some)(Collection.name)
-        updateResponse <- updateRequest.toRequest(uri).send(backend).map(_.body)
-        updateName     <- IO.fromEither(updateResponse)
-        // RETRIEVE
-        retrieveRequest = collection(newName)(Collection.name)
-        retrieveResponse <-
-          retrieveRequest.toRequest(uri).send(backend).map(_.body)
-        retrieveName <- IO.fromEither(retrieveResponse)
-      } yield expect(createName === collectionName) and expect(
-        updateName === newName
+        updateRequest = updateCollection(collectionName, newName.some)(
+          Collection.view(UserBook.view, Sort.view)
+        )
+        updateResponse <- send(uri, backend)(updateRequest)
+        // RETRIEVE COLLECTION
+        retrieveRequest =
+          collection(newName)(Collection.view(UserBook.view, Sort.view))
+        retrieveResponse <- send(uri, backend)(retrieveRequest)
+      } yield expect(createResponse.name === collectionName) and expect(
+        updateResponse.name === newName
       ) and expect(
-        retrieveName === newName
+        retrieveResponse.name === newName
       )
   }
 
@@ -95,26 +99,113 @@ object IntegrationTests extends IOSuite {
       val collectionName = "my collection with books"
       val book           = bookTemplate.copy(isbn = "create/add/retrieve")
 
-      val createRequest = createCollection(collectionName)(Collection.name)
+      val createRequest =
+        createCollection(collectionName)(
+          Collection.view(UserBook.view, Sort.view)
+        )
       for {
-        // CREATE
-        _ <- createRequest.toRequest(uri).send(backend)
+        // CREATE COLLECTION
+        _ <- send(uri, backend)(createRequest)
         // ADD BOOK
         addBookRequest = addBook(collectionName.some, book)(
-          Collection.name ~ Collection.books(UserBook.isbn)
+          Collection.view(UserBook.view, Sort.view)
         )
-        addBookResponse <-
-          addBookRequest.toRequest(uri).send(backend).map(_.body)
-        // RETRIEVE
+        addBookResponse <- send(uri, backend)(addBookRequest)
+        // RETRIEVE COLLECTION
         retrieveRequest = collection(collectionName)(
-          Collection.name ~ Collection.books(UserBook.isbn)
+          Collection.view(UserBook.view, Sort.view)
         )
-        retrieveResponse <-
-          retrieveRequest.toRequest(uri).send(backend).map(_.body)
-      } yield expect(
-        addBookResponse.exists(_ === (collectionName, List(book.isbn)))
-      ) and expect(
-        retrieveResponse.exists(_ === (collectionName, List(book.isbn)))
+        retrieveResponse <- send(uri, backend)(retrieveRequest)
+      } yield expectBooksEqualIgnoringDates(
+        viewToUserBook(addBookResponse.books.head),
+        inputToUserBook(book)
+      ) and expectBooksEqualIgnoringDates(
+        viewToUserBook(retrieveResponse.books.head),
+        inputToUserBook(book)
       )
   }
+
+  testUsingUri("createCollection, addBook, collection, removeBook") {
+    case (uri, backend) =>
+      val collectionName = "my collection with books to remove"
+      val book           = bookTemplate.copy(isbn = "create/add/retrieve/remove")
+
+      val createRequest =
+        createCollection(collectionName)(
+          Collection.view(UserBook.view, Sort.view)
+        )
+      for {
+        // CREATE COLLECTION
+        _ <- send(uri, backend)(createRequest)
+        // ADD BOOK
+        addBookRequest = addBook(collectionName.some, book)(
+          Collection.view(UserBook.view, Sort.view)
+        )
+        addBookResponse <- send(uri, backend)(addBookRequest)
+        // REMOVE BOOK
+        removeBookRequest = removeBook(collectionName, book.isbn)
+        _ <- send(uri, backend)(removeBookRequest)
+        // RETRIEVE COLLECTION
+        retrieveRequest = collection(collectionName)(
+          Collection.view(UserBook.view, Sort.view)
+        )
+        retrieveResponse <- send(uri, backend)(retrieveRequest)
+      } yield expectBooksEqualIgnoringDates(
+        viewToUserBook(addBookResponse.books.head),
+        inputToUserBook(book)
+      ) and expect(retrieveResponse.books.isEmpty)
+  }
+
+  private def send[R: IsOperation, A](uri: Uri, backend: ClientBackend)(
+      selection: SelectionBuilder[R, A]
+  ): IO[A] =
+    selection
+      .toRequest(uri)
+      .send(backend)
+      .map(_.body.leftMap(err => new Exception(err.toString)))
+      .flatMap(IO.fromEither)
+
+  def expectBooksEqualIgnoringDates(
+      b1: Types.UserBook,
+      b2: Types.UserBook
+  ): Expectations =
+    expect(b1.title === b2.title) and expect(
+      b1.authors === b2.authors
+    ) and expect(b1.description === b2.description) and expect(
+      b1.isbn === b2.isbn
+    ) and expect(b1.rating === b2.rating)
+
+  def viewToUserBook(
+      book: UserBook.UserBookView
+  ): Types.UserBook =
+    Types.UserBook(
+      title = book.title,
+      authors = book.authors,
+      description = book.description,
+      isbn = book.isbn,
+      thumbnailUri = book.thumbnailUri,
+      dateAdded = book.dateAdded.map(LocalDate.parse),
+      rating = book.rating,
+      startedReading = book.startedReading.map(LocalDate.parse),
+      lastRead = book.lastRead.map(LocalDate.parse)
+    )
+
+  def inputToUserBook(
+      book: BookInput,
+      dateAdded: Option[LocalDate] = None,
+      rating: Option[Int] = None,
+      startedReading: Option[LocalDate] = None,
+      lastRead: Option[LocalDate] = None
+  ): Types.UserBook =
+    Types.UserBook(
+      book.title,
+      book.authors,
+      book.description,
+      book.isbn,
+      book.thumbnailUri,
+      dateAdded,
+      rating,
+      startedReading,
+      lastRead
+    )
 }

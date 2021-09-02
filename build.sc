@@ -30,6 +30,7 @@ object finito extends Module {
 
       def schemaPath  = gqlSchemaPath
       def packageName = finPackageName
+      def genView     = true
 
       def ivyDeps =
         super.ivyDeps() ++ Agg(
