@@ -32,6 +32,10 @@ The server may be configured in a number of ways by via a file whose expected lo
       read-complete-hook = "remove = true"
     },
     {
+      name = Read,
+      read-completed-hook = "add = true"
+    },
+    {
       name = Favourites,
       rate-hook = """
         if(rating >= 5) then
@@ -64,3 +68,5 @@ Therefore the `add-hook` above on the `My Books` special collection will simply 
 * `read-completed-hook` called when a book has been finished
 
 In the configuration above, some special collections have been marked as not `lazy`, which means the service will create them on startup if it detects they do not exist, as opposed to the default which is creating them as soon as a book is added to them via a hook.
+
+The special collections enabled by default are those defined in the above snippet - so `My Books`, `Currently Reading`, `Read` and `Favourites`.

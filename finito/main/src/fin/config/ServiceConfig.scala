@@ -65,6 +65,10 @@ object ServiceConfig {
           |      read-completed-hook = \"\"\"remove = true\"\"\"
           |    },
           |    {
+          |      name = Read,
+          |      read-completed-hook = \"\"\"add = true\"\"\"
+          |    },
+          |    {
           |      name = Favourites,
           |      rate-hook = \"\"\"
           |        if(rating >= 5) then
