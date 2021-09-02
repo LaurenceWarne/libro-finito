@@ -20,6 +20,8 @@ jobs:
         run: ./mill __.checkFormat
       - name: Scalafix
         run: ./mill __.fix --check
+      - name: Create docker Image
+        run: ./mill finito.main.docker.build
       - name: Run tests
         run: ./mill __.test
       ##################
