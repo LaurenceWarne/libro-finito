@@ -26,10 +26,10 @@ object IntegrationTests extends IOSuite {
 
   type ClientBackend = SttpBackend[IO, Fs2Streams[IO]]
 
-  def backend: Resource[IO, ClientBackend] =
+  val backend: Resource[IO, ClientBackend] =
     Http4sBackend.usingDefaultBlazeClientBuilder[IO]()
 
-  def container: Resource[IO, GenericContainer] =
+  val container: Resource[IO, GenericContainer] =
     Resource.make(
       for {
         container <- IO(
@@ -154,6 +154,54 @@ object IntegrationTests extends IOSuite {
         viewToUserBook(addBookResponse.books.head),
         inputToUserBook(book)
       ) and expect(retrieveResponse.books.isEmpty)
+  }
+
+  testUsingUri("createCollection, addBook, startReading") {
+    case (uri, backend) =>
+      val collectionName = "my collection with book to start"
+      val book           = bookTemplate.copy(isbn = "create/add/start")
+      val startedDate    = "2012-03-12"
+
+      val createRequest =
+        createCollection(collectionName)(
+          Collection.view(UserBook.view, Sort.view)
+        )
+      for {
+        // CREATE COLLECTION
+        _ <- send(uri, backend)(createRequest)
+        // ADD BOOK
+        addBookRequest = addBook(collectionName.some, book)(
+          Collection.view(UserBook.view, Sort.view)
+        )
+        _ <- send(uri, backend)(addBookRequest)
+        // START BOOK
+        startRequest = startReading(book, startedDate.some)(UserBook.view)
+        startResponse <- send(uri, backend)(startRequest)
+      } yield expect(startResponse.startedReading.exists(_ == startedDate))
+  }
+
+  testUsingUri("createCollection, addBook, finishReading") {
+    case (uri, backend) =>
+      val collectionName = "my collection with book to finish"
+      val book           = bookTemplate.copy(isbn = "create/add/finish")
+      val finishedDate   = "2012-03-12"
+
+      val createRequest =
+        createCollection(collectionName)(
+          Collection.view(UserBook.view, Sort.view)
+        )
+      for {
+        // CREATE COLLECTION
+        _ <- send(uri, backend)(createRequest)
+        // ADD BOOK
+        addBookRequest = addBook(collectionName.some, book)(
+          Collection.view(UserBook.view, Sort.view)
+        )
+        _ <- send(uri, backend)(addBookRequest)
+        // FINISH BOOK
+        finishRequest = finishReading(book, finishedDate.some)(UserBook.view)
+        finishResponse <- send(uri, backend)(finishRequest)
+      } yield expect(finishResponse.lastRead.exists(_ == finishedDate))
   }
 
   private def send[R: IsOperation, A](uri: Uri, backend: ClientBackend)(
