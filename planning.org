@@ -4,22 +4,45 @@
 
 ** APIs
 
-   Google Books API: https://developers.google.com/books/
-   relevant API doc: https://developers.google.com/books/docs/v1/using
+*** Google
+Google Books API: https://developers.google.com/books/
+relevant API doc: https://developers.google.com/books/docs/v1/using
 
-   Allows for searching by title, author and provides links for thumbnails.
+Allows for searching by title, author and provides links for thumbnails.
 
-   Example:
-   #+BEGIN_SRC bash
-      curl -X GET 'https://www.googleapis.com/books/v1/volumes?q=intitle:flowers+inauthor:keyes'
-   #+END_SRC
+Example:
+#+BEGIN_SRC bash
+curl -X GET 'https://www.googleapis.com/books/v1/volumes?q=intitle:flowers+inauthor:keyes'
+#+END_SRC
+
+*** Openlibrary
+
+http://openlibrary.org/search.json?title=azkaban&fields=title,cover_edition_key,author_name,id_wikidata,isbn
+
+Then, you'd have to get the description through the works api.  The wikidata id also seems to not be great.
+
+*** Wikidata
+
+Get series info from isbn:
+
+#+BEGIN_SRC sql
+SELECT ?bookLabel ?series ?seriesBook ?seriesBookLabel ?seriesBookIsbn WHERE {
+  ?book wdt:P212 '978-85-7657-049-3'.
+  ?book wdt:P179 ?series.
+  ?series wdt:P527 ?seriesBook.
+  ?seriesBook wdt:P212 ?seriesBookIsbn
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en".}
+}
+#+END_SRC
+
+The problem here is that the returned isbns are no good since they point to french translations.
 
 * TODO list
 
 ** Bigger things  
 *** DONE Remove poc package
 *** DONE Add test framework to sbt
-*** TODO Add docker build (with docker-compose)
+*** DONE Add docker build (with docker-compose)
 *** DONE Integrate with GH Actions
 *** DONE db backend
 *** TODO Import Goodreads shelves
@@ -27,7 +50,7 @@
 *** DONE Implement langRestrict
 *** DONE Add asc/desc to collection sorting
 *** DONE Implement adding to default collection
-*** TODO Add integration tests
+*** DONE Add integration tests
 *** DONE Make isbn return multiple books
 
 ** Smaller Things
