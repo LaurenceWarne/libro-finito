@@ -26,11 +26,10 @@ Then, you'd have to get the description through the works api.  The wikidata id 
 Get series info from isbn:
 
 #+BEGIN_SRC sql
-SELECT ?bookLabel ?series ?seriesBook ?seriesBookLabel ?seriesBookIsbn WHERE {
+SELECT ?bookLabel ?series ?seriesBook ?seriesBookLabel WHERE {
   ?book wdt:P212 '978-85-7657-049-3'.
   ?book wdt:P179 ?series.
   ?series wdt:P527 ?seriesBook.
-  ?seriesBook wdt:P212 ?seriesBookIsbn
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en".}
 }
 #+END_SRC

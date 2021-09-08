@@ -51,7 +51,10 @@ class GoogleBookInfoService[F[_]: Concurrent: Logger] private (
       // import cats.effect.syntax._
       googleResponse <- MonadThrow[F].fromEither(decode[GoogleResponse](json))
       _              <- Logger[F].debug("DECODED: " + googleResponse)
-    } yield googleResponse.items.getOrElse(List.empty).collect(pf)
+    } yield googleResponse.items
+      .getOrElse(List.empty)
+      .sorted(responseOrdering)
+      .collect(pf)
   }
 }
 
@@ -64,6 +67,11 @@ object GoogleBookInfoService {
     ("Accept-Encoding", "gzip"),
     ("User-Agent", "finito (gzip)")
   )
+
+  val noDescriptionFillIn = "No Description!"
+
+  val responseOrdering: Ordering[GoogleVolume] =
+    Ordering.by(gVolume => gVolume.volumeInfo.description.isEmpty)
 
   val searchPartialFn: PartialFunction[GoogleVolume, UserBook] = {
     case GoogleVolume(
@@ -78,7 +86,7 @@ object GoogleBookInfoService {
       UserBook(
         title,
         authors,
-        maybeDescription.getOrElse("No Description!"),
+        maybeDescription.getOrElse(noDescriptionFillIn),
         industryIdentifier.getIsbn13,
         largeThumbnail,
         None,
@@ -96,7 +104,7 @@ object GoogleBookInfoService {
       UserBook(
         bookItem.title.getOrElse("???"),
         bookItem.authors.getOrElse(List("???")),
-        bookItem.description.getOrElse("No Description!"),
+        bookItem.description.getOrElse(noDescriptionFillIn),
         bookItem.industryIdentifiers
           .getOrElse(Nil)
           .headOption
