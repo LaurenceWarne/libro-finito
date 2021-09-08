@@ -114,14 +114,16 @@ object finito extends Module {
         Deps.Caliban.cats,
         Deps.Caliban.core,
         Deps.Caliban.http4s,
+        Deps.CatsEffect.catsEffect,
+        Deps.CatsLogging.core,
         Deps.Circe.core,
         Deps.Circe.generic,
         Deps.Circe.parser,
-        Deps.enumeratum,
+        Deps.Fs2.core,
+        Deps.Fs2.io,
         Deps.Http4s.http4sBlazeClient,
         Deps.Http4s.http4sDsl,
-        Deps.CatsEffect.catsEffect,
-        Deps.CatsLogging.core,
+        Deps.enumeratum,
         Deps.luaj
       )
 
@@ -274,5 +276,11 @@ object Deps {
     val version = "2.1.0-M6"
     val core    = ivy"com.github.alexarchambault::case-app:$version"
     val cats    = ivy"com.github.alexarchambault::case-app-cats:$version"
+  }
+
+  object Fs2 {
+    val version = "3.1.1"
+    val core    = ivy"co.fs2::fs2-core:$version"
+    val io      = ivy"co.fs2::fs2-io:$version"
   }
 }

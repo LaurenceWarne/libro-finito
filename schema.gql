@@ -90,5 +90,10 @@ type Mutations {
   Deletes all data held about a book, is nop if no data is held about the book.
   """
   deleteBookData(isbn: String!): Boolean
-  import(collection: String!, importType: PortType!): Collection!
+  """
+  Import books from given resource to a collection.  If a collection is not
+  specified, if a name can be inferred from the resource, use that, else import
+  to the default collection.
+  """
+  import(importType: PortType!, resource: String!, collection: String): Collection!
 }
