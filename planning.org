@@ -23,18 +23,20 @@ Then, you'd have to get the description through the works api.  The wikidata id 
 
 *** Wikidata
 
-Get series info from isbn:
+Get series info from the isbn of one book in the series:
 
 #+BEGIN_SRC sql
-SELECT ?bookLabel ?series ?seriesBook ?seriesBookLabel WHERE {
+SELECT ?series ?seriesBook ?seriesBookLabel ?ordinal WHERE {
   ?book wdt:P212 '978-85-7657-049-3'.
   ?book wdt:P179 ?series.
   ?series wdt:P527 ?seriesBook.
+  ?seriesBook p:P179 ?membership.
+  ?membership pq:P1545 ?ordinal.
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en".}
 }
 #+END_SRC
 
-The problem here is that the returned isbns are no good since they point to french translations.
+The problem here is that the returned isbns are no good since they point to french translations.  Proposed solution is to rely on author and title to fill in the data.
 
 * TODO list
 
