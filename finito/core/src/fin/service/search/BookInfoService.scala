@@ -1,4 +1,4 @@
-package fin.service.book
+package fin.service.search
 
 import fin.Types._
 

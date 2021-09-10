@@ -17,11 +17,13 @@ curl -X GET 'https://www.googleapis.com/books/v1/volumes?q=intitle:flowers+inaut
 
 *** Openlibrary
 
-http://openlibrary.org/search.json?title=azkaban&fields=title,cover_edition_key,author_name,id_wikidata,isbn
+#+BEGIN_SRC bash
+curl -X GET 'http://openlibrary.org/search.json?title=azkaban&fields=title,cover_edition_key,author_name,id_wikidata,isbn'
+#+END_SRC
 
-Then, you'd have to get the description through the works api.  The wikidata id also seems to not be great.
+Then, you'd have to get the description through the works api.  The wikidata ids returned also seems to not be great.
 
-*** Wikidata
+*** [[https://www.wikidata.org/wiki/Wikidata:SPARQL_tutorial][Wikidata]]
 
 Get series info from the isbn of one book in the series:
 
@@ -34,6 +36,35 @@ SELECT ?series ?seriesBook ?seriesBookLabel ?ordinal WHERE {
   ?membership pq:P1545 ?ordinal.
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en".}
 }
+#+END_SRC
+
+Alternatively, get series info from the title/author:
+
+#+BEGIN_SRC sql
+SELECT ?book ?seriesBookLabel ?ordinal WHERE {
+  ?book wdt:P31 wd:Q7725634.
+  ?book wdt:P1476 "Harry Potter and the Prisoner of Azkaban"@en.
+  ?book wdt:P50 ?author.
+  ?author rdfs:label "J. K. Rowling"@en.
+  ?book wdt:P179 ?series.
+  ?series wdt:P527 ?seriesBook.
+  ?seriesBook p:P179 ?membership.
+  ?membership pq:P1545 ?ordinal.
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en".}
+} limit 100
+#+END_SRC
+
+
+#+BEGIN_SRC bash
+curl -H "Accept: application/json" -G https://query.wikidata.org/sparql --data-urlencode query="
+SELECT ?series ?seriesBook ?seriesBookLabel ?ordinal WHERE {
+  ?book wdt:P212 '978-85-7657-049-3'.
+  ?book wdt:P179 ?series.
+  ?series wdt:P527 ?seriesBook.
+  ?seriesBook p:P179 ?membership.
+  ?membership pq:P1545 ?ordinal.
+  SERVICE wikibase:label { bd:serviceParam wikibase:language 'en'.}
+}"
 #+END_SRC
 
 The problem here is that the returned isbns are no good since they point to french translations.  Proposed solution is to rely on author and title to fill in the data.

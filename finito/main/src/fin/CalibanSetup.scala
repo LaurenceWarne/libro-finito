@@ -14,6 +14,7 @@ import cats.implicits._
 import fin.Operations._
 import fin.service.book._
 import fin.service.collection._
+import fin.service.search._
 
 import CalibanError._
 import ResponseValue._
@@ -34,21 +35,22 @@ object CalibanSetup {
     val queries = Queries[F](
       booksArgs => bookInfoService.search(booksArgs),
       bookArgs => bookInfoService.fromIsbn(bookArgs),
+      _ => ???,
       collectionService.collections,
       collectionArgs => collectionService.collection(collectionArgs),
       _ => ???
     )
     val mutations = Mutations[F](
       args => collectionService.createCollection(args),
-      args => collectionService.deleteCollection(args).map(_ => None),
+      args => collectionService.deleteCollection(args).as(None),
       args => collectionService.updateCollection(args),
       args => collectionService.addBookToCollection(args),
-      args => collectionService.removeBookFromCollection(args).map(_ => None),
+      args => collectionService.removeBookFromCollection(args).as(None),
       args => bookManagementService.startReading(args),
       args => bookManagementService.finishReading(args),
       args => bookManagementService.rateBook(args),
       args => bookManagementService.createBook(args),
-      args => bookManagementService.deleteBookData(args).map(_ => None),
+      args => bookManagementService.deleteBookData(args).as(None),
       _ => ???
     )
     val api = GraphQL.graphQL(RootResolver(queries, mutations))

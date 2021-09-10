@@ -21,6 +21,7 @@ import fin.config._
 import fin.persistence._
 import fin.service.book._
 import fin.service.collection._
+import fin.service.search._
 
 object Main extends IOCaseApp[CliOptions] {
 

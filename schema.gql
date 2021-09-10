@@ -60,6 +60,7 @@ type Queries {
     langRestrict: String = "en"
   ): [UserBook!]!
   book(isbn: String!, langRestrict: String = "en"): [UserBook!]!
+  series(book: BookInput!): [UserBook!]!
   collections: [Collection!]!
   collection(name: String!): Collection!
   export(collection: String!, exportType: PortType!): String!

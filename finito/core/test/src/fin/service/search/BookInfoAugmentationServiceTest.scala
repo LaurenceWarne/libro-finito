@@ -1,4 +1,4 @@
-package fin.service.book
+package fin.service.search
 
 import java.time.LocalDate
 
@@ -10,6 +10,7 @@ import weaver._
 import fin.BookConversions._
 import fin.Types._
 import fin.implicits._
+import fin.service.book.InMemoryBookRepository
 
 object BookInfoAugmentationServiceTest extends SimpleIOSuite {
 
