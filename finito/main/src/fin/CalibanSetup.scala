@@ -26,6 +26,7 @@ object CalibanSetup {
 
   def interpreter[F[_]: Async](
       bookInfoService: BookInfoService[F],
+      seriesInfoService: SeriesInfoService[F],
       bookManagementService: BookManagementService[F],
       collectionService: CollectionService[F]
   )(implicit
@@ -35,7 +36,7 @@ object CalibanSetup {
     val queries = Queries[F](
       booksArgs => bookInfoService.search(booksArgs),
       bookArgs => bookInfoService.fromIsbn(bookArgs),
-      _ => ???,
+      seriesArgs => seriesInfoService.series(seriesArgs),
       collectionService.collections,
       collectionArgs => collectionService.collection(collectionArgs),
       _ => ???

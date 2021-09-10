@@ -2,18 +2,18 @@ package fin.service.book
 
 import cats.effect.Concurrent
 import cats.implicits._
-import org.http4s.client._
-import org.http4s.implicits._
-import io.circe.parser.decode
+import cats.{MonadThrow, Parallel}
 import io.circe._
 import io.circe.generic.semiauto._
+import io.circe.parser.decode
+import org.http4s._
+import org.http4s.client._
+import org.http4s.implicits._
 
 import fin.Types._
-import org.http4s._
-import cats.MonadThrow
 import fin.service.search.BookInfoService
 
-class WikidataSeriesInfoService[F[_]: Concurrent](
+class WikidataSeriesInfoService[F[_]: Concurrent: Parallel](
     client: Client[F],
     bookInfoService: BookInfoService[F]
 ) extends SeriesInfoService[F] {
@@ -29,17 +29,45 @@ class WikidataSeriesInfoService[F[_]: Concurrent](
     val request =
       Request[F](uri = uri +? ("query", body), headers = headers)
     for {
-      json    <- client.expect[String](request)
-      results <- MonadThrow[F].fromEither(decode[WikidataSeriesResponse](json))
-      _ = identity(bookInfoService)
-      _ = println(
-        results.results.bindings.map(e =>
-          (e.seriesBookLabel.value, e.ordinal.value)
-        )
-      )
-    } yield List.empty
-
+      json     <- client.expect[String](request)
+      response <- MonadThrow[F].fromEither(decode[WikidataSeriesResponse](json))
+      titlesAndStrOrdinals =
+        response.results.bindings
+          .map(e => (e.seriesBookLabel.value, e.ordinal.value))
+          .distinct
+      titlesAndOrdinals <- titlesAndStrOrdinals.traverse {
+        case (title, ordinalStr) =>
+          MonadThrow[F]
+            .fromOption(
+              ordinalStr.toIntOption,
+              new Exception(
+                show"Expected int for ordinal of $title, but was $ordinalStr"
+              )
+            )
+            .tupleLeft(title)
+      }
+      booksAndOrdinals <- titlesAndOrdinals.parTraverse {
+        case (title, ordinal) =>
+          topSearchResult(author, title).tupleRight(ordinal)
+      }
+    } yield booksAndOrdinals.sortBy(_._2).map(_._1)
   }
+
+  private def topSearchResult(
+      author: String,
+      title: String
+  ): F[UserBook] =
+    for {
+      books <-
+        bookInfoService
+          .search(
+            QueriesBooksArgs(title.some, author.some, None, None)
+          )
+      book <- MonadThrow[F].fromOption(
+        books.headOption,
+        new Exception(show"No book found for $title and $author")
+      )
+    } yield book
 
   private def sparqlQuery(author: String, title: String): String =
     s"""

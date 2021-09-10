@@ -80,9 +80,12 @@ object Main extends IOCaseApp[CliOptions] {
               config.defaultCollection,
               config.specialCollections
             )
+          seriesInfoService =
+            new WikidataSeriesInfoService(client, wrappedInfoService)
           _ <- logger.debug("Bootstrapping caliban...")
           interpreter <- CalibanSetup.interpreter[IO](
             wrappedInfoService,
+            seriesInfoService,
             wrappedBookManagementService,
             wrappedCollectionService
           )
