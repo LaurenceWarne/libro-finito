@@ -2,13 +2,13 @@ package fin.service.book
 
 import cats.effect._
 import cats.implicits._
+import org.http4s.Response
+import org.http4s.client.Client
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import weaver._
 
 import fin.Types._
-import org.http4s.client.Client
-import org.http4s.Response
 import fin.service.search.BookInfoService
 
 object WikidataSeriesInfoServiceTest extends SimpleIOSuite {
@@ -42,6 +42,38 @@ object WikidataSeriesInfoServiceTest extends SimpleIOSuite {
             QueriesSeriesArgs(BookInput(title1, List(author), "", "", ""))
           )
     } yield expect(response.toSet === books.toSet)
+  }
+
+  test("series returns error when no book from book info service") {
+    val (title1, title2, title3) =
+      ("Neuromancer", "Count Zero", "Mona Lisa Overdrive")
+    val author          = "William Gibson"
+    val client          = mockedClient(Mocks.trilogy(title1, title2, title3))
+    val bookInfoService = new BookInfoServiceUsingTitles(List.empty)
+    val service =
+      new WikidataSeriesInfoService(client, bookInfoService)
+    for {
+      response <-
+        service
+          .series(
+            QueriesSeriesArgs(BookInput(title1, List(author), "", "", ""))
+          )
+          .attempt
+    } yield expect(response.isLeft)
+  }
+
+  test("series returns error when ordinal not integral") {
+    val author          = "William Gibson"
+    val client          = mockedClient(Mocks.badOrdinal)
+    val bookInfoService = new BookInfoServiceUsingTitles(List.empty)
+    val service =
+      new WikidataSeriesInfoService(client, bookInfoService)
+    for {
+      response <-
+        service
+          .series(QueriesSeriesArgs(BookInput("", List(author), "", "", "")))
+          .attempt
+    } yield expect(response.isLeft)
   }
 }
 
@@ -101,6 +133,29 @@ object Mocks {
       "ordinal" : {
         "type" : "literal",
         "value" : "2"
+      }
+    } ]
+  }
+}"""
+
+  val badOrdinal = """{
+  "head" : {
+    "vars" : [ "book", "seriesBookLabel", "ordinal" ]
+  },
+  "results" : {
+    "bindings" : [ {
+      "book" : {
+        "type" : "uri",
+        "value" : "http://www.wikidata.org/entity/Q662029"
+      },
+      "seriesBookLabel" : {
+        "xml:lang" : "en",
+        "type" : "literal",
+        "value" : "some-title"
+      },
+      "ordinal" : {
+        "type" : "literal",
+        "value" : "not-an-integer"
       }
     } ]
   }
