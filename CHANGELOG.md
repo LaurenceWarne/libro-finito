@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.6.0
+
+* [c4ab43f](https://github.com/LaurenceWarne/libro-finito/commit/c4ab43f6384c10ad556a9bf05cfb57ebfac011d5) Provisional support for looking up book series
+* [7b6bf9b](https://github.com/LaurenceWarne/libro-finito/commit/7b6bf9b7826d9cf2c1de67a7f9883834174b8395) Slight improvment in the ordering of search results
+
 ## v0.5.0
 
 * [aa62ace](https://github.com/LaurenceWarne/libro-finito/commit/aa62acee063d84c78419fbe29db82ca6e57dbacb): Add a special collection for read books
