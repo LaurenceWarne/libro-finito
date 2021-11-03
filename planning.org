@@ -23,6 +23,12 @@ curl -X GET 'http://openlibrary.org/search.json?title=azkaban&fields=title,cover
 
 Then, you'd have to get the description through the works api.  The wikidata ids returned also seems to not be great.
 
+**** Covers
+#+BEGIN_SRC bash
+curl -X GET 'https://covers.openlibrary.org/b/isbn/9780575097933-L.jpg'
+#+END_SRC
+
+
 *** [[https://www.wikidata.org/wiki/Wikidata:SPARQL_tutorial][Wikidata]]
 
 Get series info from the isbn of one book in the series:

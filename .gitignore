@@ -10,7 +10,6 @@ out
 .lib/
 dist/*
 target/
-bin/
 libexec/
 lib_managed/
 src_managed/
