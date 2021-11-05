@@ -1,9 +1,21 @@
+"""
+Usage: python3 montage.py f
+
+Where f is a file consisting of lines of the form
+'title,image_path,bit'
+e.g.
+'old man's war,/home/images/oldmanswar.jpeg,0'
+
+The bit here controls whether the image is rendered large or small
+"""
+
 import shutil, collections, os, sys, requests
 
 
 DIM = (DIM_WIDTH := 128, DIM_HEIGHT := 196)
 TILE_WIDTH = 6
 Entry = collections.namedtuple("Entry", "title, img, large")
+
 
 def proc_small_entry(path):
     name, ext = os.path.splitext(os.path.basename(path))
@@ -40,7 +52,7 @@ def main():
             tp_left, tp_right, btm_left, btm_right = proc_large_entry(entry.img)
             idx = current_row.index(False)
             if idx == TILE_WIDTH - 1:
-                nxt_small = next(filter(lambda e: not e.large, entries), None)
+                nxt_small = next(filter(lambda e: not e.large, entries[::-1]), None)
                 if nxt_small:
                     entries.remove(nxt_small)
                     entries.append(entry)
@@ -54,8 +66,9 @@ def main():
         else:
             current_row[current_row.index(False)] = proc_small_entry(entry.img)
     files.extend([f or "null:" for f in current_row])
-    mx_idx = max(i for i in range(TILE_WIDTH) if nxt_row[i])
-    files.extend([f or "null:" for f in nxt_row[:mx_idx + 1]])
+    mx_idx = max([i for i in range(TILE_WIDTH) if nxt_row[i]] + [False])
+    if mx_idx:
+        files.extend([f or "null:" for f in nxt_row[:mx_idx + 1]])
     print(len(files))
     os.system(
         f"montage -tile {TILE_WIDTH}x -geometry {DIM_WIDTH//2}x{DIM_HEIGHT//2}+0+0 -background transparent " +
