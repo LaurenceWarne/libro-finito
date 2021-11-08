@@ -24,10 +24,11 @@ class WikidataSeriesInfoService[F[_]: Concurrent: Parallel](
   private val headers = Headers(("Accept", "application/json"))
 
   override def series(args: QueriesSeriesArgs): F[List[UserBook]] = {
-    val BookInput(title, author :: _, _, _, _) = args.book
-    val body                                   = sparqlQuery(author, title)
+    val BookInput(title, authors, _, _, _) = args.book
+    val author                             = authors.headOption.getOrElse("???")
+    val body                               = sparqlQuery(author, title)
     val request =
-      Request[F](uri = uri +? ("query", body), headers = headers)
+      Request[F](uri = uri +? (("query", body)), headers = headers)
     for {
       json     <- client.expect[String](request)
       response <- MonadThrow[F].fromEither(decode[WikidataSeriesResponse](json))

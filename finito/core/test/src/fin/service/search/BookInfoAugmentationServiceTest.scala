@@ -35,12 +35,13 @@ object BookInfoAugmentationServiceTest extends SimpleIOSuite {
       _        <- repo.rateBook(book2, rating)
       _        <- repo.startReading(book2, date)
       response <- service.search(QueriesBooksArgs(None, None, None, None))
-      List(bookResponse) = response
     } yield expect(
-      bookResponse === toUserBook(
-        book2,
-        rating = rating.some,
-        startedReading = date.some
+      response === List(
+        toUserBook(
+          book2,
+          rating = rating.some,
+          startedReading = date.some
+        )
       )
     )
   }
@@ -59,12 +60,13 @@ object BookInfoAugmentationServiceTest extends SimpleIOSuite {
       _            <- repo.rateBook(book, rating)
       _            <- repo.startReading(book, date)
       bookResponse <- service.fromIsbn(QueriesBookArgs(book.isbn, None))
-      List(userBook) = bookResponse
     } yield expect(
-      userBook === toUserBook(
-        book,
-        rating = rating.some,
-        startedReading = date.some
+      bookResponse === List(
+        toUserBook(
+          book,
+          rating = rating.some,
+          startedReading = date.some
+        )
       )
     )
   }

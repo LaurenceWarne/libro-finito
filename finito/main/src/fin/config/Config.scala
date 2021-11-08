@@ -32,5 +32,5 @@ object Config {
   private def initializeConfigLocation[F[_]: Sync](
       configDirectory: File
   ): F[Unit] =
-    Sync[F].delay(configDirectory.createDirectoryIfNotExists())
+    Sync[F].delay(configDirectory.createDirectoryIfNotExists()).void
 }

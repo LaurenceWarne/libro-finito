@@ -1,7 +1,5 @@
 package fin
 
-import scala.concurrent.ExecutionContext.global
-
 import _root_.cats.arrow.FunctionK
 import _root_.cats.effect._
 import _root_.cats.effect.std.Dispatcher
@@ -30,7 +28,7 @@ object Main extends IOCaseApp[CliOptions] {
 
   def resources(options: CliOptions) =
     for {
-      client <- BlazeClientBuilder[IO](global).resource
+      client <- BlazeClientBuilder[IO].resource
       config <- Resource.eval(Config.get[IO](options.config))
       transactor <- ExecutionContexts.fixedThreadPool[IO](4).flatMap { ec =>
         TransactorSetup.sqliteTransactor[IO](
@@ -90,7 +88,7 @@ object Main extends IOCaseApp[CliOptions] {
             wrappedCollectionService
           )
           server <-
-            BlazeServerBuilder[IO](global)
+            BlazeServerBuilder[IO]
               .withBanner(Seq(Banner.value))
               .bindHttp(config.port, config.host)
               .withHttpApp(Routes.routes(interpreter).orNotFound)

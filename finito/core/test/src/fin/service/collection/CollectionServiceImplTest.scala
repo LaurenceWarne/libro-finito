@@ -131,7 +131,6 @@ object CollectionServiceImplTest extends IOSuite {
         )
         retrievedCollection <-
           collectionService.collection(QueriesCollectionArgs(name))
-        _ = println(retrievedCollection)
       } yield expect(
         retrievedCollection.books === List(book3, book2).map(toUserBook(_))
       )
@@ -365,16 +364,12 @@ object CollectionServiceImplTest extends IOSuite {
       _ <- collectionService.addBookToCollection(
         MutationsAddBookArgs(name.some, book)
       )
-      collection <- collectionService.removeBookFromCollection(
+      _ <- collectionService.removeBookFromCollection(
         MutationsRemoveBookArgs(name, book.isbn)
       )
-    } yield expect(
-      collection === Collection(
-        name,
-        List.empty,
-        Sort(SortType.DateAdded, true)
-      )
-    )
+      retrievedCollection <-
+        collectionService.collection(QueriesCollectionArgs(name))
+    } yield expect(retrievedCollection.books.isEmpty)
   }
 
   test("removeBookFromCollection errors on inexistant collection") {

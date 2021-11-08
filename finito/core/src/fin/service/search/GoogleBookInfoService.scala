@@ -124,20 +124,21 @@ object GoogleBookInfoService {
 
   def uriFromBooksArgs(booksArgs: QueriesBooksArgs): Either[Throwable, Uri] =
     Either.cond(
-      booksArgs.authorKeywords
-        .filterNot(_.isEmpty)
-        .nonEmpty || booksArgs.titleKeywords.filterNot(_.isEmpty).nonEmpty,
+      booksArgs.authorKeywords.exists(_.nonEmpty) ||
+        booksArgs.titleKeywords.exists(_.nonEmpty),
       baseUri +? (
-        "q",
-        (booksArgs.titleKeywords.filterNot(_.isEmpty).map("intitle:" + _) ++
-          booksArgs.authorKeywords.map("inauthor:" + _))
-          .mkString("+")
-      ) +? ("fields", GoogleBooksAPIDecoding.fieldsSelector)
-        +?? ("maxResults", booksArgs.maxResults)
-        +?? ("langRestrict", booksArgs.langRestrict),
+        (
+          "q",
+          (booksArgs.titleKeywords.filterNot(_.isEmpty).map("intitle:" + _) ++
+            booksArgs.authorKeywords.filterNot(_.isEmpty).map("inauthor:" + _))
+            .mkString("+")
+        )
+      ) +? (("fields", GoogleBooksAPIDecoding.fieldsSelector))
+        +?? (("maxResults", booksArgs.maxResults))
+        +?? (("langRestrict", booksArgs.langRestrict)),
       NoKeywordsSpecifiedError
     )
 
   def uriFromBookArgs(bookArgs: QueriesBookArgs): Uri =
-    baseUri +? ("q", "isbn:" + bookArgs.isbn)
+    baseUri +? (("q", "isbn:" + bookArgs.isbn))
 }

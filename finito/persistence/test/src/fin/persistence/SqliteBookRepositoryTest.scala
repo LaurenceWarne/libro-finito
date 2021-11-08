@@ -145,11 +145,11 @@ object SqliteBookRepositoryTest extends SqliteSuite {
   }
 
   testDoobie("retrieveMultipleBooks retrieves all matching books") {
-    val isbns                     = List("book1", "book2", "book3")
-    val List(isbn1, isbn2, isbn3) = isbns
-    val book1                     = book.copy(isbn = isbn1)
-    val book2                     = book.copy(isbn = isbn2)
-    val book3                     = book.copy(isbn = isbn3)
+    val (isbn1, isbn2, isbn3) = ("book1", "book2", "book3")
+    val isbns                 = List(isbn1, isbn2, isbn3)
+    val book1                 = book.copy(isbn = isbn1)
+    val book2                 = book.copy(isbn = isbn2)
+    val book3                 = book.copy(isbn = isbn3)
     for {
       _     <- repo.createBook(book1, date)
       _     <- repo.createBook(book2, date)

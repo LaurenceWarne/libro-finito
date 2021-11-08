@@ -32,10 +32,11 @@ object GoogleBookInfoServiceTest extends SimpleIOSuite {
     for {
       result <-
         bookAPI.search(QueriesBooksArgs("non-empty".some, None, None, None))
-      book :: Nil = result
-    } yield expect(book.title === title) and
-      expect(book.authors === List(author)) and
-      expect(book.description === description)
+      maybeBook = result.headOption
+    } yield expect(result.length === 1) and
+      expect(maybeBook.map(_.title) === title.some) and
+      expect(maybeBook.map(_.authors) === List(author).some) and
+      expect(maybeBook.map(_.description) === description.some)
   }
 
   test("search errors with empty strings") {
@@ -66,9 +67,10 @@ object GoogleBookInfoServiceTest extends SimpleIOSuite {
     val bookAPI: BookInfoService[IO] = GoogleBookInfoService(client)
     for {
       response <- bookAPI.fromIsbn(QueriesBookArgs(isbn, None))
-      List(book) = response
-      // TODO why do I need the type hint here?
-    } yield expect(book.isbn === "978" + isbn): Expectations
+      maybeBook = response.headOption
+    } yield expect(response.length === 1) and expect(
+      maybeBook.map(_.isbn) === ("978" + isbn).some
+    )
   }
 }
 
