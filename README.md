@@ -1,11 +1,7 @@
 # Fin
 [![codecov](https://codecov.io/gh/LaurenceWarne/libro-finito/branch/master/graph/badge.svg?token=IFT4R8T4F3)](https://codecov.io/gh/LaurenceWarne/libro-finito)
 
-`libro-finito` is a http service whose goal is to provide a local book management service.
-
-Its main features are searching for books and aggregating books into user defined collections.
-
-It's sole entry point is a graphql API located [here](/schema.gql).
+`libro-finito` is a http service whose goal is to provide a local book management service.  Its main features are searching for books and aggregating books into user defined collections.  The main entry point is a graphql API located [here](/schema.gql).  Currently the only client application is [finito.el](https://github.com/LaurenceWarne/finito.el) (for Emacs).
 
 Also check out the [Changelog](/CHANGELOG.md).
 
@@ -68,3 +64,23 @@ Therefore the `add-hook` above on the `My Books` special collection will simply 
 In the configuration above some special collections have been marked as not `lazy`, which means the service will create them on startup if it detects they do not exist as opposed to the default which is creating them as soon as a book is added to them via a hook (they can also be manually created).
 
 The special collections enabled by default are those defined in the above snippet - so `My Books`, `Currently Reading`, `Read` and `Favourites`.
+
+# Local Development
+
+Optionally install [mill](https://com-lihaoyi.github.io/mill/mill/Intro_to_Mill.html#_installation) (otherwise swap `mill` for `./mill`).  You can start the server via:
+
+```bash
+mill finito.main.run
+```
+
+You can then open the playground at http://localhost:56848/graphiql, alternatively you can curl:
+
+```bash
+curl 'http://localhost:56848/api/graphql' -H 'Accept-Encoding: gzip, deflate, br' -H 'Content-Type: application/json' -H 'Accept: application/json' --data-binary '{"query":"query {\n  collection(name: \"My Books\") {\n    name\n    books {\n      title\n    }\n  }\n}"}' --compressed
+```
+
+All tests can be run using:
+
+```bash
+mill __.test
+```

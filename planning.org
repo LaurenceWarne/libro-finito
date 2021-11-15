@@ -104,6 +104,7 @@ The problem here is that the returned isbns are no good since they point to fren
 *** DONE Add IOCaseApp for flags
 *** DONE Add tracing
 *** TODO Add cli option for just outputting the default config
+*** TODO Replace betterfiles with fs2 File ops
 
 ** Bugs
 *** DONE Adding the same book to a collection results in an uhelpful sql error
