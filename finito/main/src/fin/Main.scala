@@ -26,19 +26,6 @@ object Main extends IOCaseApp[CliOptions] {
   implicit val zioRuntime         = Runtime.default
   implicit val logger: Logger[IO] = Slf4jLogger.getLogger
 
-  def resources(options: CliOptions) =
-    for {
-      client <- BlazeClientBuilder[IO].resource
-      config <- Resource.eval(Config[IO](options.config))
-      transactor <- ExecutionContexts.fixedThreadPool[IO](4).flatMap { ec =>
-        TransactorSetup.sqliteTransactor[IO](
-          config.databaseUri,
-          ec
-        )
-      }
-      dispatcher <- Dispatcher[IO]
-    } yield (client, config, transactor, dispatcher)
-
   def run(options: CliOptions, arg: RemainingArgs): IO[ExitCode] = {
     val server = resources(options).use {
       case (client, config, transactor, dispatcher) =>
@@ -99,6 +86,19 @@ object Main extends IOCaseApp[CliOptions] {
     }
     server.as(ExitCode.Success)
   }
+
+  private def resources(options: CliOptions) =
+    for {
+      client <- BlazeClientBuilder[IO].resource
+      config <- Resource.eval(Config[IO](options.config))
+      transactor <- ExecutionContexts.fixedThreadPool[IO](4).flatMap { ec =>
+        TransactorSetup.sqliteTransactor[IO](
+          config.databaseUri,
+          ec
+        )
+      }
+      dispatcher <- Dispatcher[IO]
+    } yield (client, config, transactor, dispatcher)
 }
 
 object Banner {

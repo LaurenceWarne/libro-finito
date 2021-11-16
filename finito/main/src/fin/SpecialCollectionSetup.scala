@@ -25,21 +25,7 @@ object SpecialCollectionSetup {
       _ <-
         specialCollections
           .filter(_.`lazy`.contains(false))
-          .traverse { collection =>
-            Logger[F].info(
-              show"Creating collection marked as not lazy: '${collection.name}'"
-            ) *>
-              collectionService
-                .createCollection(
-                  MutationsCreateCollectionArgs(collection.name, None)
-                )
-                .void
-                // TODO use error classes here so we don't catch all errors
-                .handleErrorWith(_ =>
-                  Logger[F]
-                    .info(show"Collection '${collection.name}' already exists")
-                )
-          }
+          .traverse(createCollection[F](collectionService, _))
       hookExecutionService = HookExecutionServiceImpl[F]
       collectionHooks      = specialCollections.flatMap(_.toCollectionHooks)
       wrappedCollectionService = SpecialCollectionService[F](
@@ -55,4 +41,23 @@ object SpecialCollectionSetup {
         hookExecutionService
       )
     } yield (wrappedBookService, wrappedCollectionService)
+
+  private def createCollection[F[_]: Sync: Logger](
+      collectionService: CollectionService[F],
+      collection: SpecialCollection
+  ): F[Unit] =
+    Logger[F].info(
+      show"Creating collection marked as not lazy: '${collection.name}'"
+    ) *>
+      collectionService
+        .createCollection(
+          MutationsCreateCollectionArgs(collection.name, None)
+        )
+        .void
+        // TODO use error classes here so we don't catch all errors
+        .handleErrorWith(_ =>
+          Logger[F]
+            .info(show"Collection '${collection.name}' already exists")
+        )
+
 }
