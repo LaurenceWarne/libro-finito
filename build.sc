@@ -67,23 +67,24 @@ object finito extends Module {
 
     def ivyDeps =
       Agg(
-        Deps.betterFiles,
         Deps.Caliban.cats,
         Deps.Caliban.core,
         Deps.Caliban.http4s,
-        Deps.CaseApp.core,
         Deps.CaseApp.cats,
+        Deps.CaseApp.core,
+        Deps.CatsEffect.catsEffect,
+        Deps.CatsLogging.core,
+        Deps.CatsLogging.slf4j,
         Deps.Circe.core,
         Deps.Circe.generic,
         Deps.Circe.parser,
         Deps.Doobie.core,
         Deps.Doobie.hikari,
+        Deps.Fs2.core,
+        Deps.Fs2.io,
         Deps.Http4s.http4sBlazeClient,
         Deps.Http4s.http4sBlazeServer,
         Deps.Http4s.http4sDsl,
-        Deps.CatsEffect.catsEffect,
-        Deps.CatsLogging.slf4j,
-        Deps.CatsLogging.core,
         Deps.flyway,
         Deps.logback,
         Deps.pureconfig
@@ -136,7 +137,6 @@ object finito extends Module {
 
     def ivyDeps =
       super.ivyDeps() ++ Agg(
-        Deps.betterFiles,
         Deps.CatsEffect.catsEffect,
         Deps.CatsLogging.core,
         Deps.Circe.core,
@@ -144,6 +144,8 @@ object finito extends Module {
         Deps.Circe.parser,
         Deps.Doobie.core,
         Deps.Doobie.hikari,
+        Deps.Fs2.core,
+        Deps.Fs2.io,
         Deps.flyway,
         Deps.sqlite
       )
@@ -258,7 +260,6 @@ object Deps {
   val sqlite           = ivy"org.xerial:sqlite-jdbc:3.34.0"
   val flyway           = ivy"org.flywaydb:flyway-core:7.10.0"
   val pureconfig       = ivy"com.github.pureconfig::pureconfig:0.16.0"
-  val betterFiles      = ivy"com.github.pathikrit::better-files:3.9.1"
   val enumeratum       = ivy"com.beachape::enumeratum:1.7.0"
   // https://github.com/luaj/luaj/issues/91 ):
   val luaj           = ivy"org.luaj:luaj-jse:3.0.1"
@@ -278,6 +279,12 @@ object Deps {
   object CatsEffect {
     val version    = "3.2.5"
     val catsEffect = ivy"org.typelevel::cats-effect:$version"
+  }
+
+  object Fs2 {
+    val version = "3.2.0"
+    val core    = ivy"co.fs2::fs2-core:$version"
+    val io      = ivy"co.fs2::fs2-io:$version"
   }
 
   object CatsLogging {

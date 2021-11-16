@@ -1,7 +1,8 @@
 package fin.service.summary
 
-import cats.implicits._
 import scala.annotation.tailrec
+
+import cats.implicits._
 
 sealed trait ImageChunk
 

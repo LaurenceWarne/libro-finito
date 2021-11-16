@@ -29,7 +29,7 @@ object Main extends IOCaseApp[CliOptions] {
   def resources(options: CliOptions) =
     for {
       client <- BlazeClientBuilder[IO].resource
-      config <- Resource.eval(Config.get[IO](options.config))
+      config <- Resource.eval(Config[IO](options.config))
       transactor <- ExecutionContexts.fixedThreadPool[IO](4).flatMap { ec =>
         TransactorSetup.sqliteTransactor[IO](
           config.databaseUri,
