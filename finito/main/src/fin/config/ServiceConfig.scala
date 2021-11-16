@@ -1,6 +1,7 @@
 package fin.config
 
 import cats.implicits._
+import cats.kernel.Eq
 import pureconfig._
 import pureconfig.generic.semiauto._
 
@@ -38,10 +39,11 @@ object ServiceConfig {
     deriveReader[SpecialCollection]
   implicit val confReader: ConfigReader[ServiceConfig] =
     deriveReader[ServiceConfig]
+  implicit val serviceConfigEq: Eq[ServiceConfig] = Eq.fromUniversalEquals
 
   val defaultPort: Int = 56848
 
-  def default(configDirectory: String) =
+  def default(configDirectory: String): ConfigObjectSource =
     ConfigSource.string(
       show"""{
           |  database-path = $configDirectory/db.sqlite,
