@@ -23,10 +23,32 @@ class BufferedImageMontageService[F[_]: Async: Parallel](
         download(b.thumbnailUri, b.title).map { img =>
           val resizedImg = resize(img)
           if (specification.largeImgPredicate(b)) split(resizedImg)
-          else (SingularChunk(resizedImg): ImageChunk).pure[F]
+          else (SingularChunk(resizedImg): ImageChunk)
         }
       }
-    } yield chunks.toString
+      map = ImageStitch.stitch(chunks, specification.columns)
+      img = collageBufferedImages(map)
+    } yield img.toString
+
+  private def collageBufferedImages(
+      chunkMapping: Map[(Int, Int), SingularChunk]
+  ): BufferedImage = {
+    val MontageSpecification(columns, width, height, largeImgScalaFactor, _) =
+      specification
+    val rows = chunkMapping.keySet.map(_._1).max
+    val img =
+      new BufferedImage(
+        columns * (width / largeImgScalaFactor),
+        rows * (height / largeImgScalaFactor),
+        BufferedImage.TYPE_INT_ARGB
+      )
+    val g2d = img.createGraphics()
+    chunkMapping.foreach {
+      case ((r, c), chunk) =>
+        g2d.drawImage(chunk.img, c * width, r * height, null)
+    }
+    img
+  }
 
   private def download(uri: String, fileName: String): F[BufferedImage] = {
     val path = Path(tmpDirectory) / (fileName + ".jpg")

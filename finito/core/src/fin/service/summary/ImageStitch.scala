@@ -5,35 +5,7 @@ import scala.annotation.tailrec
 import cats.implicits._
 import java.awt.image.BufferedImage
 
-sealed trait ImageChunk
-
-object ImageChunk {
-  def fitsIn(width: Int)(chunk: ImageChunk): Boolean = {
-    chunk match {
-      case CompositeChunk(w, _) if w > width => false
-      case _                                 => true
-    }
-  }
-}
-
-final case class SingularChunk(img: BufferedImage) extends ImageChunk
-
-final case class CompositeChunk(
-    width: Int,
-    chunks: List[SingularChunk]
-) extends ImageChunk {
-
-  def flatten(at: (Int, Int)): List[((Int, Int), SingularChunk)] =
-    LazyList
-      .iterate((0, 0)) {
-        case (r, c) => (r + c / width, (c + 1) % width)
-      }
-      .map(_ |+| at)
-      .zip(chunks)
-      .toList
-}
-
-object YearlySummary {
+object ImageStitch {
 
   def stitch(
       images: List[ImageChunk],
@@ -89,4 +61,32 @@ object YearlySummary {
       }
     (maybeElt, checkedList)
   }
+}
+
+sealed trait ImageChunk
+
+object ImageChunk {
+  def fitsIn(width: Int)(chunk: ImageChunk): Boolean = {
+    chunk match {
+      case CompositeChunk(w, _) if w > width => false
+      case _                                 => true
+    }
+  }
+}
+
+final case class SingularChunk(img: BufferedImage) extends ImageChunk
+
+final case class CompositeChunk(
+    width: Int,
+    chunks: List[SingularChunk]
+) extends ImageChunk {
+
+  def flatten(at: (Int, Int)): List[((Int, Int), SingularChunk)] =
+    LazyList
+      .iterate((0, 0)) {
+        case (r, c) => (r + c / width, (c + 1) % width)
+      }
+      .map(_ |+| at)
+      .zip(chunks)
+      .toList
 }
