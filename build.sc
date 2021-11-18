@@ -257,7 +257,7 @@ object Deps {
   val scoverageVersion = "1.4.8"
   val logback          = ivy"ch.qos.logback:logback-classic:1.1.3"
   val weaver           = ivy"com.disneystreaming::weaver-cats:0.7.4"
-  val sqlite           = ivy"org.xerial:sqlite-jdbc:3.34.0"
+  val sqlite           = ivy"org.xerial:sqlite-jdbc:3.36.0.3"
   val flyway           = ivy"org.flywaydb:flyway-core:7.10.0"
   val pureconfig       = ivy"com.github.pureconfig::pureconfig:0.16.0"
   val enumeratum       = ivy"com.beachape::enumeratum:1.7.0"
@@ -294,7 +294,7 @@ object Deps {
   }
 
   object Caliban {
-    val version = "1.1.1"
+    val version = "1.2.4"
     val core    = ivy"com.github.ghostdogpr::caliban:$version"
     val http4s  = ivy"com.github.ghostdogpr::caliban-http4s:$version"
     val cats    = ivy"com.github.ghostdogpr::caliban-cats:$version"
@@ -315,7 +315,7 @@ object Deps {
   }
 
   object Circe {
-    val version = "0.12.3"
+    val version = "0.14.1"
     val core    = ivy"io.circe::circe-core:$version"
     val generic = ivy"io.circe::circe-generic:$version"
     val parser  = ivy"io.circe::circe-parser:$version"

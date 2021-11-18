@@ -1,13 +1,13 @@
 # Fin
 [![codecov](https://codecov.io/gh/LaurenceWarne/libro-finito/branch/master/graph/badge.svg?token=IFT4R8T4F3)](https://codecov.io/gh/LaurenceWarne/libro-finito)
 
-`libro-finito` is a http service whose goal is to provide a local book management service.  Its main features are searching for books and aggregating books into user defined collections.  The main entry point is a graphql API located [here](/schema.gql).  Currently the only client application is [finito.el](https://github.com/LaurenceWarne/finito.el) (for Emacs).
+`libro-finito` is a http server whose goal is to provide a local book management service.  Its main features are searching for books and aggregating books into user defined collections.  The main entry point is a graphql API located [here](/schema.gql).  Currently the only client application is [finito.el](https://github.com/LaurenceWarne/finito.el) (for Emacs).
 
 Also check out the [Changelog](/CHANGELOG.md).
 
 # Configuration
 
-The server may be configured in a number of ways by via a file whose expected location is `~/.config/libro-finito/service.conf`:
+The server may be configured in a number of ways via a file whose expected location is `~/.config/libro-finito/service.conf`:
 
 ```hocon
 {
@@ -67,7 +67,7 @@ The special collections enabled by default are those defined in the above snippe
 
 # Local Development
 
-Optionally install [mill](https://com-lihaoyi.github.io/mill/mill/Intro_to_Mill.html#_installation) (otherwise swap `mill` for `./mill`).  You can start the server via:
+Optionally install [mill](https://com-lihaoyi.github.io/mill/mill/Intro_to_Mill.html#_installation) (otherwise swap `mill` for `./mill` below).  You can start the server via:
 
 ```bash
 mill finito.main.run
