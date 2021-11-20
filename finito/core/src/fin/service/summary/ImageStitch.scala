@@ -1,9 +1,10 @@
 package fin.service.summary
 
+import java.awt.image.BufferedImage
+
 import scala.annotation.tailrec
 
 import cats.implicits._
-import java.awt.image.BufferedImage
 
 object ImageStitch {
 
@@ -12,7 +13,7 @@ object ImageStitch {
       columns: Int
   ): Map[(Int, Int), SingularChunk] = {
     val gridStream = LazyList.iterate((0, 0)) {
-      case (r, c) => (r + c / columns, (c + 1) % columns)
+      case (r, c) => (r + (c + 1) / columns, (c + 1) % columns)
     }
     stitchRec(gridStream, images, Map.empty, columns)
   }
@@ -25,17 +26,18 @@ object ImageStitch {
       columns: Int
   ): Map[(Int, Int), SingularChunk] = {
     val head #:: tail = gridStream
-    val fitInFn       = ImageChunk.fitsIn(columns - (head._1 + 1))(_)
+    val fitInFn =
+      ImageChunk.fitsAt(head, columns - head._1, chunkMapping.keySet)(_)
     unprocessedChunks match {
       case (c: SingularChunk) :: chunksTail =>
         stitchRec(tail, chunksTail, chunkMapping + (head -> c), columns)
       case (c: CompositeChunk) :: chunksTail if fitInFn(c) =>
         val subChunks = c.flatten(head)
-        val fStream   = tail.filterNot(subChunks.map(_._2).contains(_))
+        val fStream   = tail.filterNot(subChunks.map(_._1).contains(_))
         stitchRec(fStream, chunksTail, chunkMapping ++ subChunks.toMap, columns)
-      case CompositeChunk(w, _) :: _ =>
+      case (_: CompositeChunk) :: _ =>
         val (maybeMatch, chunks) =
-          findFirstAndRemove(unprocessedChunks, ImageChunk.fitsIn(w))
+          findFirstAndRemove(unprocessedChunks, fitInFn)
         stitchRec(
           if (maybeMatch.isEmpty) gridStream.init else gridStream,
           chunks.prependedAll(maybeMatch),
@@ -66,10 +68,14 @@ object ImageStitch {
 sealed trait ImageChunk
 
 object ImageChunk {
-  def fitsIn(width: Int)(chunk: ImageChunk): Boolean = {
+  def fitsAt(centre: (Int, Int), width: Int, filled: Set[(Int, Int)])(
+      chunk: ImageChunk
+  ): Boolean = {
     chunk match {
-      case CompositeChunk(w, _) if w > width => false
-      case _                                 => true
+      case c @ CompositeChunk(w, _)
+          if (w > width || c.flatten(centre).exists(c => filled(c._1))) =>
+        false
+      case _ => true
     }
   }
 }
@@ -84,7 +90,7 @@ final case class CompositeChunk(
   def flatten(at: (Int, Int)): List[((Int, Int), SingularChunk)] =
     LazyList
       .iterate((0, 0)) {
-        case (r, c) => (r + c / width, (c + 1) % width)
+        case (r, c) => (r + (c + 1) / width, (c + 1) % width)
       }
       .map(_ |+| at)
       .zip(chunks)

@@ -1,15 +1,17 @@
 package fin.service.summary
 
+import java.awt.Image
+import java.awt.image.BufferedImage
+import java.io.File
+import javax.imageio.ImageIO
+
+import cats.Parallel
+import cats.effect.kernel.Async
 import cats.implicits._
+import fs2.io.file._
+import org.http4s.client.Client
 
 import fin.Types._
-import org.http4s.client.Client
-import cats.Parallel
-import fs2.io.file._
-import cats.effect.kernel.Async
-import java.awt.image.BufferedImage
-import javax.imageio.ImageIO
-import java.awt.Image
 
 class BufferedImageMontageService[F[_]: Async: Parallel](
     client: Client[F],
@@ -17,35 +19,38 @@ class BufferedImageMontageService[F[_]: Async: Parallel](
     tmpDirectory: String = "/tmp"
 ) extends MontageService[F] {
 
+  private val imageType = BufferedImage.TYPE_INT_ARGB
+
   override def montage(books: List[UserBook]): F[String] =
     for {
       chunks <- books.parTraverse { b =>
         download(b.thumbnailUri, b.title).map { img =>
-          val resizedImg = resize(img)
-          if (specification.largeImgPredicate(b)) split(resizedImg)
-          else (SingularChunk(resizedImg): ImageChunk)
+          val MontageSpecification(_, width, height, _, _) = specification
+          if (specification.largeImgPredicate(b)) {
+            val resizedImg = resize(img, width, height)
+            split(resizedImg)
+          } else {
+            val resizedImg = resize(img, width / 2, height / 2)
+            (SingularChunk(resizedImg): ImageChunk)
+          }
         }
       }
       map = ImageStitch.stitch(chunks, specification.columns)
       img = collageBufferedImages(map)
-    } yield img.toString
+      _ <- Async[F].delay(ImageIO.write(img, "png", new File("montage.png")))
+    } yield map.toString
 
   private def collageBufferedImages(
       chunkMapping: Map[(Int, Int), SingularChunk]
   ): BufferedImage = {
-    val MontageSpecification(columns, width, height, largeImgScalaFactor, _) =
+    val MontageSpecification(columns, widthL, heightL, largeImgScalaFactor, _) =
       specification
-    val rows = chunkMapping.keySet.map(_._1).max
-    val img =
-      new BufferedImage(
-        columns * (width / largeImgScalaFactor),
-        rows * (height / largeImgScalaFactor),
-        BufferedImage.TYPE_INT_ARGB
-      )
-    val g2d = img.createGraphics()
+    val (w, h) = (widthL / largeImgScalaFactor, heightL / largeImgScalaFactor)
+    val rows   = chunkMapping.keySet.map(_._1).max
+    val img    = new BufferedImage(columns * w, (rows + 1) * h, imageType)
+    val g2d    = img.createGraphics()
     chunkMapping.foreach {
-      case ((r, c), chunk) =>
-        g2d.drawImage(chunk.img, c * width, r * height, null)
+      case ((r, c), chunk) => g2d.drawImage(chunk.img, c * w, r * h, null)
     }
     img
   }
@@ -65,27 +70,26 @@ class BufferedImageMontageService[F[_]: Async: Parallel](
     } yield img
   }
 
-  private def resize(img: BufferedImage): BufferedImage = {
-    val MontageSpecification(_, width, height, _, _) = specification
+  private def resize(img: BufferedImage, w: Int, h: Int): BufferedImage = {
     // https://stackoverflow.com/questions/9417356/bufferedimage-resize
-    val tmp  = img.getScaledInstance(width, height, Image.SCALE_SMOOTH)
-    val dimg = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+    val tmp  = img.getScaledInstance(w, h, Image.SCALE_SMOOTH)
+    val dimg = new BufferedImage(w, h, imageType)
     val g2d  = dimg.createGraphics()
     g2d.drawImage(tmp, 0, 0, null)
     g2d.dispose()
     dimg
   }
 
-  private def split(img: BufferedImage): ImageChunk = {
-    val MontageSpecification(columns, width, height, largeImgScalaFactor, _) =
+  private def split(img: BufferedImage): CompositeChunk = {
+    val MontageSpecification(_, width, height, largeImgScaleFactor, _) =
       specification
-    val (w, h) = (width / largeImgScalaFactor, height / largeImgScalaFactor)
-    val subImages = LazyList
-      .iterate((0, 0)) {
-        case (x, y) => ((x + w) % (w * columns), y + h * (x / (w * columns)))
+    val (w, h) = (width / largeImgScaleFactor, height / largeImgScaleFactor)
+    val subImages = List
+      .tabulate(largeImgScaleFactor, largeImgScaleFactor) {
+        case (y, x) => SingularChunk(img.getSubimage(x * w, y * h, w, h))
       }
-      .map { case (x, y) => SingularChunk(img.getSubimage(x, y, w, h)) }
-    CompositeChunk(columns, subImages.toList)
+      .flatten
+    CompositeChunk(largeImgScaleFactor, subImages.toList)
   }
 }
 
@@ -93,7 +97,7 @@ final case class MontageSpecification(
     columns: Int = 6,
     /** Corresponds the width of large images */
     imageWidth: Int = 128,
-    /** Corresponds the width of large images */
+    /** Corresponds the height of large images */
     imageHeight: Int = 196,
     largeImgScaleFactor: Int = 2,
     largeImgPredicate: UserBook => Boolean = b => b.rating.exists(_ >= 5)

@@ -1,9 +1,12 @@
 package fin.service.summary
 
-import weaver.IOSuite
-import org.http4s.blaze.client.BlazeClientBuilder
+import scala.util.Random
+
 import cats.effect.IO
+import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.client.Client
+import weaver.IOSuite
+
 import fin.Types._
 
 object BufferedImageMontageServiceTest extends IOSuite {
@@ -11,16 +14,48 @@ object BufferedImageMontageServiceTest extends IOSuite {
   override type Res = Client[IO]
   override def sharedResource = BlazeClientBuilder[IO].resource
 
+  val uris = List(
+    "http://books.google.com/books/content?id=sMHmCwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+    "http://books.google.com/books/content?id=OV4eQgAACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+    "http://books.google.com/books/content?id=JYMLR4gzSR8C&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+    "http://books.google.com/books/content?id=E8Zp238yVY0C&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+    "http://books.google.com/books/content?id=reNQtm7Nv9kC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+    "http://books.google.com/books/content?id=B91TKeLQ54EC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+    "http://books.google.com/books/content?id=gnwETwF8Zb4C&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+    "http://books.google.com/books/content?id=_0YB05NPhJUC&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+    "http://books.google.com/books/content?id=TnzyrQEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+    "http://books.google.com/books/content?id=cIMdYAAACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api",
+    "http://books.google.com/books/content?id=kd1XlWVAIWQC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+    "http://books.google.com/books/content?id=Jmv6DwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+    "http://books.google.com/books/content?id=75C5DAAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+    "http://books.google.com/books/content?id=1FrJqcRILaoC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+    "http://books.google.com/books/content?id=pilZDwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+    "http://books.google.com/books/content?id=oct4DwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+    "http://books.google.com/books/content?id=CVBObgUR2zcC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+    "http://books.google.com/books/content?id=V5s14nks9I8C&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+    "http://books.google.com/books/content?id=MoEO9onVftUC&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
+    "http://books.google.com/books/content?id=DTS-zQEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api"
+  )
+
   test("foobar") { client =>
-    val uri =
-      "http://books.google.com/books/content?id=jUX8N9kiCiQC&printsec=frontcover&img=1&zoom=1&source=gbs_api"
-    val book = UserBook("am", List.empty, "", "", uri, None, None, None, None)
+    val books =
+      uris.map(uri =>
+        UserBook(
+          uri.drop(38),
+          List.empty,
+          "",
+          "",
+          uri,
+          None,
+          Some(5 - (Random.nextInt() % 5)),
+          None,
+          None
+        )
+      )
     val service =
       new BufferedImageMontageService[IO](client, MontageSpecification())
-    println(book)
-    println(client)
     for {
-      _ <- service.montage(List(book))
+      _ <- service.montage(books)
     } yield success
   }
 }
