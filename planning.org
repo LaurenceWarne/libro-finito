@@ -101,10 +101,14 @@ The problem here is that the returned isbns are no good since they point to fren
 *** DONE Add error classes for better testing than ~isLeft~
 *** DONE Add typeclass to put objects into ~Bindings~
 *** TODO Add logging to file in config directory
+https://gist.github.com/greenlaw110/e32d0cb433ee89b12790ad75e94d3a91
 *** DONE Add IOCaseApp for flags
 *** DONE Add tracing
 *** TODO Add cli option for just outputting the default config
-*** TODO Replace betterfiles with fs2 File ops
+*** DONE Replace betterfiles with fs2 File ops
+*** TODO Why do we get mulitple:
+18:29:07.639 [blaze-selector-0] INFO  o.h.b.c.nio1.NIO1SocketServerGroup - Accepted connection from /0:0:0:0:0:0:0:1:43412
+*** TODO Log response timings on the INFO log level
 
 ** Bugs
 *** DONE Adding the same book to a collection results in an uhelpful sql error
