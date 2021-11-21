@@ -3,6 +3,7 @@ package fin
 import _root_.cats.arrow.FunctionK
 import _root_.cats.effect._
 import _root_.cats.effect.std.Dispatcher
+import _root_.cats.implicits._
 import caseapp._
 import caseapp.cats._
 import doobie._
@@ -74,11 +75,13 @@ object Main extends IOCaseApp[CliOptions] {
             wrappedBookManagementService,
             wrappedCollectionService
           )
+          debug <-
+            IO(sys.env.get("LOG_LEVEL").exists(_.toLowerCase === "debug"))
           server <-
             BlazeServerBuilder[IO]
               .withBanner(Seq(Banner.value))
               .bindHttp(config.port, config.host)
-              .withHttpApp(Routes.routes(interpreter).orNotFound)
+              .withHttpApp(Routes.routes(interpreter, debug).orNotFound)
               .serve
               .compile
               .drain

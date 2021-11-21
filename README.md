@@ -79,6 +79,8 @@ You can then open the playground at http://localhost:56848/graphiql, alternative
 curl 'http://localhost:56848/api/graphql' -H 'Accept-Encoding: gzip, deflate, br' -H 'Content-Type: application/json' -H 'Accept: application/json' --data-binary '{"query":"query {\n  collection(name: \"My Books\") {\n    name\n    books {\n      title\n    }\n  }\n}"}' --compressed
 ```
 
+Setting `LOG_LEVEL` to `DEBUG` will prompt more verbose output.
+
 All tests can be run using:
 
 ```bash

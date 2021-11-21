@@ -12,7 +12,8 @@ import org.http4s.{HttpRoutes, Response, StaticFile}
 object Routes {
 
   def routes(
-      interpreter: GraphQLInterpreter[Any, CalibanError]
+      interpreter: GraphQLInterpreter[Any, CalibanError],
+      debug: Boolean
   )(implicit
       runtime: zio.Runtime[Any],
       dispatcher: Dispatcher[IO]
@@ -20,7 +21,7 @@ object Routes {
     val serviceRoutes =
       Http4sAdapter.makeHttpServiceF[IO, Any, CalibanError](interpreter)
     val loggedRoutes =
-      Logger.httpRoutes(logHeaders = true, logBody = true)(serviceRoutes)
+      Logger.httpRoutes(logHeaders = true, logBody = debug)(serviceRoutes)
     Router[IO](
       "/version" -> Kleisli.liftF(
         OptionT.pure[IO](
