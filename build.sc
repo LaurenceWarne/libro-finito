@@ -264,7 +264,7 @@ object Deps {
   // https://github.com/luaj/luaj/issues/91 ):
   val luaj           = ivy"org.luaj:luaj-jse:3.0.1"
   val testContainers = ivy"com.dimafeng::testcontainers-scala:0.39.7"
-  val sttpHttp4s     = ivy"com.softwaremill.sttp.client3::http4s-backend:3.3.14"
+  val sttpHttp4s     = ivy"com.softwaremill.sttp.client3::http4s-backend:3.3.17"
 
   object Compiler {
     val semanticDb       = ivy"org.scalameta::semanticdb-scalac:4.4.22"
