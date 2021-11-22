@@ -65,7 +65,7 @@ object ImageStitch {
   }
 }
 
-sealed trait ImageChunk
+sealed trait ImageChunk extends Product with Serializable
 
 object ImageChunk {
   def fitsAt(centre: (Int, Int), width: Int, filled: Set[(Int, Int)])(

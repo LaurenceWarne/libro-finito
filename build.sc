@@ -118,7 +118,6 @@ object finito extends Module {
         Deps.Circe.core,
         Deps.Circe.generic,
         Deps.Circe.parser,
-        Deps.enumeratum,
         Deps.Http4s.http4sBlazeClient,
         Deps.Http4s.http4sDsl,
         Deps.CatsEffect.catsEffect,
@@ -260,7 +259,6 @@ object Deps {
   val sqlite           = ivy"org.xerial:sqlite-jdbc:3.36.0.3"
   val flyway           = ivy"org.flywaydb:flyway-core:7.10.0"
   val pureconfig       = ivy"com.github.pureconfig::pureconfig:0.16.0"
-  val enumeratum       = ivy"com.beachape::enumeratum:1.7.0"
   // https://github.com/luaj/luaj/issues/91 ):
   val luaj           = ivy"org.luaj:luaj-jse:3.0.1"
   val testContainers = ivy"com.dimafeng::testcontainers-scala:0.39.7"

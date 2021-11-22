@@ -63,7 +63,7 @@ object HookExecutionServiceImpl {
   def apply[F[_]: Sync] = new HookExecutionServiceImpl[F]
 }
 
-sealed trait ProcessResult
+sealed trait ProcessResult extends Product with Serializable
 
 object ProcessResult {
   case object Add    extends ProcessResult
