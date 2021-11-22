@@ -5,8 +5,26 @@
     </encoder>
   </appender>
 
+  <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${HOME}/.config/libro-finito/logs/out.log</file>
+    <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+
+    <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+      <FileNamePattern>${HOME}/.config/libro-finito/out-%i.log</FileNamePattern>
+      <MinIndex>1</MinIndex>
+      <MaxIndex>10</MaxIndex>
+    </rollingPolicy>
+
+    <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+      <MaxFileSize>2MB</MaxFileSize>
+    </triggeringPolicy>
+  </appender>
+
   <root level="${LOG_LEVEL:-INFO}">
     <appender-ref ref="STDOUT" />
+    <appender-ref ref="FILE" />
   </root>
 
 </configuration>

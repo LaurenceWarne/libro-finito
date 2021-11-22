@@ -100,7 +100,7 @@ The problem here is that the returned isbns are no good since they point to fren
 *** DONE Get better errors than "Effect Failure"
 *** DONE Add error classes for better testing than ~isLeft~
 *** DONE Add typeclass to put objects into ~Bindings~
-*** TODO Add logging to file in config directory
+*** DONE Add logging to file in config directory
 https://gist.github.com/greenlaw110/e32d0cb433ee89b12790ad75e94d3a91
 *** DONE Add IOCaseApp for flags
 *** DONE Add tracing
