@@ -11,7 +11,7 @@ import doobie.implicits._
 import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.client.middleware.GZip
-import org.http4s.implicits._
+import org.typelevel.ci._
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import zio.Runtime
@@ -76,12 +76,12 @@ object Main extends IOCaseApp[CliOptions] {
             wrappedCollectionService
           )
           debug <-
-            IO(sys.env.get("LOG_LEVEL").exists(_.toLowerCase === "debug"))
+            IO(sys.env.get("LOG_LEVEL").exists(CIString(_) === ci"DEBUG"))
           server <-
             BlazeServerBuilder[IO]
               .withBanner(Seq(Banner.value))
               .bindHttp(config.port, config.host)
-              .withHttpApp(Routes.routes(interpreter, debug).orNotFound)
+              .withHttpApp(Routes.routes(interpreter, debug))
               .serve
               .compile
               .drain

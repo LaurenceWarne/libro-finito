@@ -6,8 +6,8 @@ import cats.effect.IO
 import cats.effect.std.Dispatcher
 import fs2.Stream
 import org.http4s.server.Router
-import org.http4s.server.middleware.Logger
-import org.http4s.{HttpRoutes, Response, StaticFile}
+import org.http4s.server.middleware.{Logger, ResponseTiming}
+import org.http4s.{HttpApp, Response, StaticFile}
 
 object Routes {
 
@@ -17,22 +17,20 @@ object Routes {
   )(implicit
       runtime: zio.Runtime[Any],
       dispatcher: Dispatcher[IO]
-  ): HttpRoutes[IO] = {
+  ): HttpApp[IO] = {
     val serviceRoutes =
       Http4sAdapter.makeHttpServiceF[IO, Any, CalibanError](interpreter)
-    val loggedRoutes =
-      Logger.httpRoutes(logHeaders = true, logBody = debug)(serviceRoutes)
-    Router[IO](
+    val app = Router[IO](
       "/version" -> Kleisli.liftF(
         OptionT.pure[IO](
           Response[IO](body = Stream.emits(BuildInfo.version.getBytes("UTF-8")))
         )
       ),
-      "/api/graphql" -> loggedRoutes,
+      "/api/graphql" -> serviceRoutes,
       "/graphiql" -> Kleisli.liftF(
-        StaticFile
-          .fromResource("/graphql-playground.html", None)
+        StaticFile.fromResource("/graphql-playground.html", None)
       )
-    )
+    ).orNotFound
+    Logger.httpApp(logHeaders = true, logBody = debug)(ResponseTiming(app))
   }
 }
