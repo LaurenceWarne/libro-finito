@@ -204,6 +204,35 @@ object IntegrationTests extends IOSuite {
       } yield expect(finishResponse.lastRead.exists(_ == finishedDate))
   }
 
+  testUsingUri("books") {
+    case (uri, backend) =>
+      val title      = "Lord of the Rings"
+      val authors    = "Tolkien"
+      val maxResults = 10
+      val lang       = "en"
+      val booksRequest =
+        books(title.some, authors.some, maxResults.some, lang.some)(
+          UserBook.view
+        )
+      for {
+        // KEYWORD SEARCH
+        booksResponse <- send(uri, backend)(booksRequest)
+      } yield expect(booksResponse.nonEmpty)
+  }
+
+  testUsingUri("series") {
+    case (uri, backend) =>
+      val bookInput = bookTemplate.copy(
+        title = "Neuromancer",
+        authors = List("William Gibson")
+      )
+      val seriesRequest = series(bookInput)(UserBook.view)
+      for {
+        // SEARCH SERIES
+        seriesResponse <- send(uri, backend)(seriesRequest)
+      } yield expect(seriesResponse.nonEmpty)
+  }
+
   private def send[R: IsOperation, A](uri: Uri, backend: ClientBackend)(
       selection: SelectionBuilder[R, A]
   ): IO[A] =
