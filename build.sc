@@ -292,7 +292,7 @@ object Deps {
   }
 
   object Caliban {
-    val version = "1.2.4"
+    val version = "1.3.0"
     val core    = ivy"com.github.ghostdogpr::caliban:$version"
     val http4s  = ivy"com.github.ghostdogpr::caliban-http4s:$version"
     val cats    = ivy"com.github.ghostdogpr::caliban-cats:$version"

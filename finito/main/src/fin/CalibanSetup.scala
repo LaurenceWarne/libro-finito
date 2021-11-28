@@ -39,6 +39,7 @@ object CalibanSetup {
       seriesArgs => seriesInfoService.series(seriesArgs),
       collectionService.collections,
       collectionArgs => collectionService.collection(collectionArgs),
+      _ => ???,
       _ => ???
     )
     val mutations = Mutations[F](

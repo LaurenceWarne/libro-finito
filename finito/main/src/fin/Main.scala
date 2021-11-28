@@ -77,6 +77,7 @@ object Main extends IOCaseApp[CliOptions] {
           )
           debug <-
             IO(sys.env.get("LOG_LEVEL").exists(CIString(_) === ci"DEBUG"))
+          _ <- logger.debug("Starting http4s server...")
           server <-
             BlazeServerBuilder[IO]
               .withBanner(Seq(Banner.value))

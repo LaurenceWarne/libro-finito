@@ -28,14 +28,14 @@ class GoogleBookInfoService[F[_]: Concurrent: Logger] private (
   def search(booksArgs: QueriesBooksArgs): F[List[UserBook]] =
     for {
       uri   <- MonadThrow[F].fromEither(uriFromBooksArgs(booksArgs))
-      _     <- Logger[F].info(uri.toString)
+      _     <- Logger[F].debug(uri.toString)
       books <- booksFromUri(uri, searchPartialFn)
     } yield books
 
   def fromIsbn(bookArgs: QueriesBookArgs): F[List[UserBook]] = {
     val uri = uriFromBookArgs(bookArgs)
     for {
-      _     <- Logger[F].info(uri.toString)
+      _     <- Logger[F].debug(uri.toString)
       books <- booksFromUri(uri, isbnPartialFn)
     } yield books
   }

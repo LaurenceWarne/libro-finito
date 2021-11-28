@@ -48,6 +48,13 @@ type Collection {
   preferredSort: Sort!
 }
 
+type Summary {
+  read: Int!
+  added: Int!
+  averageRating: Float!
+  montage: String!
+}
+
 type Queries {
   """
   Search for books matching the specified parameters.  langRestrict should be
@@ -64,10 +71,10 @@ type Queries {
   collections: [Collection!]!
   collection(name: String!): Collection!
   export(collection: String!, exportType: PortType!): String!
+  summary(from: Date, to: Date): Summary!
 }
 
-type Mutations {
-  createCollection(name: String!, books: [BookInput!]): Collection!
+type Mutations {  createCollection(name: String!, books: [BookInput!]): Collection!
   """
   Delete a collection, will error if the collection does not exist.
   """
