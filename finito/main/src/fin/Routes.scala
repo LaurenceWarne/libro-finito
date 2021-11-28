@@ -13,15 +13,17 @@ import org.http4s.server.middleware.{Logger, ResponseTiming}
 
 object Routes {
 
+  type Env = zio.clock.Clock with zio.blocking.Blocking
+
   def routes(
       interpreter: GraphQLInterpreter[Any, CalibanError],
       debug: Boolean
   )(implicit
-      runtime: zio.Runtime[zio.clock.Clock with zio.blocking.Blocking],
+      runtime: zio.Runtime[Env],
       dispatcher: Dispatcher[IO]
   ): HttpApp[IO] = {
     val serviceRoutes: HttpRoutes[IO] =
-      wrapRoute[IO, zio.clock.Clock with zio.blocking.Blocking](
+      wrapRoute[IO, Env](
         Http4sAdapter.makeHttpService[Any, CalibanError](interpreter)
       )
     val app = Router[IO](

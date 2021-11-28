@@ -5,6 +5,7 @@ import scala.annotation.nowarn
 import caliban.CalibanError.ExecutionError
 import caliban._
 import caliban.interop.cats.implicits._
+import caliban.schema.Schema
 import caliban.wrappers.ApolloTracing.apolloTracing
 import caliban.wrappers.Wrappers
 import cats.effect.Async
@@ -12,6 +13,7 @@ import cats.effect.std.Dispatcher
 import cats.implicits._
 
 import fin.Operations._
+import fin.Types.BookInput
 import fin.service.book._
 import fin.service.collection._
 import fin.service.search._
@@ -23,6 +25,9 @@ import Value._
 object CalibanSetup {
 
   type Env = zio.clock.Clock with zio.console.Console
+
+  implicit val bookInputSchema: Schema[Any, BookInput] =
+    Schema.gen[Any, BookInput].rename("BookInput", "BookInput".some)
 
   def interpreter[F[_]: Async](
       bookInfoService: BookInfoService[F],
