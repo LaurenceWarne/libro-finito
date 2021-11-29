@@ -1,11 +1,14 @@
 package fin
 
+import java.time.LocalDate
+
 import scala.annotation.nowarn
+import scala.util.Try
 
 import caliban.CalibanError.ExecutionError
 import caliban._
 import caliban.interop.cats.implicits._
-import caliban.schema.Schema
+import caliban.schema._
 import caliban.wrappers.ApolloTracing.apolloTracing
 import caliban.wrappers.Wrappers
 import cats.effect.Async
@@ -21,13 +24,11 @@ import fin.service.search._
 import CalibanError._
 import ResponseValue._
 import Value._
+import FinitoSchema._
 
 object CalibanSetup {
 
   type Env = zio.clock.Clock with zio.console.Console
-
-  implicit val bookInputSchema: Schema[Any, BookInput] =
-    Schema.gen[Any, BookInput].rename("BookInput", "BookInput".some)
 
   def interpreter[F[_]: Async](
       bookInfoService: BookInfoService[F],
@@ -93,4 +94,30 @@ object CalibanSetup {
           ObjectValue(List(("errorCode", StringValue("UNKNOWN")))).some
         )
     }
+}
+
+object FinitoSchema {
+  implicit val bookInputSchema: Schema[Any, BookInput] =
+    Schema.gen[Any, BookInput].rename("BookInput", "BookInput".some)
+
+  implicit val localDateSchema: Schema[Any, LocalDate] =
+    Schema.scalarSchema("DateTime", None, None, d => StringValue(d.toString))
+
+  implicit val localDateArgBuilder: ArgBuilder[LocalDate] = {
+    case StringValue(value) =>
+      Try(LocalDate.parse(value))
+        .fold(
+          ex =>
+            Left(
+              ExecutionError(
+                s"Can't parse $value into a LocalDate",
+                innerThrowable = Some(ex)
+              )
+            ),
+          Right(_)
+        )
+    case other =>
+      Left(ExecutionError(s"Can't build a LocalDate from input $other"))
+  }
+
 }
