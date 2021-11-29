@@ -3,7 +3,7 @@ import $ivy.`com.lihaoyi::mill-contrib-buildinfo:$MILL_VERSION`
 import $ivy.`com.lihaoyi::mill-contrib-docker:$MILL_VERSION`
 import $ivy.`com.lihaoyi::mill-contrib-scoverage:$MILL_VERSION`
 import $ivy.`com.goyeau::mill-scalafix:0.2.4`
-import $ivy.`com.goyeau::mill-git:0.2.2`
+import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version_mill0.9:0.1.2`
 import $file.plugins.calibanSchemaGen
 import mill._, scalalib._, scalafmt._
 import mill.scalalib.publish._
@@ -11,12 +11,11 @@ import mill.contrib.buildinfo.BuildInfo
 import mill.contrib.docker.DockerModule
 import mill.contrib.scoverage.{ScoverageModule, ScoverageReport}
 import mill.eval.Evaluator
-import com.goyeau.mill.git.GitVersionModule
 import com.goyeau.mill.scalafix.ScalafixModule
 import coursier.maven.MavenRepository
 import calibanSchemaGen.{CalibanClientModule, CalibanSchemaModule}
+import de.tobiasroeser.mill.vcs.version.VcsVersion
 
-val finitoVersion  = GitVersionModule.version()
 val gqlSchemaPath  = "schema.gql"
 val finPackageName = "fin"
 
@@ -39,6 +38,9 @@ object finito extends Module {
           Deps.testContainers
         )
     }
+
+    def finitoVersion: T[String] =
+      VcsVersion.vcsState().format(tagModifier = tag => tag.stripPrefix("v"))
 
     def buildInfoPackageName = Some(finPackageName)
 
