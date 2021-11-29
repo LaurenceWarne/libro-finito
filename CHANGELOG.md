@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.6.1
+
+* [384c0ef](https://github.com/LaurenceWarne/libro-finito/commit/384c0efbf5ba46303c8bd91c186808da168ab15c) Streamline logging
+
 ## v0.6.0
 
 * [c4ab43f](https://github.com/LaurenceWarne/libro-finito/commit/c4ab43f6384c10ad556a9bf05cfb57ebfac011d5) Provisional support for looking up book series
