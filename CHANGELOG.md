@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.6.2
+
+* [49b4300](https://github.com/LaurenceWarne/libro-finito/commit/49b43001f90229e731279e3e5f34aea6f1146ce4) Fix Schema scalars mis-translated
+
 ## v0.6.1
 
 * [384c0ef](https://github.com/LaurenceWarne/libro-finito/commit/384c0efbf5ba46303c8bd91c186808da168ab15c) Streamline logging
