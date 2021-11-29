@@ -55,12 +55,10 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
   ): F[Collection] = {
     val transaction = for {
       collection <- collectionOrError(args.currentName)
-      _ <- MonadThrow[G].unlessA(
+      _ <- MonadThrow[G].raiseUnless(
         List(args.newName, args.preferredSortType, args.sortAscending)
           .exists(_.nonEmpty)
-      ) {
-        MonadThrow[G].raiseError(NotEnoughArgumentsForUpdateError)
-      }
+      )(NotEnoughArgumentsForUpdateError)
       _ <- args.newName.traverse(errorIfCollectionExists)
       sort = Sort(
         args.preferredSortType.getOrElse(collection.preferredSort.`type`),
@@ -88,12 +86,9 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
           DefaultCollectionNotSupportedError
         )
         collection <- collectionOrError(collectionName)
-        _ <-
-          if (collection.books.exists(_.isbn === args.book.isbn))
-            MonadThrow[G].raiseError(
-              BookAlreadyInCollectionError(collection.name, args.book.title)
-            )
-          else MonadThrow[G].unit
+        _ <- MonadThrow[G].raiseWhen(
+          collection.books.exists(_.isbn === args.book.isbn)
+        )(BookAlreadyInCollectionError(collection.name, args.book.title))
         _ <- collectionRepo.addBookToCollection(collectionName, args.book, date)
       } yield collection.copy(books = toUserBook(args.book) :: collection.books)
     Dates.currentDate(clock).flatMap(date => transact(transaction(date)))
@@ -127,8 +122,8 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
   private def errorIfCollectionExists(collection: String): G[Unit] =
     for {
       maybeExistingCollection <- collectionRepo.collection(collection)
-      _ <- MonadThrow[G].whenA(maybeExistingCollection.nonEmpty)(
-        MonadThrow[G].raiseError(CollectionAlreadyExistsError(collection))
+      _ <- MonadThrow[G].raiseWhen(maybeExistingCollection.nonEmpty)(
+        CollectionAlreadyExistsError(collection)
       )
     } yield ()
 

@@ -277,7 +277,7 @@ object Deps {
   }
 
   object CatsEffect {
-    val version    = "3.2.5"
+    val version    = "3.3.0"
     val catsEffect = ivy"org.typelevel::cats-effect:$version"
   }
 

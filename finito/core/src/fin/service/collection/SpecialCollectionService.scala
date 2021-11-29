@@ -42,19 +42,19 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
   override def deleteCollection(
       args: MutationsDeleteCollectionArgs
   ): F[Unit] =
-    Sync[F].whenA(
+    Sync[F].raiseWhen(
       collectionHooks.exists(_.collection === args.name)
-    )(Sync[F].raiseError(CannotDeleteSpecialCollectionError)) *>
+    )(CannotDeleteSpecialCollectionError) *>
       wrappedCollectionService.deleteCollection(args)
 
   override def updateCollection(
       args: MutationsUpdateCollectionArgs
   ): F[Collection] =
-    Sync[F].whenA(
+    Sync[F].raiseWhen(
       args.newName.nonEmpty && collectionHooks.exists(
         _.collection === args.currentName
       )
-    )(Sync[F].raiseError(CannotChangeNameOfSpecialCollectionError)) *>
+    )(CannotChangeNameOfSpecialCollectionError) *>
       wrappedCollectionService.updateCollection(args)
 
   override def addBookToCollection(

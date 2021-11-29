@@ -45,10 +45,8 @@ class BookManagementServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
     val transaction: LocalDate => G[UserBook] = date =>
       for {
         book <- createIfNotExists(args.book, date)
-        _ <- MonadThrow[G].whenA(book.startedReading.nonEmpty) {
-          MonadThrow[G].raiseError(
-            BookAlreadyBeingReadError(args.book)
-          )
+        _ <- MonadThrow[G].raiseWhen(book.startedReading.nonEmpty) {
+          BookAlreadyBeingReadError(args.book)
         }
         _ <- bookRepo.startReading(args.book, date)
       } yield book.copy(startedReading = date.some)
