@@ -2,6 +2,8 @@ package fin.persistence
 
 import java.time.LocalDate
 
+import scala.math.Ordering.Implicits._
+
 import cats.data.NonEmptyList
 import cats.implicits._
 import doobie.Fragments._
@@ -78,6 +80,21 @@ object SqliteBookRepository extends BookRepository[ConnectionIO] {
       _ <- BookFragments.deleteRead(isbn).update.run
       _ <- BookFragments.deleteRated(isbn).update.run
     } yield ()
+
+  override def retrieveBooksInside(
+      from: LocalDate,
+      to: LocalDate
+  ): ConnectionIO[List[UserBook]] =
+    for {
+      rawBooks <- BookFragments.allBooks.query[BookRow].to[List]
+      inRange = (d: LocalDate) => from <= d && d <= to
+      books =
+        rawBooks
+          .map(_.toBook)
+          .filter { d =>
+            d.dateAdded.exists(inRange) || d.lastRead.exists(inRange)
+          }
+    } yield books
 }
 
 object BookFragments {
@@ -160,6 +177,8 @@ object BookFragments {
     fr"""
        |DELETE FROM rated_books
        |WHERE isbn = $isbn""".stripMargin
+
+  def allBooks: Fragment = selectBook
 
   private def selectBook: Fragment =
     fr"""

@@ -12,4 +12,5 @@ trait BookRepository[F[_]] {
   def startReading(book: BookInput, date: LocalDate): F[Unit]
   def finishReading(book: BookInput, date: LocalDate): F[Unit]
   def deleteBookData(isbn: String): F[Unit]
+  def retrieveBooksInside(from: LocalDate, to: LocalDate): F[List[UserBook]]
 }
