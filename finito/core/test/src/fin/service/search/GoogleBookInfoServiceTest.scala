@@ -2,25 +2,17 @@ package fin.service.search
 
 import cats.effect._
 import cats.implicits._
-import fs2.Stream
-import org.http4s.Response
 import org.http4s.client.Client
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import weaver._
 
 import fin.Types._
 import fin._
+import fin.service.mockedClient
 
 object GoogleBookInfoServiceTest extends SimpleIOSuite {
 
   implicit val logger = Slf4jLogger.getLogger[IO]
-
-  def mockedClient(response: String): Client[IO] =
-    Client.apply[IO](_ =>
-      Resource.pure[IO, Response[IO]](
-        Response[IO](body = Stream.emits(response.getBytes("UTF-8")))
-      )
-    )
 
   test("search parses title, author and description from json") {
     val title       = "The Casual Vacancy"

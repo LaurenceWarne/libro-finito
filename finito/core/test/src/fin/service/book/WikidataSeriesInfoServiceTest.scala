@@ -2,25 +2,17 @@ package fin.service.book
 
 import cats.effect._
 import cats.implicits._
-import org.http4s.Response
-import org.http4s.client.Client
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import weaver._
 
+import fin.service.mockedClient
 import fin.Types._
 import fin.service.search.BookInfoService
 
 object WikidataSeriesInfoServiceTest extends SimpleIOSuite {
 
   implicit def unsafeLogger: Logger[IO] = Slf4jLogger.getLogger
-
-  def mockedClient(response: String): Client[IO] =
-    Client.apply[IO](_ =>
-      Resource.pure[IO, Response[IO]](
-        Response[IO](body = fs2.Stream.emits(response.getBytes("UTF-8")))
-      )
-    )
 
   val emptyBook = UserBook("", List.empty, "", "", "", None, None, None, None)
 

@@ -53,7 +53,7 @@ object BufferedImageMontageServiceTest extends IOSuite {
         )
       )
     val service =
-      new BufferedImageMontageService[IO](client, MontageSpecification())
+      BufferedImageMontageService[IO](client, MontageSpecification())
     for {
       _ <- service.montage(books)
     } yield success

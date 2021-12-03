@@ -2,9 +2,6 @@ package fin.service.book
 
 import java.time.{LocalDate, ZoneId}
 
-import scala.concurrent.duration.{FiniteDuration, MILLISECONDS}
-
-import cats.Applicative
 import cats.arrow.FunctionK
 import cats.effect._
 import cats.implicits._
@@ -186,20 +183,4 @@ object BookManagementServiceImplTest extends IOSuite {
       book <- repo.retrieveBook(bookToClear.isbn)
     } yield expect(book.exists(_ == toUserBook(bookToClear)))
   }
-}
-
-/**
-  * A Test clock that always returns a constant time.
-  *
-  * @param epoch the constant time as a unix epoch
-  */
-final case class TestClock[F[_]: Applicative](epoch: Long) extends Clock[F] {
-
-  override def applicative = implicitly[Applicative[F]]
-
-  override def realTime: F[FiniteDuration] =
-    FiniteDuration(epoch, MILLISECONDS).pure[F]
-
-  override def monotonic: F[FiniteDuration] =
-    FiniteDuration(epoch, MILLISECONDS).pure[F]
 }

@@ -8,15 +8,13 @@ import javax.imageio.ImageIO
 import cats.Parallel
 import cats.effect.kernel.Async
 import cats.implicits._
-import fs2.io.file._
 import org.http4s.client.Client
 
 import fin.Types._
 
-class BufferedImageMontageService[F[_]: Async: Parallel](
+class BufferedImageMontageService[F[_]: Async: Parallel] private (
     client: Client[F],
-    specification: MontageSpecification,
-    tmpDirectory: String = "/tmp"
+    specification: MontageSpecification
 ) extends MontageService[F] {
 
   private val imageType = BufferedImage.TYPE_INT_ARGB
@@ -24,7 +22,7 @@ class BufferedImageMontageService[F[_]: Async: Parallel](
   override def montage(books: List[UserBook]): F[String] =
     for {
       chunks <- books.parTraverse { b =>
-        download(b.thumbnailUri, b.title).map { img =>
+        download(b.thumbnailUri).map { img =>
           val MontageSpecification(_, width, height, _, _) = specification
           if (specification.largeImgPredicate(b)) {
             val resizedImg = resize(img, width, height)
@@ -46,7 +44,7 @@ class BufferedImageMontageService[F[_]: Async: Parallel](
     val MontageSpecification(columns, widthL, heightL, largeImgScalaFactor, _) =
       specification
     val (w, h) = (widthL / largeImgScalaFactor, heightL / largeImgScalaFactor)
-    val rows   = chunkMapping.keySet.map(_._1).max
+    val rows   = (chunkMapping.keySet.map(_._1) + 0).max
     val img    = new BufferedImage(columns * w, (rows + 1) * h, imageType)
     val g2d    = img.createGraphics()
     chunkMapping.foreach {
@@ -55,18 +53,15 @@ class BufferedImageMontageService[F[_]: Async: Parallel](
     img
   }
 
-  private def download(uri: String, fileName: String): F[BufferedImage] = {
-    val path = Path(tmpDirectory) / (fileName + ".jpg")
+  private def download(uri: String): F[BufferedImage] = {
     for {
-      _ <-
-        client
-          .get(uri)(
-            _.body.bufferAll
-              .through(Files[F].writeAll(path, Flags.Write))
-              .compile
-              .drain
-          )
-      img <- Async[F].delay(ImageIO.read(path.toNioPath.toFile))
+      img <- client.get(uri)(
+        _.body.bufferAll
+          .through(fs2.io.toInputStream)
+          .map(ImageIO.read)
+          .compile
+          .lastOrError
+      )
     } yield img
   }
 
@@ -91,6 +86,17 @@ class BufferedImageMontageService[F[_]: Async: Parallel](
       .flatten
     CompositeChunk(largeImgScaleFactor, subImages.toList)
   }
+}
+
+object BufferedImageMontageService {
+  def apply[F[_]: Async: Parallel](
+      client: Client[F],
+      specification: MontageSpecification
+  ) =
+    new BufferedImageMontageService[F](
+      client,
+      specification
+    )
 }
 
 final case class MontageSpecification(

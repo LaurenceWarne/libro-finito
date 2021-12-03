@@ -16,7 +16,7 @@ class InMemoryBookRepository[F[_]: Monad](booksRef: Ref[F, List[UserBook]])
     extends BookRepository[F] {
 
   override def createBook(book: BookInput, date: LocalDate): F[Unit] =
-    booksRef.getAndUpdate(toUserBook(book) :: _).void
+    booksRef.getAndUpdate(toUserBook(book, dateAdded = date.some) :: _).void
 
   override def retrieveBook(isbn: String): F[Option[UserBook]] =
     booksRef.get.map(_.find(_.isbn === isbn))
