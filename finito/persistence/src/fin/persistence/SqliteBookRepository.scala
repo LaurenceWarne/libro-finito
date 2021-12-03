@@ -91,8 +91,8 @@ object SqliteBookRepository extends BookRepository[ConnectionIO] {
       books =
         rawBooks
           .map(_.toBook)
-          .filter { d =>
-            d.dateAdded.exists(inRange) || d.lastRead.exists(inRange)
+          .filter { b =>
+            b.dateAdded.exists(inRange) || b.lastRead.exists(inRange)
           }
     } yield books
 }

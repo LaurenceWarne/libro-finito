@@ -2,6 +2,8 @@ package fin.service.book
 
 import java.time.LocalDate
 
+import scala.math.Ordering.Implicits._
+
 import cats.Monad
 import cats.effect.Ref
 import cats.implicits._
@@ -58,4 +60,14 @@ class InMemoryBookRepository[F[_]: Monad](booksRef: Ref[F, List[UserBook]])
         else b
       })
       .void
+
+  override def retrieveBooksInside(
+      from: LocalDate,
+      to: LocalDate
+  ): F[List[UserBook]] = {
+    val inRange = (d: LocalDate) => from <= d && d <= to
+    booksRef.get.map {
+      _.filter(b => b.dateAdded.exists(inRange) || b.lastRead.exists(inRange))
+    }
+  }
 }

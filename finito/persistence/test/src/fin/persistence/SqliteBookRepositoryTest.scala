@@ -164,6 +164,37 @@ object SqliteBookRepositoryTest extends SqliteSuite {
     )
   }
 
+  testDoobie("retrieveBooksInside retrieves books within interval") {
+    val date1 = LocalDate.parse("1920-03-20")
+    val date2 = LocalDate.parse("1920-05-13")
+    val book1 = book.copy(isbn = "old book 1")
+    val book2 = book.copy(isbn = "old book 2")
+    for {
+      _ <- repo.createBook(book1, date1)
+      _ <- repo.createBook(book2, date2)
+      books <- repo.retrieveBooksInside(
+        LocalDate.parse("1920-01-01"),
+        LocalDate.parse("1921-01-01")
+      )
+    } yield expect(
+      books.sameElements(
+        List(
+          toUserBook(book1, dateAdded = date1.some),
+          toUserBook(book2, dateAdded = date2.some)
+        )
+      )
+    )
+  }
+
+  testDoobie("retrieveBooksInside returns nothing for empty interval") {
+    for {
+      books <- repo.retrieveBooksInside(
+        LocalDate.parse("1820-01-01"),
+        LocalDate.parse("1821-01-01")
+      )
+    } yield expect(books.isEmpty)
+  }
+
   private def retrieveRating(isbn: String): ConnectionIO[Option[Int]] =
     fr"SELECT rating FROM rated_books WHERE isbn=$isbn".stripMargin
       .query[Int]
