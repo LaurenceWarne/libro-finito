@@ -8,12 +8,10 @@ import javax.imageio.ImageIO
 import cats.Parallel
 import cats.effect.kernel.Async
 import cats.implicits._
-import org.http4s.client.Client
 
 import fin.Types._
 
 class BufferedImageMontageService[F[_]: Async: Parallel] private (
-    client: Client[F],
     specification: MontageSpecification
 ) extends MontageService[F] {
 
@@ -54,15 +52,8 @@ class BufferedImageMontageService[F[_]: Async: Parallel] private (
   }
 
   private def download(uri: String): F[BufferedImage] = {
-    for {
-      img <- client.get(uri)(
-        _.body.bufferAll
-          .through(fs2.io.toInputStream)
-          .map(ImageIO.read)
-          .compile
-          .lastOrError
-      )
-    } yield img
+    val url = new java.net.URL(uri)
+    Async[F].delay(ImageIO.read(url))
   }
 
   private def resize(img: BufferedImage, w: Int, h: Int): BufferedImage = {
@@ -90,11 +81,9 @@ class BufferedImageMontageService[F[_]: Async: Parallel] private (
 
 object BufferedImageMontageService {
   def apply[F[_]: Async: Parallel](
-      client: Client[F],
       specification: MontageSpecification
   ) =
     new BufferedImageMontageService[F](
-      client,
       specification
     )
 }

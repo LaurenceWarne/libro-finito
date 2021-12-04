@@ -3,16 +3,11 @@ package fin.service.summary
 import scala.util.Random
 
 import cats.effect.IO
-import org.http4s.blaze.client.BlazeClientBuilder
-import org.http4s.client.Client
-import weaver.IOSuite
+import weaver._
 
 import fin.Types._
 
-object BufferedImageMontageServiceTest extends IOSuite {
-
-  override type Res = Client[IO]
-  override def sharedResource = BlazeClientBuilder[IO].resource
+object BufferedImageMontageServiceTest extends SimpleIOSuite {
 
   val uris = List(
     "http://books.google.com/books/content?id=sMHmCwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
@@ -37,7 +32,7 @@ object BufferedImageMontageServiceTest extends IOSuite {
     "http://books.google.com/books/content?id=DTS-zQEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api"
   )
 
-  test("foobar") { client =>
+  test("foobar") {
     val books =
       uris.map(uri =>
         UserBook(
@@ -52,8 +47,7 @@ object BufferedImageMontageServiceTest extends IOSuite {
           None
         )
       )
-    val service =
-      BufferedImageMontageService[IO](client, MontageSpecification())
+    val service = BufferedImageMontageService[IO](MontageSpecification())
     for {
       _ <- service.montage(books)
     } yield success

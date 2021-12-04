@@ -11,9 +11,6 @@ import fin.Types._
 import fin._
 import fin.persistence.BookRepository
 import fin.service.book.InMemoryBookRepository
-import org.http4s.client.Client
-import org.http4s.Response
-import java.util.UUID
 
 object SummaryServiceImplTest extends IOSuite {
 
@@ -33,14 +30,16 @@ object SummaryServiceImplTest extends IOSuite {
       "uri"
     )
 
+  val imgUri =
+    "https://user-images.githubusercontent.com/17688577/144673930-add9233d-9308-4972-8043-2f519d808874.png"
+
   override type Res = (BookRepository[IO], SummaryService[IO])
   override def sharedResource
       : Resource[IO, (BookRepository[IO], SummaryService[IO])] =
     Resource.eval(Ref.of[IO, List[UserBook]](List.empty).map { ref =>
-      val repo   = new InMemoryBookRepository(ref)
-      val client = mockedClientRandomTitles
+      val repo = new InMemoryBookRepository(ref)
       val montageService =
-        BufferedImageMontageService[IO](client, MontageSpecification())
+        BufferedImageMontageService[IO](MontageSpecification())
       (
         repo,
         SummaryServiceImpl[IO, IO](
@@ -57,7 +56,11 @@ object SummaryServiceImplTest extends IOSuite {
       for {
         _ <- (1 to 16).toList.traverse { idx =>
           repo.createBook(
-            book.copy(title = show"book-$idx", isbn = show"isbn-$idx"),
+            book.copy(
+              title = show"book-$idx",
+              isbn = show"isbn-$idx",
+              thumbnailUri = imgUri
+            ),
             constantDate.plusDays(idx.toLong)
           )
         }
@@ -68,44 +71,4 @@ object SummaryServiceImplTest extends IOSuite {
         _ = println(summary)
       } yield success
   }
-
-  val mockedClientRandomTitles: Client[IO] =
-    Client.apply[IO](_ =>
-      Resource.eval[IO, Response[IO]](
-        IO(UUID.randomUUID()).map { uuid =>
-          Response[IO](body =
-            fs2.Stream.emits(stubResponse(uuid.toString).getBytes("UTF-8"))
-          )
-        }
-      )
-    )
-
-  private def stubResponse(title: String) =
-    show"""{
-  "items": [
-    {
-      "volumeInfo": {
-        "title": "$title",
-        "authors": [
-          "bar"
-        ],
-        "description": "a description",
-        "industryIdentifiers": [
-          {
-            "type": "ISBN_13",
-            "identifier": "foobar"
-          },
-          {
-            "type": "ISBN_10",
-            "identifier": "foobar"
-          }
-        ],
-        "imageLinks": {
-          "smallThumbnail": "https://user-images.githubusercontent.com/17688577/144645773-fdaa9482-016d-48e5-a993-5c4fd6f72dec.jpeg",
-          "thumbnail": "https://user-images.githubusercontent.com/17688577/144645773-fdaa9482-016d-48e5-a993-5c4fd6f72dec.jpeg"
-        }
-    }
-  ]
-}
-"""
 }

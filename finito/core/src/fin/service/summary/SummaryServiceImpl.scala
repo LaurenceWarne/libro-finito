@@ -27,7 +27,6 @@ class SummaryServiceImpl[F[_]: Async, G[_]] private (
       books       <- transact(bookRepo.retrieveBooksInside(from, to))
       read      = books.filter(_.lastRead.nonEmpty).length
       ratingAvg = mean(books.flatMap(_.rating.toList))
-      _         = println(books)
       montage <- montageService.montage(books)
     } yield Summary(books.length, read, ratingAvg, montage)
 
