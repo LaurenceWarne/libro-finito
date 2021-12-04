@@ -32,7 +32,7 @@ object BufferedImageMontageServiceTest extends SimpleIOSuite {
     "http://books.google.com/books/content?id=DTS-zQEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api"
   )
 
-  test("foobar") {
+  test("montage") {
     val books =
       uris.map(uri =>
         UserBook(

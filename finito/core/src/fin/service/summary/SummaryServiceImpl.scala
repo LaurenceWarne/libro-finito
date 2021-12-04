@@ -1,10 +1,10 @@
 package fin.service.summary
 
-import cats.~>
+import java.time.LocalDate
+
 import cats.effect._
 import cats.implicits._
-
-import java.time.LocalDate
+import cats.~>
 
 import fin.Types._
 import fin.persistence.{BookRepository, Dates}
@@ -28,7 +28,7 @@ class SummaryServiceImpl[F[_]: Async, G[_]] private (
       read      = books.filter(_.lastRead.nonEmpty).length
       ratingAvg = mean(books.flatMap(_.rating.toList))
       montage <- montageService.montage(books)
-    } yield Summary(books.length, read, ratingAvg, montage)
+    } yield Summary(read, books.length, ratingAvg, montage)
 
   private def mean(ls: List[Int]): Float =
     if (ls.isEmpty) 0f else (ls.sum / ls.size).toFloat

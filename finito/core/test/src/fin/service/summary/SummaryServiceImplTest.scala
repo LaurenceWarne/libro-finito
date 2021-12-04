@@ -1,6 +1,9 @@
 package fin.service.summary
 
+import java.io.ByteArrayInputStream
 import java.time.{LocalDate, ZoneId}
+import java.util.Base64
+import javax.imageio.ImageIO
 
 import cats.arrow.FunctionK
 import cats.effect._
@@ -32,14 +35,15 @@ object SummaryServiceImplTest extends IOSuite {
 
   val imgUri =
     "https://user-images.githubusercontent.com/17688577/144673930-add9233d-9308-4972-8043-2f519d808874.png"
+  val (imgWidth, imgHeight) = (128, 195)
+  val montageSpecification  = MontageSpecification()
 
   override type Res = (BookRepository[IO], SummaryService[IO])
   override def sharedResource
       : Resource[IO, (BookRepository[IO], SummaryService[IO])] =
     Resource.eval(Ref.of[IO, List[UserBook]](List.empty).map { ref =>
-      val repo = new InMemoryBookRepository(ref)
-      val montageService =
-        BufferedImageMontageService[IO](MontageSpecification())
+      val repo           = new InMemoryBookRepository(ref)
+      val montageService = BufferedImageMontageService[IO](montageSpecification)
       (
         repo,
         SummaryServiceImpl[IO, IO](
@@ -51,10 +55,11 @@ object SummaryServiceImplTest extends IOSuite {
       )
     })
 
-  test("summary") {
+  test("summary has image of correct height and number of books added") {
     case (repo, summaryService) =>
+      val noImages = 16
       for {
-        _ <- (1 to 16).toList.traverse { idx =>
+        _ <- (1 to noImages).toList.traverse { idx =>
           repo.createBook(
             book.copy(
               title = show"book-$idx",
@@ -68,7 +73,13 @@ object SummaryServiceImplTest extends IOSuite {
           constantDate.some,
           constantDate.plusYears(1).some
         )
-        _ = println(summary)
-      } yield success
+        b64 <- IO(Base64.getDecoder().decode(summary.montage))
+        is  <- IO(new ByteArrayInputStream(b64))
+        img <- IO(ImageIO.read(is))
+      } yield expect(summary.added == noImages) and expect(
+        Math
+          .ceil(noImages.toDouble / montageSpecification.columns)
+          .toInt * montageSpecification.smallImageHeight == img.getHeight()
+      )
   }
 }
