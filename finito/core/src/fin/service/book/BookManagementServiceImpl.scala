@@ -42,28 +42,30 @@ class BookManagementServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
   }
 
   override def startReading(args: MutationsStartReadingArgs): F[UserBook] = {
-    val transaction: LocalDate => G[UserBook] = date =>
-      for {
-        book <- createIfNotExists(args.book, date)
-        _ <- MonadThrow[G].raiseWhen(book.startedReading.nonEmpty) {
-          BookAlreadyBeingReadError(args.book)
-        }
-        _ <- bookRepo.startReading(args.book, date)
-      } yield book.copy(startedReading = date.some)
-    args.date
-      .fold(Dates.currentDate(clock))(_.pure[F])
-      .flatMap(date => transact(transaction(date)))
+    val transaction: (LocalDate, LocalDate) => G[UserBook] =
+      (currentDate, startDate) =>
+        for {
+          book <- createIfNotExists(args.book, currentDate)
+          _ <- MonadThrow[G].raiseWhen(book.startedReading.nonEmpty) {
+            BookAlreadyBeingReadError(args.book)
+          }
+          _ <- bookRepo.startReading(args.book, startDate)
+        } yield book.copy(startedReading = startDate.some)
+    Dates
+      .currentDate(clock)
+      .flatMap(date => transact(transaction(date, args.date.getOrElse(date))))
   }
 
   override def finishReading(args: MutationsFinishReadingArgs): F[UserBook] = {
-    val transaction: LocalDate => G[UserBook] = date =>
-      for {
-        book <- createIfNotExists(args.book, date)
-        _    <- bookRepo.finishReading(args.book, date)
-      } yield book.copy(startedReading = None, lastRead = date.some)
-    args.date
-      .fold(Dates.currentDate(clock))(_.pure[F])
-      .flatMap(date => transact(transaction(date)))
+    val transaction: (LocalDate, LocalDate) => G[UserBook] =
+      (currentDate, finishDate) =>
+        for {
+          book <- createIfNotExists(args.book, currentDate)
+          _    <- bookRepo.finishReading(args.book, finishDate)
+        } yield book.copy(startedReading = None, lastRead = finishDate.some)
+    Dates
+      .currentDate(clock)
+      .flatMap(date => transact(transaction(date, args.date.getOrElse(date))))
   }
 
   override def deleteBookData(args: MutationsDeleteBookDataArgs): F[Unit] =
@@ -78,7 +80,7 @@ class BookManagementServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
       _ <- MonadThrow[G].whenA(maybeBook.isEmpty)(
         bookRepo.createBook(book, date)
       )
-    } yield maybeBook.getOrElse(toUserBook(book))
+    } yield maybeBook.getOrElse(toUserBook(book, dateAdded = date.some))
 }
 
 object BookManagementServiceImpl {
