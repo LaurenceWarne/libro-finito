@@ -12,20 +12,24 @@ import cats.implicits._
 
 import fin.Types._
 
-class BufferedImageMontageService[F[_]: Async: Parallel] private (
-    specification: MontageSpecification
-) extends MontageService[F] {
+class BufferedImageMontageService[F[_]: Async: Parallel]
+    extends MontageService[F] {
 
   private val imageType = BufferedImage.TYPE_INT_ARGB
 
-  override def montage(books: List[UserBook]): F[String] =
+  override def montage(
+      books: List[UserBook],
+      maybeSpecification: Option[MontageInput]
+  ): F[String] = {
+    val specification = maybeSpecification.getOrElse(MontageInputs.default)
     for {
       chunks <- books.parTraverse { b =>
         download(b.thumbnailUri).map { img =>
-          val MontageSpecification(_, width, height, _, _) = specification
-          if (specification.largeImgPredicate(b)) {
+          val width  = specification.largeImageWidth
+          val height = specification.largeImageHeight
+          if (b.rating.exists(_ >= specification.largeImageRatingThreshold)) {
             val resizedImg = resize(img, width, height)
-            split(resizedImg)
+            split(resizedImg, specification)
           } else {
             val resizedImg = resize(img, width / 2, height / 2)
             (SingularChunk(resizedImg): ImageChunk)
@@ -33,9 +37,10 @@ class BufferedImageMontageService[F[_]: Async: Parallel] private (
         }
       }
       map = ImageStitch.stitch(chunks, specification.columns)
-      img = collageBufferedImages(map)
+      img = collageBufferedImages(map, specification)
       b64 <- imgToBase64(img)
     } yield b64
+  }
 
   private def imgToBase64(img: BufferedImage): F[String] =
     for {
@@ -46,10 +51,11 @@ class BufferedImageMontageService[F[_]: Async: Parallel] private (
     } yield b64
 
   private def collageBufferedImages(
-      chunkMapping: Map[(Int, Int), SingularChunk]
+      chunkMapping: Map[(Int, Int), SingularChunk],
+      specification: MontageInput
   ): BufferedImage = {
     val columns = specification.columns
-    val (w, h)  = (specification.smallImageWidth, specification.smallImageHeight)
+    val (w, h)  = MontageInputs.smallImageDim(specification)
     val rows    = (chunkMapping.keySet.map(_._1) + 0).max
     val img     = new BufferedImage(columns * w, (rows + 1) * h, imageType)
     val g2d     = img.createGraphics()
@@ -74,31 +80,31 @@ class BufferedImageMontageService[F[_]: Async: Parallel] private (
     dimg
   }
 
-  private def split(img: BufferedImage): CompositeChunk = {
-    val MontageSpecification(_, _, _, largeImgScaleFactor, _) = specification
-    val (w, h)                                                = (specification.smallImageWidth, specification.smallImageHeight)
+  private def split(
+      img: BufferedImage,
+      specification: MontageInput
+  ): CompositeChunk = {
+    val imgScaleFactor = specification.largeImgScaleFactor
+    val (w, h)         = MontageInputs.smallImageDim(specification)
     val subImages = List
-      .tabulate(largeImgScaleFactor, largeImgScaleFactor) {
+      .tabulate(imgScaleFactor, imgScaleFactor) {
         case (y, x) => SingularChunk(img.getSubimage(x * w, y * h, w, h))
       }
       .flatten
-    CompositeChunk(largeImgScaleFactor, subImages.toList)
+    CompositeChunk(imgScaleFactor, subImages.toList)
   }
 }
 
 object BufferedImageMontageService {
-  def apply[F[_]: Async: Parallel](
-      specification: MontageSpecification
-  ) = new BufferedImageMontageService[F](specification)
+  def apply[F[_]: Async: Parallel] = new BufferedImageMontageService[F]
 }
 
-final case class MontageSpecification(
-    columns: Int = 6,
-    largeImageWidth: Int = 128,
-    largeImageHeight: Int = 196,
-    largeImgScaleFactor: Int = 2,
-    largeImgPredicate: UserBook => Boolean = b => b.rating.exists(_ >= 5)
-) {
-  def smallImageWidth: Int  = largeImageWidth / largeImgScaleFactor
-  def smallImageHeight: Int = largeImageHeight / largeImgScaleFactor
+object MontageInputs {
+  def default: MontageInput = new MontageInput(6, 128, 196, 2, 5)
+  def smallImageDim(specification: MontageInput): (Int, Int) =
+    (smallImageWidth(specification), smallImageHeight(specification))
+  def smallImageWidth(specification: MontageInput): Int =
+    specification.largeImageWidth / specification.largeImgScaleFactor
+  def smallImageHeight(specification: MontageInput): Int =
+    specification.largeImageHeight / specification.largeImgScaleFactor
 }

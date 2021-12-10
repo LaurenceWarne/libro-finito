@@ -47,9 +47,9 @@ object BufferedImageMontageServiceTest extends SimpleIOSuite {
           None
         )
       )
-    val service = BufferedImageMontageService[IO](MontageSpecification())
+    val service = BufferedImageMontageService[IO]
     for {
-      _ <- service.montage(books)
+      _ <- service.montage(books, None)
     } yield success
   }
 }

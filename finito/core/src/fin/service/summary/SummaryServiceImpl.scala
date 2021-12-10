@@ -18,7 +18,8 @@ class SummaryServiceImpl[F[_]: Async, G[_]] private (
 
   override def summary(
       maybeFrom: Option[LocalDate],
-      maybeTo: Option[LocalDate]
+      maybeTo: Option[LocalDate],
+      maybeSpecification: Option[MontageInput]
   ): F[Summary] =
     for {
       currentDate <- Async[F].memoize(Dates.currentDate(clock))
@@ -27,7 +28,7 @@ class SummaryServiceImpl[F[_]: Async, G[_]] private (
       books       <- transact(bookRepo.retrieveBooksInside(from, to))
       read      = books.filter(_.lastRead.nonEmpty).length
       ratingAvg = mean(books.flatMap(_.rating.toList))
-      montage <- montageService.montage(books)
+      montage <- montageService.montage(books, maybeSpecification)
     } yield Summary(read, books.length, ratingAvg, montage)
 
   private def mean(ls: List[Int]): Float =

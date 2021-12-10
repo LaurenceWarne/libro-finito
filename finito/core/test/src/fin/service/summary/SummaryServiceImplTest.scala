@@ -36,14 +36,13 @@ object SummaryServiceImplTest extends IOSuite {
   val imgUri =
     "https://user-images.githubusercontent.com/17688577/144673930-add9233d-9308-4972-8043-2f519d808874.png"
   val (imgWidth, imgHeight) = (128, 195)
-  val montageSpecification  = MontageSpecification()
 
   override type Res = (BookRepository[IO], SummaryService[IO])
   override def sharedResource
       : Resource[IO, (BookRepository[IO], SummaryService[IO])] =
     Resource.eval(Ref.of[IO, List[UserBook]](List.empty).map { ref =>
       val repo           = new InMemoryBookRepository(ref)
-      val montageService = BufferedImageMontageService[IO](montageSpecification)
+      val montageService = BufferedImageMontageService[IO]
       (
         repo,
         SummaryServiceImpl[IO, IO](
@@ -71,15 +70,17 @@ object SummaryServiceImplTest extends IOSuite {
         }
         summary <- summaryService.summary(
           constantDate.some,
-          constantDate.plusYears(1).some
+          constantDate.plusYears(1).some,
+          None
         )
         b64 <- IO(Base64.getDecoder().decode(summary.montage))
         is  <- IO(new ByteArrayInputStream(b64))
         img <- IO(ImageIO.read(is))
       } yield expect(summary.added == noImages) and expect(
         Math
-          .ceil(noImages.toDouble / montageSpecification.columns)
-          .toInt * montageSpecification.smallImageHeight == img.getHeight()
+          .ceil(noImages.toDouble / MontageInputs.default.columns)
+          .toInt * MontageInputs.smallImageHeight(MontageInputs.default) == img
+          .getHeight()
       )
   }
 }
