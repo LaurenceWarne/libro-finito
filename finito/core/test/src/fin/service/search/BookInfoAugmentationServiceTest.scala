@@ -39,6 +39,7 @@ object BookInfoAugmentationServiceTest extends SimpleIOSuite {
       response === List(
         toUserBook(
           book2,
+          dateAdded = date.some,
           rating = rating.some,
           startedReading = date.some
         )
@@ -64,6 +65,7 @@ object BookInfoAugmentationServiceTest extends SimpleIOSuite {
       bookResponse === List(
         toUserBook(
           book,
+          dateAdded = date.some,
           rating = rating.some,
           startedReading = date.some
         )
