@@ -25,6 +25,14 @@ input BookInput {
   thumbnailUri: String!
 }
 
+input MontageInput {
+  columns: Int! = 6
+  largeImageWidth: Int! = 128
+  largeImageHeight: Int! = 196
+  largeImgScaleFactor: Int! = 2
+  largeImageRatingThreshold: Int! = 5
+}
+
 type Sort {
   type: SortType!
   sortAscending: Boolean!
@@ -71,7 +79,7 @@ type Queries {
   collections: [Collection!]!
   collection(name: String!): Collection!
   export(collection: String!, exportType: PortType!): String!
-  summary(from: Date, to: Date): Summary!
+  summary(from: Date, to: Date, montageInput: MontageInput): Summary!
 }
 
 type Mutations {  createCollection(name: String!, books: [BookInput!]): Collection!
