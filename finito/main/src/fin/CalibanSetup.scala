@@ -20,6 +20,7 @@ import fin.Types.BookInput
 import fin.service.book._
 import fin.service.collection._
 import fin.service.search._
+import fin.service.summary.SummaryService
 
 import CalibanError._
 import ResponseValue._
@@ -34,7 +35,8 @@ object CalibanSetup {
       bookInfoService: BookInfoService[F],
       seriesInfoService: SeriesInfoService[F],
       bookManagementService: BookManagementService[F],
-      collectionService: CollectionService[F]
+      collectionService: CollectionService[F],
+      summaryService: SummaryService[F]
   )(implicit
       runtime: zio.Runtime[Env],
       @nowarn dispatcher: Dispatcher[F]
@@ -46,7 +48,7 @@ object CalibanSetup {
       collectionService.collections,
       collectionArgs => collectionService.collection(collectionArgs),
       _ => ???,
-      _ => ???
+      summaryArgs => summaryService.summary(summaryArgs)
     )
     val mutations = Mutations[F](
       args => collectionService.createCollection(args),

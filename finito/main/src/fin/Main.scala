@@ -21,6 +21,7 @@ import fin.persistence._
 import fin.service.book._
 import fin.service.collection._
 import fin.service.search._
+import fin.service.summary.{BufferedImageMontageService, SummaryServiceImpl}
 
 object Main extends IOCaseApp[CliOptions] {
 
@@ -68,12 +69,19 @@ object Main extends IOCaseApp[CliOptions] {
             )
           seriesInfoService =
             new WikidataSeriesInfoService(client, wrappedInfoService)
+          summaryService = SummaryServiceImpl[IO, ConnectionIO](
+            bookRepo,
+            BufferedImageMontageService[IO],
+            clock,
+            connectionIOToIO
+          )
           _ <- logger.debug("Bootstrapping caliban...")
           interpreter <- CalibanSetup.interpreter[IO](
             wrappedInfoService,
             seriesInfoService,
             wrappedBookManagementService,
-            wrappedCollectionService
+            wrappedCollectionService,
+            summaryService
           )
           debug <-
             IO(sys.env.get("LOG_LEVEL").exists(CIString(_) === ci"DEBUG"))

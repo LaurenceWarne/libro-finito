@@ -1,7 +1,5 @@
 package fin.service.summary
 
-import java.time.LocalDate
-
 import cats.effect._
 import cats.implicits._
 import cats.~>
@@ -16,19 +14,15 @@ class SummaryServiceImpl[F[_]: Async, G[_]] private (
     transact: G ~> F
 ) extends SummaryService[F] {
 
-  override def summary(
-      maybeFrom: Option[LocalDate],
-      maybeTo: Option[LocalDate],
-      maybeSpecification: Option[MontageInput]
-  ): F[Summary] =
+  override def summary(args: QueriesSummaryArgs): F[Summary] =
     for {
       currentDate <- Async[F].memoize(Dates.currentDate(clock))
-      from        <- maybeFrom.fold(currentDate.map(_.withDayOfYear(1)))(_.pure[F])
-      to          <- maybeTo.fold(currentDate)(_.pure[F])
+      from        <- args.from.fold(currentDate.map(_.withDayOfYear(1)))(_.pure[F])
+      to          <- args.to.fold(currentDate)(_.pure[F])
       books       <- transact(bookRepo.retrieveBooksInside(from, to))
       read      = books.filter(_.lastRead.nonEmpty).length
       ratingAvg = mean(books.flatMap(_.rating.toList))
-      montage <- montageService.montage(books, maybeSpecification)
+      montage <- montageService.montage(books, args.montageInput)
     } yield Summary(read, books.length, ratingAvg, montage)
 
   private def mean(ls: List[Int]): Float =

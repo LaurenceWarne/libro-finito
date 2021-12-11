@@ -69,9 +69,11 @@ object SummaryServiceImplTest extends IOSuite {
           )
         }
         summary <- summaryService.summary(
-          constantDate.some,
-          constantDate.plusYears(1).some,
-          None
+          QueriesSummaryArgs(
+            constantDate.some,
+            constantDate.plusYears(1).some,
+            None
+          )
         )
         b64 <- IO(Base64.getDecoder().decode(summary.montage))
         is  <- IO(new ByteArrayInputStream(b64))
