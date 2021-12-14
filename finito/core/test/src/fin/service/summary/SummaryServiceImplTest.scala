@@ -1,9 +1,6 @@
 package fin.service.summary
 
-import java.io.ByteArrayInputStream
 import java.time.{LocalDate, ZoneId}
-import java.util.Base64
-import javax.imageio.ImageIO
 
 import cats.arrow.FunctionK
 import cats.effect._
@@ -54,7 +51,7 @@ object SummaryServiceImplTest extends IOSuite {
       )
     })
 
-  test("summary has image of correct height and number of books added") {
+  test("summary has correct number of books added") {
     case (repo, summaryService) =>
       val noImages = 16
       for {
@@ -75,14 +72,6 @@ object SummaryServiceImplTest extends IOSuite {
             None
           )
         )
-        b64 <- IO(Base64.getDecoder().decode(summary.montage))
-        is  <- IO(new ByteArrayInputStream(b64))
-        img <- IO(ImageIO.read(is))
-      } yield expect(summary.added == noImages) and expect(
-        Math
-          .ceil(noImages.toDouble / MontageInputs.default.columns)
-          .toInt * MontageInputs.smallImageHeight(MontageInputs.default) == img
-          .getHeight()
-      )
+      } yield expect(summary.added == noImages)
   }
 }

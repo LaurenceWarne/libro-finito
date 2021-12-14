@@ -27,7 +27,7 @@ object ImageStitch {
   ): Map[(Int, Int), SingularChunk] = {
     val head #:: tail = gridStream
     val fitInFn =
-      ImageChunk.fitsAt(head, columns - head._1, chunkMapping.keySet)(_)
+      ImageChunk.fitsAt(head, columns - head._2, chunkMapping.keySet)(_)
     unprocessedChunks match {
       case (c: SingularChunk) :: chunksTail =>
         stitchRec(tail, chunksTail, chunkMapping + (head -> c), columns)
@@ -68,12 +68,12 @@ object ImageStitch {
 sealed trait ImageChunk extends Product with Serializable
 
 object ImageChunk {
-  def fitsAt(centre: (Int, Int), width: Int, filled: Set[(Int, Int)])(
+  def fitsAt(rowColumn: (Int, Int), width: Int, filled: Set[(Int, Int)])(
       chunk: ImageChunk
   ): Boolean = {
     chunk match {
       case c @ CompositeChunk(w, _)
-          if (w > width || c.flatten(centre).exists(c => filled(c._1))) =>
+          if (w > width || c.flatten(rowColumn).exists(c => filled(c._1))) =>
         false
       case _ => true
     }

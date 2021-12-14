@@ -1,10 +1,16 @@
 package fin.service.summary
 
+import java.io.{ByteArrayInputStream, File}
+import java.util.Base64
+import javax.imageio.ImageIO
+
 import scala.util.Random
 
 import cats.effect.IO
+import cats.implicits._
 import weaver._
 
+import fin.BookConversions._
 import fin.Types._
 
 object BufferedImageMontageServiceTest extends SimpleIOSuite {
@@ -32,7 +38,7 @@ object BufferedImageMontageServiceTest extends SimpleIOSuite {
     "http://books.google.com/books/content?id=DTS-zQEACAAJ&printsec=frontcover&img=1&zoom=1&source=gbs_api"
   )
 
-  test("montage") {
+  test("montage runs successfully") {
     val books =
       uris.map(uri =>
         UserBook(
@@ -49,7 +55,41 @@ object BufferedImageMontageServiceTest extends SimpleIOSuite {
       )
     val service = BufferedImageMontageService[IO]
     for {
-      _ <- service.montage(books, None)
+      montage <- service.montage(books, None)
+      b64     <- IO(Base64.getDecoder().decode(montage))
+      is      <- IO(new ByteArrayInputStream(b64))
+      img     <- IO(ImageIO.read(is))
+      _       <- IO(ImageIO.write(img, "png", new File("montage.png")))
     } yield success
   }
+
+  test("montage has image of correct height") {
+    val noImages = 16
+    val service  = BufferedImageMontageService[IO]
+    val book =
+      BookInput("title", List("author"), "cool description", "???", "uri")
+    val imgUri =
+      "https://user-images.githubusercontent.com/17688577/144673930-add9233d-9308-4972-8043-2f519d808874.png"
+    val books = (1 to noImages).toList.map { idx =>
+      toUserBook(
+        book.copy(
+          title = show"book-$idx",
+          isbn = show"isbn-$idx",
+          thumbnailUri = imgUri
+        )
+      )
+    }
+    for {
+      montage <- service.montage(books, None)
+      b64     <- IO(Base64.getDecoder().decode(montage))
+      is      <- IO(new ByteArrayInputStream(b64))
+      img     <- IO(ImageIO.read(is))
+    } yield expect(
+      Math
+        .ceil(noImages.toDouble / MontageInputs.default.columns)
+        .toInt * MontageInputs.smallImageHeight(MontageInputs.default) == img
+        .getHeight()
+    )
+  }
+
 }
