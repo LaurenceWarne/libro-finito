@@ -8,12 +8,18 @@ import scala.util.Random
 
 import cats.effect.IO
 import cats.implicits._
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import weaver._
 
 import fin.BookConversions._
+import fin.NoBooksFoundForMontageError
 import fin.Types._
 
 object BufferedImageMontageServiceTest extends SimpleIOSuite {
+
+  implicit def unsafeLogger: Logger[IO] = Slf4jLogger.getLogger
+  def service                           = BufferedImageMontageService[IO]
 
   val uris = List(
     "http://books.google.com/books/content?id=sMHmCwAAQBAJ&printsec=frontcover&img=1&zoom=1&edge=curl&source=gbs_api",
@@ -53,7 +59,6 @@ object BufferedImageMontageServiceTest extends SimpleIOSuite {
           None
         )
       )
-    val service = BufferedImageMontageService[IO]
     for {
       montage <- service.montage(books, None)
       b64     <- IO(Base64.getDecoder().decode(montage))
@@ -65,7 +70,6 @@ object BufferedImageMontageServiceTest extends SimpleIOSuite {
 
   test("montage has image of correct height") {
     val noImages = 16
-    val service  = BufferedImageMontageService[IO]
     val book =
       BookInput("title", List("author"), "cool description", "???", "uri")
     val imgUri =
@@ -92,4 +96,9 @@ object BufferedImageMontageServiceTest extends SimpleIOSuite {
     )
   }
 
+  test("montage errors with no books") {
+    for {
+      result <- service.montage(List.empty, None).attempt
+    } yield expect(result == NoBooksFoundForMontageError.asLeft)
+  }
 }

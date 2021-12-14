@@ -9,10 +9,12 @@ import javax.imageio.ImageIO
 import cats.Parallel
 import cats.effect.kernel.Async
 import cats.implicits._
+import org.typelevel.log4cats.Logger
 
+import fin.NoBooksFoundForMontageError
 import fin.Types._
 
-class BufferedImageMontageService[F[_]: Async: Parallel]
+class BufferedImageMontageService[F[_]: Async: Parallel: Logger]
     extends MontageService[F] {
 
   private val imageType = BufferedImage.TYPE_INT_ARGB
@@ -23,7 +25,7 @@ class BufferedImageMontageService[F[_]: Async: Parallel]
   ): F[String] = {
     val specification = maybeSpecification.getOrElse(MontageInputs.default)
     for {
-      chunks <- books.parTraverse { b =>
+      chunksEither <- books.parTraverse { b =>
         download(b.thumbnailUri).map { img =>
           val width  = specification.largeImageWidth
           val height = specification.largeImageHeight
@@ -34,8 +36,11 @@ class BufferedImageMontageService[F[_]: Async: Parallel]
             val resizedImg = resize(img, width / 2, height / 2)
             (SingularChunk(resizedImg): ImageChunk)
           }
-        }
+        }.attempt
       }
+      (errors, chunks) = chunksEither.partitionEither(identity)
+      _ <- Logger[F].error(errors.toString)
+      _ <- Async[F].raiseWhen(chunks.isEmpty)(NoBooksFoundForMontageError)
       map = ImageStitch.stitch(chunks, specification.columns)
       img = collageBufferedImages(map, specification)
       b64 <- imgToBase64(img)
@@ -65,10 +70,11 @@ class BufferedImageMontageService[F[_]: Async: Parallel]
     img
   }
 
-  private def download(uri: String): F[BufferedImage] = {
-    val url = new java.net.URL(uri)
-    Async[F].blocking(ImageIO.read(url))
-  }
+  private def download(uri: String): F[BufferedImage] =
+    for {
+      url <- Async[F].delay(new java.net.URL(uri))
+      img <- Async[F].blocking(ImageIO.read(url))
+    } yield img
 
   private def resize(img: BufferedImage, w: Int, h: Int): BufferedImage = {
     // https://stackoverflow.com/questions/9417356/bufferedimage-resize
@@ -96,7 +102,7 @@ class BufferedImageMontageService[F[_]: Async: Parallel]
 }
 
 object BufferedImageMontageService {
-  def apply[F[_]: Async: Parallel] = new BufferedImageMontageService[F]
+  def apply[F[_]: Async: Parallel: Logger] = new BufferedImageMontageService[F]
 }
 
 object MontageInputs {

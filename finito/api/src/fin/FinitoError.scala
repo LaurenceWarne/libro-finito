@@ -85,3 +85,8 @@ final case class InvalidSortStringError(string: String) extends FinitoError {
   override def getMessage = show"$string is not a valid sort type!"
   override def errorCode  = "INVALID_SORT_STRING"
 }
+
+case object NoBooksFoundForMontageError extends FinitoError {
+  override def getMessage = "No Books were found to use to create a montage"
+  override def errorCode  = "NO_BOOKS_FOUND_FOR_MONTAGE"
+}
