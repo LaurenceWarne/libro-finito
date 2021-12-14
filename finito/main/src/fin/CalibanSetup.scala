@@ -16,7 +16,7 @@ import cats.effect.std.Dispatcher
 import cats.implicits._
 
 import fin.Operations._
-import fin.Types.BookInput
+import fin.Types._
 import fin.service.book._
 import fin.service.collection._
 import fin.service.search._
@@ -102,6 +102,9 @@ object FinitoSchema {
   implicit val bookInputSchema: Schema[Any, BookInput] =
     Schema.gen[Any, BookInput].rename("BookInput", "BookInput".some)
 
+  implicit val montageInputSchema: Schema[Any, MontageInput] =
+    Schema.gen[Any, MontageInput].rename("MontageInput", "MontageInput".some)
+
   implicit val localDateSchema: Schema[Any, LocalDate] =
     Schema.scalarSchema("DateTime", None, None, d => StringValue(d.toString))
 
@@ -121,5 +124,4 @@ object FinitoSchema {
     case other =>
       Left(ExecutionError(s"Can't build a LocalDate from input $other"))
   }
-
 }
