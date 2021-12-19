@@ -10,6 +10,7 @@ import fin.implicits._
 
 import HookType._
 import Bindable._
+import natchez.Span
 
 /**
   * This class manages special collection hooks on top of a collection
@@ -30,8 +31,8 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
 
   private val collectionHooks = specialCollections.flatMap(_.collectionHooks)
 
-  override def collections: F[List[Collection]] =
-    wrappedCollectionService.collections
+  override def collections(span: Span[F]): F[List[Collection]] =
+    wrappedCollectionService.collections(span)
 
   override def createCollection(
       args: MutationsCreateCollectionArgs

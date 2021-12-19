@@ -13,9 +13,15 @@ import org.typelevel.ci._
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import zio.Runtime
+import com.ovoenergy.natchez.extras.doobie.TracedTransactor
 
 import fin.config._
 import fin.persistence._
+import natchez.jaeger.Jaeger
+import io.jaegertracing.Configuration
+import natchez.EntryPoint
+import _root_.cats.data.Kleisli
+import natchez.Span
 
 object Main extends IOCaseApp[CliOptions] {
 
@@ -29,6 +35,7 @@ object Main extends IOCaseApp[CliOptions] {
     val server = serviceResources(options).use { serviceResources =>
       implicit val dispatcherEv = serviceResources.dispatcher
       val config                = serviceResources.config
+      val ep                    = serviceResources.ep
       for {
         _ <- FlywaySetup.init[IO](
           config.databaseUri,
@@ -41,7 +48,7 @@ object Main extends IOCaseApp[CliOptions] {
         _           <- logger.debug("Creating services...")
         services    <- Services[IO](serviceResources)
         _           <- logger.debug("Bootstrapping caliban...")
-        interpreter <- CalibanSetup.interpreter[IO](services)
+        interpreter <- CalibanSetup.interpreter[IO](services, ep)
         restApi = HTTPService.routes(services)
 
         debug <- IO(sys.env.get("LOG_LEVEL").exists(CIString(_) === ci"DEBUG"))
@@ -51,7 +58,7 @@ object Main extends IOCaseApp[CliOptions] {
           BlazeServerBuilder[IO]
             .withBanner(Seq(Banner.value))
             .bindHttp(config.port, config.host)
-            .withHttpApp(Routes.routes[IO](interpreter, restApi, debug))
+            .withHttpApp(Routes.routes[IO](interpreter, ep, restApi, debug))
             .serve
             .compile
             .drain
@@ -72,8 +79,20 @@ object Main extends IOCaseApp[CliOptions] {
           ec
         )
       }
+      tracedTransactor =
+        TracedTransactor(service = "finito-db", transactor = transactor)
       dispatcher <- Dispatcher[IO]
-    } yield ServiceResources(client, config, transactor, dispatcher)
+      ep <- Jaeger.entryPoint[IO]("finito")({ c =>
+        IO {
+          c.withSampler(
+            (new Configuration.SamplerConfiguration)
+              .withType("const")
+              .withParam(1)
+          ).withReporter(Configuration.ReporterConfiguration.fromEnv)
+            .getTracer
+        }
+      })
+    } yield ServiceResources(client, config, tracedTransactor, dispatcher, ep)
 }
 
 object Banner {
@@ -101,6 +120,7 @@ object Banner {
 final case class ServiceResources[F[_]](
     client: Client[F],
     config: ServiceConfig,
-    transactor: Transactor[F],
-    dispatcher: Dispatcher[F]
+    transactor: Transactor[Kleisli[F, Span[F], *]],
+    dispatcher: Dispatcher[F],
+    ep: EntryPoint[F]
 )

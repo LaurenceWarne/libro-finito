@@ -90,9 +90,12 @@ object finito extends Module {
         Deps.Http4s.http4sBlazeClient,
         Deps.Http4s.http4sBlazeServer,
         Deps.Http4s.http4sDsl,
+        Deps.Natchez.core,
+        Deps.Natchez.jaeger,
         Deps.flyway,
         Deps.logback,
-        Deps.pureconfig
+        Deps.pureconfig,
+        Deps.natchezDoobie
       )
   }
 
@@ -128,6 +131,7 @@ object finito extends Module {
         Deps.Http4s.http4sBlazeClient,
         Deps.Http4s.http4sDsl,
         Deps.Http4s.http4sCirce,
+        Deps.Natchez.core,
         Deps.CatsEffect.catsEffect,
         Deps.CatsLogging.core,
         Deps.luaj
@@ -280,6 +284,7 @@ object Deps {
   val testContainers = ivy"com.dimafeng::testcontainers-scala:0.39.7"
   val sttpHttp4s     = ivy"com.softwaremill.sttp.client3::http4s-backend:3.3.17"
   val jmh            = ivy"org.openjdk.jmh:jmh-core:1.35"
+  val natchezDoobie  = ivy"com.ovoenergy::natchez-extras-doobie:5.0.2"
 
   object Compiler {
     val semanticDb       = ivy"org.scalameta::semanticdb-scalac:4.4.22"
@@ -342,5 +347,11 @@ object Deps {
     val version = "2.1.0-M6"
     val core    = ivy"com.github.alexarchambault::case-app:$version"
     val cats    = ivy"com.github.alexarchambault::case-app-cats:$version"
+  }
+
+  object Natchez {
+    val version = "0.1.5"
+    val core    = ivy"org.tpolecat::natchez-core:$version"
+    val jaeger  = ivy"org.tpolecat::natchez-jaeger:$version"
   }
 }

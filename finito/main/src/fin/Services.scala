@@ -28,53 +28,59 @@ object Services {
   def apply[F[_]: Async: Parallel: Logger](
       serviceResources: ServiceResources[F]
   ): F[Services[F]] = {
-    val ServiceResources(client, config, transactor, _) = serviceResources
-    val clock                                           = Clock[F]
-    val collectionRepo                                  = SqliteCollectionRepository
-    val bookRepo                                        = SqliteBookRepository
-    val bookInfoService                                 = GoogleBookInfoService[F](GZip()(client))
-    val connectionIOToF                                 = λ[FunctionK[ConnectionIO, F]](_.transact(transactor))
-    val wrappedInfoService = BookInfoAugmentationService[F, ConnectionIO](
-      bookInfoService,
-      bookRepo,
-      connectionIOToF
-    )
-    val collectionService = CollectionServiceImpl[F, ConnectionIO](
-      collectionRepo,
-      clock,
-      connectionIOToF
-    )
-    val bookManagmentService = BookManagementServiceImpl[F, ConnectionIO](
-      bookRepo,
-      clock,
-      connectionIOToF
-    )
-    val seriesInfoService =
-      WikidataSeriesInfoService[F](client, wrappedInfoService)
-    val summaryService = SummaryServiceImpl[F, ConnectionIO](
-      bookRepo,
-      BufferedImageMontageService[F],
-      clock,
-      connectionIOToF
-    )
-    SpecialCollectionSetup
-      .setup[F, ConnectionIO](
-        collectionRepo,
-        collectionService,
-        bookManagmentService,
-        config.defaultCollection,
-        config.specialCollections,
+    val ServiceResources(client, config, transactor, _, ep) = serviceResources
+    val clock                                               = Clock[F]
+    val collectionRepo                                      = SqliteCollectionRepository
+    val bookRepo                                            = SqliteBookRepository
+    val bookInfoService                                     = GoogleBookInfoService[F](GZip()(client))
+    for {
+      connectionIOToF <-
+        ep
+          .root("db")
+          .use(root =>
+            (λ[FunctionK[ConnectionIO, F]])(
+              _.transact(transactor).run(root)
+            ).pure[F]
+          )
+      wrappedInfoService = BookInfoAugmentationService[F, ConnectionIO](
+        bookInfoService,
+        bookRepo,
         connectionIOToF
       )
-      .map {
-        case (wrappedBookManagementService, wrappedCollectionService) =>
-          Services[F](
-            bookInfoService,
-            seriesInfoService,
-            wrappedBookManagementService,
-            wrappedCollectionService,
-            summaryService
+      collectionService = CollectionServiceImpl[F, ConnectionIO](
+        collectionRepo,
+        clock,
+        connectionIOToF
+      )
+      bookManagmentService = BookManagementServiceImpl[F, ConnectionIO](
+        bookRepo,
+        clock,
+        connectionIOToF
+      )
+      seriesInfoService =
+        WikidataSeriesInfoService[F](client, wrappedInfoService)
+      summaryService = SummaryServiceImpl[F, ConnectionIO](
+        bookRepo,
+        BufferedImageMontageService[F],
+        clock,
+        connectionIOToF
+      )
+      (wrappedBookManagementService, wrappedCollectionService) <-
+        SpecialCollectionSetup
+          .setup[F, ConnectionIO](
+            collectionRepo,
+            collectionService,
+            bookManagmentService,
+            config.defaultCollection,
+            config.specialCollections,
+            connectionIOToF
           )
-      }
+    } yield Services[F](
+      bookInfoService,
+      seriesInfoService,
+      wrappedBookManagementService,
+      wrappedCollectionService,
+      summaryService
+    )
   }
 }

@@ -5,6 +5,7 @@ import java.time.LocalDate
 import cats.effect._
 import cats.implicits._
 import cats.{MonadThrow, ~>}
+import natchez.Span
 
 import fin.BookConversions._
 import fin.Types._
@@ -13,14 +14,16 @@ import fin.persistence.{CollectionRepository, Dates}
 
 import CollectionServiceImpl._
 
-class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
+class CollectionServiceImpl[F[_]: Async, G[_]: MonadThrow] private (
     collectionRepo: CollectionRepository[G],
     clock: Clock[F],
     transact: G ~> F
 ) extends CollectionService[F] {
 
-  override def collections: F[List[Collection]] =
-    transact(collectionRepo.collections)
+  override def collections(span: Span[F]): F[List[Collection]] =
+    span.span("collections").use { _ =>
+      transact(collectionRepo.collections)
+    }
 
   override def createCollection(
       args: MutationsCreateCollectionArgs
@@ -149,7 +152,7 @@ object CollectionServiceImpl {
 
   val defaultSort: Sort = Sort(SortType.DateAdded, true)
 
-  def apply[F[_]: MonadThrow, G[_]: MonadThrow](
+  def apply[F[_]: Async, G[_]: MonadThrow](
       collectionRepo: CollectionRepository[G],
       clock: Clock[F],
       transact: G ~> F
