@@ -22,12 +22,14 @@ import CalibanError._
 import ResponseValue._
 import Value._
 import FinitoSchema._
+import natchez.EntryPoint
 
 object CalibanSetup {
 
   type Env = zio.clock.Clock with zio.console.Console
 
-  def interpreter[F[_]: Async](services: Services[F])(implicit
+  def interpreter[F[_]: Async](services: Services[F], ep: EntryPoint[F])(
+      implicit
       runtime: zio.Runtime[Env],
       @nowarn dispatcher: Dispatcher[F]
   ): F[GraphQLInterpreter[Any, CalibanError]] = {
@@ -42,7 +44,12 @@ object CalibanSetup {
       booksArgs => bookInfoService.search(booksArgs),
       bookArgs => bookInfoService.fromIsbn(bookArgs),
       seriesArgs => seriesInfoService.series(seriesArgs),
-      collectionService.collections,
+      ep
+        .root("root_span")
+        .use(root =>
+          root.put("gql" -> "collections") *> collectionService
+            .collections(root)
+        ),
       collectionArgs => collectionService.collection(collectionArgs),
       _ => ???,
       summaryArgs => summaryService.summary(summaryArgs)

@@ -10,6 +10,8 @@ import fs2.Stream
 import org.http4s._
 import org.http4s.server.Router
 import org.http4s.server.middleware.{Logger, ResponseTiming}
+import natchez.EntryPoint
+import cats.implicits._
 
 object Routes {
 
@@ -17,6 +19,7 @@ object Routes {
 
   def routes[F[_]: Async](
       interpreter: GraphQLInterpreter[Any, CalibanError],
+      ep: EntryPoint[F],
       debug: Boolean
   )(implicit
       runtime: zio.Runtime[Env],
@@ -32,7 +35,16 @@ object Routes {
           Response[F](body = Stream.emits(BuildInfo.version.getBytes("UTF-8")))
         )
       ),
-      "/api/graphql" -> serviceRoutes,
+      "/api/graphql" -> Kleisli { r =>
+        OptionT.liftF(
+          ep.root("before caliban")
+            .use(s =>
+              s.put("before" -> "caliban") *> serviceRoutes
+                .run(r)
+                .getOrElse(null)
+            )
+        )
+      },
       "/graphiql" -> Kleisli.liftF(
         StaticFile.fromResource("/graphql-playground.html", None)
       )
