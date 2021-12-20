@@ -233,6 +233,25 @@ object IntegrationTests extends IOSuite {
       } yield expect(seriesResponse.nonEmpty)
   }
 
+  testUsingUri("summary") {
+    case (uri, backend) =>
+      val book = bookTemplate.copy(
+        isbn = "summary",
+        thumbnailUri =
+          "https://user-images.githubusercontent.com/17688577/144673930-add9233d-9308-4972-8043-2f519d808874.png"
+      )
+      val addBookRequest = addBook(None, book)(
+        Collection.view(UserBook.view, Sort.view)
+      )
+      for {
+        // ADD BOOK
+        _ <- send(uri, backend)(addBookRequest)
+        // SUMMARY
+        summaryRequest = summary(None, None, None)(Summary.view)
+        summaryResponse <- send(uri, backend)(summaryRequest)
+      } yield expect(summaryResponse.added > 0)
+  }
+
   private def send[R: IsOperation, A](uri: Uri, backend: ClientBackend)(
       selection: SelectionBuilder[R, A]
   ): IO[A] =
