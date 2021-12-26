@@ -17,10 +17,6 @@ import cats.implicits._
 
 import fin.Operations._
 import fin.Types._
-import fin.service.book._
-import fin.service.collection._
-import fin.service.search._
-import fin.service.summary.SummaryService
 
 import CalibanError._
 import ResponseValue._
@@ -31,16 +27,17 @@ object CalibanSetup {
 
   type Env = zio.clock.Clock with zio.console.Console
 
-  def interpreter[F[_]: Async](
-      bookInfoService: BookInfoService[F],
-      seriesInfoService: SeriesInfoService[F],
-      bookManagementService: BookManagementService[F],
-      collectionService: CollectionService[F],
-      summaryService: SummaryService[F]
-  )(implicit
+  def interpreter[F[_]: Async](services: Services[F])(implicit
       runtime: zio.Runtime[Env],
       @nowarn dispatcher: Dispatcher[F]
   ): F[GraphQLInterpreter[Any, CalibanError]] = {
+    val Services(
+      bookInfoService,
+      seriesInfoService,
+      bookManagementService,
+      collectionService,
+      summaryService
+    ) = services
     val queries = Queries[F](
       booksArgs => bookInfoService.search(booksArgs),
       bookArgs => bookInfoService.fromIsbn(bookArgs),

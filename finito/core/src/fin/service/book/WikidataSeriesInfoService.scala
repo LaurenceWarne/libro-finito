@@ -13,7 +13,7 @@ import org.http4s.implicits._
 import fin.Types._
 import fin.service.search.BookInfoService
 
-class WikidataSeriesInfoService[F[_]: Concurrent: Parallel](
+class WikidataSeriesInfoService[F[_]: Concurrent: Parallel] private (
     client: Client[F],
     bookInfoService: BookInfoService[F]
 ) extends SeriesInfoService[F] {
@@ -83,6 +83,13 @@ class WikidataSeriesInfoService[F[_]: Concurrent: Parallel](
       |  ?membership pq:P1545 ?ordinal.
       |  SERVICE wikibase:label { bd:serviceParam wikibase:language "en".}
       |} limit 100""".stripMargin
+}
+
+object WikidataSeriesInfoService {
+  def apply[F[_]: Concurrent: Parallel](
+      client: Client[F],
+      bookInfoService: BookInfoService[F]
+  ) = new WikidataSeriesInfoService[F](client, bookInfoService)
 }
 
 object WikidataDecoding {

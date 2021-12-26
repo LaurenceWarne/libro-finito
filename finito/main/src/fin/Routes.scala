@@ -3,8 +3,8 @@ package fin
 import caliban.interop.cats.CatsInterop
 import caliban.{CalibanError, GraphQLInterpreter, Http4sAdapter}
 import cats.data.{Kleisli, OptionT}
+import cats.effect._
 import cats.effect.std.Dispatcher
-import cats.effect.{Async, IO}
 import cats.~>
 import fs2.Stream
 import org.http4s._
@@ -15,21 +15,21 @@ object Routes {
 
   type Env = zio.clock.Clock with zio.blocking.Blocking
 
-  def routes(
+  def routes[F[_]: Async](
       interpreter: GraphQLInterpreter[Any, CalibanError],
       debug: Boolean
   )(implicit
       runtime: zio.Runtime[Env],
-      dispatcher: Dispatcher[IO]
-  ): HttpApp[IO] = {
-    val serviceRoutes: HttpRoutes[IO] =
-      wrapRoute[IO, Env](
+      dispatcher: Dispatcher[F]
+  ): HttpApp[F] = {
+    val serviceRoutes: HttpRoutes[F] =
+      wrapRoute[F, Env](
         Http4sAdapter.makeHttpService[Any, CalibanError](interpreter)
       )
-    val app = Router[IO](
+    val app = Router[F](
       "/version" -> Kleisli.liftF(
-        OptionT.pure[IO](
-          Response[IO](body = Stream.emits(BuildInfo.version.getBytes("UTF-8")))
+        OptionT.pure[F](
+          Response[F](body = Stream.emits(BuildInfo.version.getBytes("UTF-8")))
         )
       ),
       "/api/graphql" -> serviceRoutes,

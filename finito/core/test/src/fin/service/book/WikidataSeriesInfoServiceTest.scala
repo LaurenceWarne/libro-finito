@@ -25,8 +25,7 @@ object WikidataSeriesInfoServiceTest extends SimpleIOSuite {
       emptyBook.copy(title = t, authors = List(author))
     )
     val bookInfoService = new BookInfoServiceUsingTitles(books)
-    val service =
-      new WikidataSeriesInfoService(client, bookInfoService)
+    val service         = WikidataSeriesInfoService(client, bookInfoService)
     for {
       response <-
         service
@@ -42,8 +41,7 @@ object WikidataSeriesInfoServiceTest extends SimpleIOSuite {
     val author          = "William Gibson"
     val client          = mockedClient(Mocks.trilogy(title1, title2, title3))
     val bookInfoService = new BookInfoServiceUsingTitles(List.empty)
-    val service =
-      new WikidataSeriesInfoService(client, bookInfoService)
+    val service         = WikidataSeriesInfoService(client, bookInfoService)
     for {
       response <-
         service
@@ -58,8 +56,7 @@ object WikidataSeriesInfoServiceTest extends SimpleIOSuite {
     val author          = "William Gibson"
     val client          = mockedClient(Mocks.badOrdinal)
     val bookInfoService = new BookInfoServiceUsingTitles(List.empty)
-    val service =
-      new WikidataSeriesInfoService(client, bookInfoService)
+    val service         = WikidataSeriesInfoService(client, bookInfoService)
     for {
       response <-
         service

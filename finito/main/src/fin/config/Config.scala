@@ -11,12 +11,11 @@ object Config {
   def apply[F[_]: Async: Logger](
       configDirectoryStr: String
   ): F[ServiceConfig] = {
-    val expandedPathStr = configDirectoryStr.replaceFirst(
-      "^~",
-      System.getProperty("user.home")
-    ) // Java in 2021 :O
-    val configDirectory = Path(expandedPathStr).absolute
     for {
+      home <- Async[F].delay(System.getProperty("user.home"))
+      // Java in 2021 :O
+      expandedPathStr = configDirectoryStr.replaceFirst("^~", home)
+      configDirectory = Path(expandedPathStr).absolute
       _ <- Logger[F].info(show"Using config directory $configDirectory")
       _ <- Files[F].createDirectories(configDirectory)
       configResponse =
