@@ -54,12 +54,12 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
       args: MutationsUpdateCollectionArgs
   ): F[Collection] = {
     val transaction = for {
-      collection <- collectionOrError(args.currentName)
       _ <- MonadThrow[G].raiseUnless(
         List(args.newName, args.preferredSortType, args.sortAscending)
           .exists(_.nonEmpty)
       )(NotEnoughArgumentsForUpdateError)
-      _ <- args.newName.traverse(errorIfCollectionExists)
+      collection <- collectionOrError(args.currentName)
+      _          <- args.newName.traverse(errorIfCollectionExists)
       sort = Sort(
         args.preferredSortType.getOrElse(collection.preferredSort.`type`),
         args.sortAscending.getOrElse(collection.preferredSort.sortAscending)
@@ -85,10 +85,11 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
           args.collection,
           DefaultCollectionNotSupportedError
         )
-        collection <- collectionOrError(collectionName)
-        _ <- MonadThrow[G].raiseWhen(
-          collection.books.exists(_.isbn === args.book.isbn)
-        )(BookAlreadyInCollectionError(collection.name, args.book.title))
+        collection <- collectionOrError(collectionName).ensureOr { c =>
+          BookAlreadyInCollectionError(c.name, args.book.title)
+        } { c =>
+          c.books.exists(_.isbn === args.book.isbn)
+        }
         _ <- collectionRepo.addBookToCollection(collectionName, args.book, date)
       } yield collection.copy(books = toUserBook(args.book) :: collection.books)
     Dates.currentDate(clock).flatMap(date => transact(transaction(date)))
@@ -120,12 +121,10 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
     } yield collection
 
   private def errorIfCollectionExists(collection: String): G[Unit] =
-    for {
-      maybeExistingCollection <- collectionRepo.collection(collection)
-      _ <- MonadThrow[G].raiseWhen(maybeExistingCollection.nonEmpty)(
-        CollectionAlreadyExistsError(collection)
-      )
-    } yield ()
+    collectionRepo
+      .collection(collection)
+      .ensure(CollectionAlreadyExistsError(collection))(_.nonEmpty)
+      .void
 
   def sortBooksFor(collection: Collection): Collection =
     collection.copy(books = collection.books.sortWith {
@@ -136,6 +135,8 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
         (collection.preferredSort.`type` match {
           case SortType.DateAdded =>
             b1.dateAdded.map(_.toEpochDay) < b2.dateAdded.map(_.toEpochDay)
+          case SortType.LastRead =>
+            b1.lastRead.map(_.toEpochDay) < b2.lastRead.map(_.toEpochDay)
           case SortType.Title  => b1.title < b2.title
           case SortType.Author => b1.authors < b2.authors
           case SortType.Rating => b1.rating < b2.rating

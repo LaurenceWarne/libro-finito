@@ -2,9 +2,9 @@ package fin.service.collection
 
 import java.time.LocalDate
 
+import cats.MonadThrow
 import cats.effect.Ref
 import cats.implicits._
-import cats.{MonadError, MonadThrow}
 
 import fin.BookConversions._
 import fin.Types._
@@ -73,7 +73,7 @@ class InMemoryCollectionRepository[F[_]: MonadThrow](
   private def collectionOrError(collectionName: String): F[Collection] =
     for {
       maybeCollection <- collection(collectionName)
-      retrievedCollection <- MonadError[F, Throwable].fromOption(
+      retrievedCollection <- MonadThrow[F].fromOption(
         maybeCollection,
         CollectionDoesNotExistError(collectionName)
       )

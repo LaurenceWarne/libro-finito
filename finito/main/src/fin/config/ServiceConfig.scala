@@ -5,7 +5,10 @@ import cats.kernel.Eq
 import pureconfig._
 import pureconfig.generic.semiauto._
 
+import fin.Types._
 import fin.service.collection.{CollectionHook, HookType}
+
+import SortType._
 
 final case class ServiceConfig(
     databasePath: String,
@@ -25,7 +28,8 @@ final case class SpecialCollection(
     addHook: Option[String],
     readStartedHook: Option[String],
     readCompletedHook: Option[String],
-    rateHook: Option[String]
+    rateHook: Option[String],
+    sort: Option[Sort]
 ) {
   def toCollectionHooks: List[CollectionHook] =
     (addHook.map(CollectionHook(name, HookType.Add, _)) ++
@@ -35,11 +39,16 @@ final case class SpecialCollection(
 }
 
 object ServiceConfig {
-  implicit val collectionReader: ConfigReader[SpecialCollection] =
-    deriveReader[SpecialCollection]
-  implicit val confReader: ConfigReader[ServiceConfig] =
-    deriveReader[ServiceConfig]
-  implicit val serviceConfigEq: Eq[ServiceConfig] = Eq.fromUniversalEquals
+  implicit val dateAddedReader  = deriveReader[DateAdded.type]
+  implicit val lastReadReader   = deriveReader[LastRead.type]
+  implicit val titleReader      = deriveReader[Title.type]
+  implicit val authorReader     = deriveReader[Author.type]
+  implicit val ratingReader     = deriveReader[Rating.type]
+  implicit val sortTypeReader   = deriveReader[SortType]
+  implicit val sortReader       = deriveReader[Sort]
+  implicit val collectionReader = deriveReader[SpecialCollection]
+  implicit val confReader       = deriveReader[ServiceConfig]
+  implicit val serviceConfigEq  = Eq.fromUniversalEquals[ServiceConfig]
 
   val defaultPort: Int = 56848
 
@@ -63,6 +72,10 @@ object ServiceConfig {
           |    },
           |    {
           |      name = Currently Reading,
+          |      sort = {
+          |        type = lastRead,
+          |        sortAscending = false
+          |      },
           |      read-started-hook = \"\"\"add = true\"\"\",
           |      read-completed-hook = \"\"\"remove = true\"\"\"
           |    },
