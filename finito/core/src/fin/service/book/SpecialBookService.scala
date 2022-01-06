@@ -14,9 +14,11 @@ import Bindable._
 class SpecialBookService[F[_]: Sync: Logger] private (
     wrappedCollectionService: CollectionService[F],
     wrappedBookService: BookManagementService[F],
-    collectionHooks: List[CollectionHook],
+    specialCollections: List[SpecialCollection],
     hookExecutionService: HookExecutionService[F]
 ) extends BookManagementService[F] {
+
+  private val collectionHooks = specialCollections.flatMap(_.collectionHooks)
 
   override def createBook(args: MutationsCreateBookArgs): F[UserBook] =
     wrappedBookService.createBook(args)
@@ -63,73 +65,84 @@ class SpecialBookService[F[_]: Sync: Logger] private (
     for {
       hookResponses <- hookExecutionService.processHooks(hooks, bindings, book)
       _ <- hookResponses.traverse {
-        case (hook, ProcessResult.Add)    => addHookCollection(hook, book)
-        case (hook, ProcessResult.Remove) => removeHookCollection(hook, book)
+        case (hook, ProcessResult.Add) =>
+          specialCollections
+            .find(_.name === hook.collection)
+            .traverse(sc => addHookCollection(sc, book))
+        case (hook, ProcessResult.Remove) =>
+          specialCollections
+            .find(_.name === hook.collection)
+            .traverse(sc => removeHookCollection(sc, book))
       }
     } yield ()
 
-  private def createCollectionIfNotExists(collection: String): F[Unit] =
-    wrappedCollectionService
-      .createCollection(MutationsCreateCollectionArgs(collection, None))
-      .void
-      .handleError(_ => ())
-
   private def addHookCollection(
-      hook: CollectionHook,
+      collection: SpecialCollection,
       book: BookInput
   ): F[Unit] = {
     Logger[F].info(
-      show"Adding $book to special collection '${hook.collection}'"
+      show"Adding $book to special collection '${collection.name}'"
     ) *>
-      createCollectionIfNotExists(hook.collection) *>
+      createCollectionIfNotExists(collection.name, collection.preferredSort) *>
       wrappedCollectionService
         .addBookToCollection(
-          MutationsAddBookArgs(hook.collection.some, book)
+          MutationsAddBookArgs(collection.name.some, book)
         )
         .void
-        .handleErrorWith(err =>
+        .handleErrorWith { err =>
           Logger[F].error(
             show"""
-               |Unable to add book to special collection '${hook.collection}',
+               |Unable to add book to special collection '${collection.name}',
                |reason: ${err.getMessage}""".stripMargin.replace("\n", " ")
           )
-        )
+        }
   }
 
   private def removeHookCollection(
-      hook: CollectionHook,
+      collection: SpecialCollection,
       book: BookInput
   ): F[Unit] = {
     Logger[F].info(
-      show"Removing $book from special collection '${hook.collection}'"
+      show"Removing $book from special collection '${collection.name}'"
     ) *>
+      createCollectionIfNotExists(collection.name, collection.preferredSort) *>
       wrappedCollectionService
         .removeBookFromCollection(
-          MutationsRemoveBookArgs(hook.collection, book.isbn)
+          MutationsRemoveBookArgs(collection.name, book.isbn)
         )
         .void
-        .handleErrorWith(err =>
+        .handleErrorWith { err =>
           Logger[F].error(
             show"""
                |Unable to remove book from special collection
-               |'${hook.collection}', reason: ${err.getMessage}""".stripMargin
+               |'${collection.name}', reason: ${err.getMessage}""".stripMargin
               .replace("\n", " ")
           )
-        )
+        }
   }
+
+  private def createCollectionIfNotExists(
+      collection: String,
+      maybeSort: Option[Sort]
+  ): F[Unit] =
+    wrappedCollectionService
+      .createCollection(
+        MutationsCreateCollectionArgs(collection, None, maybeSort)
+      )
+      .void
 }
 
 object SpecialBookService {
   def apply[F[_]: Sync: Logger](
       wrappedCollectionService: CollectionService[F],
       wrappedBookService: BookManagementService[F],
-      collectionHooks: List[CollectionHook],
+      specialCollections: List[SpecialCollection],
       hookExecutionService: HookExecutionService[F]
   ) =
     new SpecialBookService[F](
       wrappedCollectionService,
       wrappedBookService,
-      collectionHooks,
+      specialCollections,
       hookExecutionService
     )
 }

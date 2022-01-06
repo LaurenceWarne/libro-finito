@@ -18,15 +18,17 @@ import Bindable._
   *
   * @param maybeDefaultCollection the default collection
   * @param wrappedCollectionService the wrapped collection service
-  * @param collectionHooks collection hooks to run
+  * @param specialCollections special collections
   * @param hookExecutionService the hook execution service
   */
 class SpecialCollectionService[F[_]: Sync: Logger] private (
     maybeDefaultCollection: Option[String],
     wrappedCollectionService: CollectionService[F],
-    collectionHooks: List[CollectionHook],
+    specialCollections: List[SpecialCollection],
     hookExecutionService: HookExecutionService[F]
 ) extends CollectionService[F] {
+
+  private val collectionHooks = specialCollections.flatMap(_.collectionHooks)
 
   override def collections: F[List[Collection]] =
     wrappedCollectionService.collections
@@ -70,19 +72,23 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
         args.copy(collection = collectionName.some)
       )
       hookResponses <- hookExecutionService.processHooks(
-        collectionHooks.filter(h =>
+        collectionHooks.filter { h =>
           h.`type` === HookType.Add && args.collection.exists(
             _ =!= h.collection
           )
-        ),
+        },
         Map("collection" -> collectionName).asBindings |+| args.book.asBindings,
         args.book
       )
       _ <- hookResponses.traverse {
         case (hook, ProcessResult.Add) =>
-          addHookCollection(hook, args.book)
+          specialCollections
+            .find(_.name === hook.collection)
+            .traverse(sc => addHookCollection(sc, args.book))
         case (hook, ProcessResult.Remove) =>
-          removeHookCollection(hook, args.book)
+          specialCollections
+            .find(_.name === hook.collection)
+            .traverse(sc => removeHookCollection(sc, args.book))
       }
     } yield response
   }
@@ -91,66 +97,87 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
       args: MutationsRemoveBookArgs
   ): F[Unit] = wrappedCollectionService.removeBookFromCollection(args)
 
-  private def createCollectionIfNotExists(collection: String): F[Unit] =
-    createCollection(MutationsCreateCollectionArgs(collection, None)).void
-      .handleError(_ => ())
-
   private def addHookCollection(
-      hook: CollectionHook,
+      collection: SpecialCollection,
       book: BookInput
   ): F[Unit] = {
     Logger[F].info(
-      show"Adding $book to special collection '${hook.collection}'"
+      show"Adding $book to special collection '${collection.name}'"
     ) *>
-      createCollectionIfNotExists(hook.collection) *>
+      createCollectionIfNotExists(collection.name, collection.preferredSort) *>
       wrappedCollectionService
         .addBookToCollection(
-          MutationsAddBookArgs(hook.collection.some, book)
+          MutationsAddBookArgs(collection.name.some, book)
         )
         .void
-        .handleErrorWith(err =>
+        .handleErrorWith { err =>
           Logger[F].error(
             show"""
-               |Unable to add book to special collection '${hook.collection}',
+               |Unable to add book to special collection '${collection.name}',
                |reason: ${err.getMessage}""".stripMargin.replace("\n", " ")
           )
-        )
+        }
   }
 
   private def removeHookCollection(
-      hook: CollectionHook,
+      collection: SpecialCollection,
       book: BookInput
   ): F[Unit] = {
     Logger[F].info(
-      show"Removing $book from special collection '${hook.collection}'"
+      show"Removing $book from special collection '${collection.name}'"
     ) *>
       wrappedCollectionService
         .removeBookFromCollection(
-          MutationsRemoveBookArgs(hook.collection, book.isbn)
+          MutationsRemoveBookArgs(collection.name, book.isbn)
         )
         .void
-        .handleErrorWith(err =>
+        .handleErrorWith { err =>
           Logger[F].error(
             show"""
                |Unable to remove book from special collection
-               |'${hook.collection}', reason: ${err.getMessage}""".stripMargin
+               |'${collection.name}', reason: ${err.getMessage}""".stripMargin
               .replace("\n", " ")
           )
-        )
+        }
   }
+
+  private def createCollectionIfNotExists(
+      collection: String,
+      maybeSort: Option[Sort]
+  ): F[Option[Collection]] =
+    createCollection(
+      MutationsCreateCollectionArgs(collection, None, maybeSort)
+    ).redeem(_ => None, _.some)
 }
 
 object SpecialCollectionService {
   def apply[F[_]: Sync: Logger](
       maybeDefaultCollection: Option[String],
       wrappedCollectionService: CollectionService[F],
-      collectionHooks: List[CollectionHook],
+      specialCollections: List[SpecialCollection],
       hookExecutionService: HookExecutionService[F]
   ) =
     new SpecialCollectionService[F](
       maybeDefaultCollection,
       wrappedCollectionService,
-      collectionHooks,
+      specialCollections,
       hookExecutionService
     )
+
+}
+
+final case class SpecialCollection(
+    name: String,
+    `lazy`: Option[Boolean],
+    addHook: Option[String],
+    readStartedHook: Option[String],
+    readCompletedHook: Option[String],
+    rateHook: Option[String],
+    preferredSort: Option[Sort]
+) {
+  def collectionHooks: List[CollectionHook] =
+    (addHook.map(CollectionHook(name, HookType.Add, _)) ++
+      readStartedHook.map(CollectionHook(name, HookType.ReadStarted, _)) ++
+      readCompletedHook.map(CollectionHook(name, HookType.ReadCompleted, _)) ++
+      rateHook.map(CollectionHook(name, HookType.Rate, _))).toList
 }

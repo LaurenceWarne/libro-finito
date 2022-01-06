@@ -33,11 +33,14 @@ object CollectionServiceImplTest extends IOSuite {
 
   test("createCollection creates collection") { collectionService =>
     val name = "name"
+    val sort = Sort(SortType.Author, false)
     for {
       collection <- collectionService.createCollection(
-        MutationsCreateCollectionArgs(name, None)
+        MutationsCreateCollectionArgs(name, None, sort.some)
       )
-    } yield expect(collection.name === name)
+    } yield expect(collection.name === name) and expect(
+      collection.preferredSort === sort
+    )
   }
 
   test("createCollection errors if collection already exists") {
@@ -45,12 +48,12 @@ object CollectionServiceImplTest extends IOSuite {
       val name = "already existing"
       for {
         _ <- collectionService.createCollection(
-          MutationsCreateCollectionArgs(name, None)
+          MutationsCreateCollectionArgs(name, None, None)
         )
         response <-
           collectionService
             .createCollection(
-              MutationsCreateCollectionArgs(name, None)
+              MutationsCreateCollectionArgs(name, None, None)
             )
             .attempt
       } yield expect(response == CollectionAlreadyExistsError(name).asLeft)
@@ -60,7 +63,7 @@ object CollectionServiceImplTest extends IOSuite {
     val name = "name to retrieve"
     for {
       _ <- collectionService.createCollection(
-        MutationsCreateCollectionArgs(name, None)
+        MutationsCreateCollectionArgs(name, None, None)
       )
       retrievedCollection <-
         collectionService.collection(QueriesCollectionArgs(name))
@@ -83,7 +86,7 @@ object CollectionServiceImplTest extends IOSuite {
       book.copy(isbn = "different isbn", title = "alphabetically before")
     for {
       _ <- collectionService.createCollection(
-        MutationsCreateCollectionArgs(name, None)
+        MutationsCreateCollectionArgs(name, None, None)
       )
       _ <- collectionService.updateCollection(
         MutationsUpdateCollectionArgs(
@@ -113,7 +116,7 @@ object CollectionServiceImplTest extends IOSuite {
       val book3 = book.copy(isbn = "isbn3", title = "book after")
       for {
         _ <- collectionService.createCollection(
-          MutationsCreateCollectionArgs(name, None)
+          MutationsCreateCollectionArgs(name, None, None)
         )
         _ <- collectionService.updateCollection(
           MutationsUpdateCollectionArgs(
@@ -141,7 +144,7 @@ object CollectionServiceImplTest extends IOSuite {
     val book2 = book.copy(isbn = "isbn2", authors = List("aauthor", "bauthor"))
     for {
       _ <- collectionService.createCollection(
-        MutationsCreateCollectionArgs(name, None)
+        MutationsCreateCollectionArgs(name, None, None)
       )
       _ <- collectionService.updateCollection(
         MutationsUpdateCollectionArgs(
@@ -168,10 +171,10 @@ object CollectionServiceImplTest extends IOSuite {
     val (name1, name2) = ("name1", "name2")
     for {
       _ <- collectionService.createCollection(
-        MutationsCreateCollectionArgs(name1, None)
+        MutationsCreateCollectionArgs(name1, None, None)
       )
       _ <- collectionService.createCollection(
-        MutationsCreateCollectionArgs(name2, None)
+        MutationsCreateCollectionArgs(name2, None, None)
       )
       retrievedCollection <- collectionService.collections
     } yield expect(
@@ -183,7 +186,7 @@ object CollectionServiceImplTest extends IOSuite {
     val name = "collection to delete"
     for {
       _ <- collectionService.createCollection(
-        MutationsCreateCollectionArgs(name, None)
+        MutationsCreateCollectionArgs(name, None, None)
       )
       _ <-
         collectionService
@@ -210,7 +213,9 @@ object CollectionServiceImplTest extends IOSuite {
       for {
         _ <-
           collectionService
-            .createCollection(MutationsCreateCollectionArgs(oldName, None))
+            .createCollection(
+              MutationsCreateCollectionArgs(oldName, None, None)
+            )
         collection <- collectionService.updateCollection(
           MutationsUpdateCollectionArgs(
             oldName,
@@ -231,7 +236,7 @@ object CollectionServiceImplTest extends IOSuite {
       for {
         _ <-
           collectionService
-            .createCollection(MutationsCreateCollectionArgs(name, None))
+            .createCollection(MutationsCreateCollectionArgs(name, None, None))
         collection <- collectionService.updateCollection(
           MutationsUpdateCollectionArgs(
             name,
@@ -267,10 +272,14 @@ object CollectionServiceImplTest extends IOSuite {
       for {
         _ <-
           collectionService
-            .createCollection(MutationsCreateCollectionArgs(oldName, None))
+            .createCollection(
+              MutationsCreateCollectionArgs(oldName, None, None)
+            )
         _ <-
           collectionService
-            .createCollection(MutationsCreateCollectionArgs(newName, None))
+            .createCollection(
+              MutationsCreateCollectionArgs(newName, None, None)
+            )
         response <-
           collectionService
             .updateCollection(
@@ -285,7 +294,7 @@ object CollectionServiceImplTest extends IOSuite {
     for {
       _ <-
         collectionService
-          .createCollection(MutationsCreateCollectionArgs(name, None))
+          .createCollection(MutationsCreateCollectionArgs(name, None, None))
       response <-
         collectionService
           .updateCollection(
@@ -299,7 +308,7 @@ object CollectionServiceImplTest extends IOSuite {
     val name = "collection with books"
     for {
       _ <- collectionService.createCollection(
-        MutationsCreateCollectionArgs(name, None)
+        MutationsCreateCollectionArgs(name, None, None)
       )
       collection <- collectionService.addBookToCollection(
         MutationsAddBookArgs(name.some, book)
@@ -342,7 +351,7 @@ object CollectionServiceImplTest extends IOSuite {
       for {
         _ <-
           collectionService
-            .createCollection(MutationsCreateCollectionArgs(name, None))
+            .createCollection(MutationsCreateCollectionArgs(name, None, None))
         _ <-
           collectionService
             .addBookToCollection(MutationsAddBookArgs(name.some, book))
@@ -359,7 +368,7 @@ object CollectionServiceImplTest extends IOSuite {
     val name = "collection with books to remove"
     for {
       _ <- collectionService.createCollection(
-        MutationsCreateCollectionArgs(name, None)
+        MutationsCreateCollectionArgs(name, None, None)
       )
       _ <- collectionService.addBookToCollection(
         MutationsAddBookArgs(name.some, book)
@@ -391,7 +400,7 @@ object CollectionServiceImplTest extends IOSuite {
       val name = "empty collection"
       for {
         _ <- collectionService.createCollection(
-          MutationsCreateCollectionArgs(name, None)
+          MutationsCreateCollectionArgs(name, None, None)
         )
         response <-
           collectionService

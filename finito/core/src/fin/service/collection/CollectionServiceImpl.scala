@@ -27,8 +27,9 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
   ): F[Collection] = {
     val transaction = for {
       maybeExistingCollection <- collectionRepo.collection(args.name)
+      sort = args.preferredSort.getOrElse(defaultSort)
       _ <- maybeExistingCollection.fold(
-        collectionRepo.createCollection(args.name, defaultSort)
+        collectionRepo.createCollection(args.name, sort)
       ) { collection =>
         MonadThrow[G].raiseError(
           CollectionAlreadyExistsError(collection.name)

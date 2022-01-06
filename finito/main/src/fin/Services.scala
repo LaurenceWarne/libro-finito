@@ -58,11 +58,13 @@ object Services {
       connectionIOToF
     )
     SpecialCollectionSetup
-      .setup[F](
+      .setup[F, ConnectionIO](
+        collectionRepo,
         collectionService,
         bookManagmentService,
         config.defaultCollection,
-        config.specialCollections
+        config.specialCollections,
+        connectionIOToF
       )
       .map {
         case (wrappedBookManagementService, wrappedCollectionService) =>

@@ -83,7 +83,12 @@ type Queries {
   summary(from: Date, to: Date, montageInput: MontageInput): Summary!
 }
 
-type Mutations {  createCollection(name: String!, books: [BookInput!]): Collection!
+type Mutations {
+  createCollection(
+    name: String!,
+    books: [BookInput!],
+    preferredSort: Sort
+  ): Collection!
   """
   Delete a collection, will error if the collection does not exist.
   """

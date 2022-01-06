@@ -6,9 +6,7 @@ import pureconfig._
 import pureconfig.generic.semiauto._
 
 import fin.Types._
-import fin.service.collection.{CollectionHook, HookType}
-
-import SortType._
+import fin.service.collection._
 
 final case class ServiceConfig(
     databasePath: String,
@@ -22,29 +20,8 @@ final case class ServiceConfig(
   def databaseUri: String = show"jdbc:sqlite:$databasePath"
 }
 
-final case class SpecialCollection(
-    name: String,
-    `lazy`: Option[Boolean],
-    addHook: Option[String],
-    readStartedHook: Option[String],
-    readCompletedHook: Option[String],
-    rateHook: Option[String],
-    sort: Option[Sort]
-) {
-  def toCollectionHooks: List[CollectionHook] =
-    (addHook.map(CollectionHook(name, HookType.Add, _)) ++
-      readStartedHook.map(CollectionHook(name, HookType.ReadStarted, _)) ++
-      readCompletedHook.map(CollectionHook(name, HookType.ReadCompleted, _)) ++
-      rateHook.map(CollectionHook(name, HookType.Rate, _))).toList
-}
-
 object ServiceConfig {
-  implicit val dateAddedReader  = deriveReader[DateAdded.type]
-  implicit val lastReadReader   = deriveReader[LastRead.type]
-  implicit val titleReader      = deriveReader[Title.type]
-  implicit val authorReader     = deriveReader[Author.type]
-  implicit val ratingReader     = deriveReader[Rating.type]
-  implicit val sortTypeReader   = deriveReader[SortType]
+  implicit val sortTypeReader   = deriveEnumerationReader[SortType]
   implicit val sortReader       = deriveReader[Sort]
   implicit val collectionReader = deriveReader[SpecialCollection]
   implicit val confReader       = deriveReader[ServiceConfig]
@@ -73,8 +50,8 @@ object ServiceConfig {
           |    {
           |      name = Currently Reading,
           |      sort = {
-          |        type = lastRead,
-          |        sortAscending = false
+          |        type = last-read,
+          |        sort-ascending = false
           |      },
           |      read-started-hook = \"\"\"add = true\"\"\",
           |      read-completed-hook = \"\"\"remove = true\"\"\"

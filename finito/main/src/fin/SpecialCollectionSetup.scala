@@ -1,22 +1,24 @@
 package fin
 
-import cats.data.OptionT
 import cats.effect.Sync
 import cats.implicits._
 import org.typelevel.log4cats.Logger
 
-import fin.Types._
-import fin.config.SpecialCollection
 import fin.implicits._
 import fin.service.book._
 import fin.service.collection._
+import fin.persistence.CollectionRepository
+import cats.Monad
+import cats.~>
 
 object SpecialCollectionSetup {
-  def setup[F[_]: Sync: Logger](
+  def setup[F[_]: Sync: Logger, G[_]: Monad](
+      collectionRepo: CollectionRepository[G],
       collectionService: CollectionService[F],
       bookService: BookManagementService[F],
       defaultCollection: Option[String],
-      specialCollections: List[SpecialCollection]
+      specialCollections: List[SpecialCollection],
+      transact: G ~> F
   ): F[(BookManagementService[F], CollectionService[F])] =
     for {
       _ <- Logger[F].info(
@@ -28,67 +30,54 @@ object SpecialCollectionSetup {
         specialCollections
           .filter(_.`lazy`.contains(false))
           .traverse { c =>
-            createCollection[F](collectionService, c).semiflatMap { c2 =>
-              updateCollection(collectionService, c, c2)
-            }
+            transact(processSpecialCollection[G](collectionRepo, c))
+              .flatMap(Logger[F].info(_))
           }
-          .value
       hookExecutionService = HookExecutionServiceImpl[F]
-      collectionHooks      = specialCollections.flatMap(_.toCollectionHooks)
       wrappedCollectionService = SpecialCollectionService[F](
         defaultCollection,
         collectionService,
-        collectionHooks,
+        specialCollections,
         hookExecutionService
       )
       wrappedBookService = SpecialBookService[F](
         collectionService,
         bookService,
-        collectionHooks,
+        specialCollections,
         hookExecutionService
       )
     } yield (wrappedBookService, wrappedCollectionService)
 
-  private def createCollection[F[_]: Sync: Logger](
-      collectionService: CollectionService[F],
+  private def processSpecialCollection[G[_]: Monad](
+      collectionRepo: CollectionRepository[G],
       collection: SpecialCollection
-  ): OptionT[F, Collection] = {
-    val maybeCollectionF = Logger[F].info(
-      show"Creating collection marked as not lazy: '${collection.name}'"
-    ) *>
-      collectionService
-        .createCollection(
-          MutationsCreateCollectionArgs(collection.name, None)
+  ): G[String] =
+    for {
+      maybeCollection <- collectionRepo.collection(collection.name)
+      _ <- Monad[G].whenA(maybeCollection.isEmpty) {
+        val sort = collection.preferredSort.getOrElse(
+          CollectionServiceImpl.defaultSort
         )
-        .void
-        .recoverWith {
-          case _: CollectionAlreadyExistsError =>
-            Logger[F]
-              .info(
-                show"Collection '${collection.name}' already exists"
-              )
-        } *>
-      collectionService
-        .collection(QueriesCollectionArgs(collection.name))
-        .attempt
-        .map(_.toOption)
-    OptionT(maybeCollectionF)
-  }
-
-  private def updateCollection[F[_]: Sync: Logger](
-      collectionService: CollectionService[F],
-      collection: SpecialCollection,
-      existingCollection: Collection
-  ): F[Unit] =
-    collectionService
-      .updateCollection(
-        MutationsUpdateCollectionArgs(
-          existingCollection.name,
-          None,
-          collection.sort.map(_.`type`),
-          collection.sort.map(_.sortAscending)
+        collectionRepo.createCollection(collection.name, sort)
+      }
+      maybeUpdatedCollection <-
+        maybeCollection
+          .zip(collection.preferredSort)
+          .collect {
+            case (c, sort) if c.preferredSort =!= sort => sort
+          }
+          .traverse { sort =>
+            collectionRepo
+              .updateCollection(collection.name, collection.name, sort)
+          }
+    } yield maybeUpdatedCollection
+      .as(show"Updated collection '${collection.name}'")
+      .orElse(
+        maybeCollection.as(
+          show"No changes for special collection '${collection.name}'"
         )
-      ) *> Logger[F].info(
-      show"Changed sort of ${existingCollection.name} to ${collection.sort}"
-    )
+      )
+      .getOrElse(
+        show"Created collection marked as not lazy: '${collection.name}'"
+      )
 }

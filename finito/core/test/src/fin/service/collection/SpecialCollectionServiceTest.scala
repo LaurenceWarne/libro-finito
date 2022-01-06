@@ -20,23 +20,51 @@ object SpecialCollectionServiceTest extends IOSuite {
   val hook3Collection           = "my ratings"
   val hookNotCreatedCollection  = "uncreated"
   val hookAlwaysFalseCollection = "always false"
-  val collectionHooks = List(
-    CollectionHook(hook1Collection, HookType.Add, "add = true"),
-    CollectionHook(
+  val specialCollections = List(
+    SpecialCollection(
+      hook1Collection,
+      false.some,
+      "add = true".some,
+      None,
+      None,
+      None,
+      None
+    ),
+    SpecialCollection(
       hook2Collection,
-      HookType.Add,
-      "if string.find(title, \"cool\") then add = true else remove = true end"
+      false.some,
+      "if string.find(title, \"cool\") then add = true else remove = true end".some,
+      None,
+      None,
+      None,
+      None
     ),
-    CollectionHook(hook3Collection, HookType.Rate, "add = true"),
-    CollectionHook(
+    SpecialCollection(
+      hook3Collection,
+      false.some,
+      None,
+      None,
+      None,
+      "add = true".some,
+      None
+    ),
+    SpecialCollection(
       hookNotCreatedCollection,
-      HookType.Add,
-      "if title == \"special\" then add = true end"
+      true.some,
+      "if title == \"special\" then add = true end".some,
+      None,
+      None,
+      None,
+      None
     ),
-    CollectionHook(
+    SpecialCollection(
       hookAlwaysFalseCollection,
-      HookType.Add,
-      "add = false"
+      false.some,
+      "add = false".some,
+      None,
+      None,
+      None,
+      None
     )
   )
   val baseBook =
@@ -65,7 +93,7 @@ object SpecialCollectionServiceTest extends IOSuite {
       specialCollectionService = SpecialCollectionService(
         hook1Collection.some,
         wrappedCollectionService,
-        collectionHooks,
+        specialCollections,
         hookExecutionService
       )
       _ <- (List(
@@ -76,7 +104,7 @@ object SpecialCollectionServiceTest extends IOSuite {
         )).traverse { collection =>
         Resource.eval(
           wrappedCollectionService.createCollection(
-            MutationsCreateCollectionArgs(collection, None)
+            MutationsCreateCollectionArgs(collection, None, None)
           )
         )
       }
@@ -244,7 +272,7 @@ object SpecialCollectionServiceTest extends IOSuite {
       val collection = "not a special collection"
       for {
         _ <- collectionService.createCollection(
-          MutationsCreateCollectionArgs(collection, None)
+          MutationsCreateCollectionArgs(collection, None, None)
         )
         _ <-
           collectionService
