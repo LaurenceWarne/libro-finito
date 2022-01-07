@@ -144,10 +144,15 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
   private def createCollectionIfNotExists(
       collection: String,
       maybeSort: Option[Sort]
-  ): F[Option[Collection]] =
+  ): F[Unit] =
     createCollection(
-      MutationsCreateCollectionArgs(collection, None, maybeSort)
-    ).redeem(_ => None, _.some)
+      MutationsCreateCollectionArgs(
+        collection,
+        None,
+        maybeSort.map(_.`type`),
+        maybeSort.map(_.sortAscending)
+      )
+    ).void.recover { case _: CollectionAlreadyExistsError => () }
 }
 
 object SpecialCollectionService {

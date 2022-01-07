@@ -59,8 +59,17 @@ object SpecialCollectionServiceTest extends IOSuite {
     ),
     SpecialCollection(
       hookAlwaysFalseCollection,
-      false.some,
+      true.some,
       "add = false".some,
+      None,
+      None,
+      None,
+      None
+    ),
+    SpecialCollection(
+      otherCollection,
+      false.some,
+      None,
       None,
       None,
       None,
@@ -75,8 +84,6 @@ object SpecialCollectionServiceTest extends IOSuite {
       "isbn",
       "thumbnail uri"
     )
-  val book2     = baseBook.copy(title = "my cool book")
-  val argsBook2 = MutationsAddBookArgs(otherCollection.some, book2)
 
   implicit def unsafeLogger: Logger[IO] = Slf4jLogger.getLogger
 
@@ -96,17 +103,18 @@ object SpecialCollectionServiceTest extends IOSuite {
         specialCollections,
         hookExecutionService
       )
-      _ <- (List(
-          otherCollection,
-          hook1Collection,
-          hook2Collection,
-          hook3Collection
-        )).traverse { collection =>
-        Resource.eval(
-          wrappedCollectionService.createCollection(
-            MutationsCreateCollectionArgs(collection, None, None)
+      _ <- specialCollections.filter(_.`lazy`.contains(false)).traverse {
+        collection =>
+          Resource.eval(
+            wrappedCollectionService.createCollection(
+              MutationsCreateCollectionArgs(
+                collection.name,
+                None,
+                collection.preferredSort.map(_.`type`),
+                collection.preferredSort.map(_.sortAscending)
+              )
+            )
           )
-        )
       }
     } yield specialCollectionService
 
@@ -206,10 +214,15 @@ object SpecialCollectionServiceTest extends IOSuite {
 
   test(
     "addBookToCollection errors when no default collection and no collection in args"
-  ) { _ =>
-    val stubbedService = SpecialCollectionService(None, null, null, null)
-    val book           = baseBook.copy(isbn = "isbn will never be added")
-    val argsBook       = MutationsAddBookArgs(None, book)
+  ) { collectionService =>
+    val stubbedService = SpecialCollectionService(
+      None,
+      collectionService,
+      List.empty,
+      HookExecutionServiceImpl[IO]
+    )
+    val book     = baseBook.copy(isbn = "isbn will never be added")
+    val argsBook = MutationsAddBookArgs(None, book)
     for {
       response <- stubbedService.addBookToCollection(argsBook).attempt
     } yield expect(
@@ -272,7 +285,7 @@ object SpecialCollectionServiceTest extends IOSuite {
       val collection = "not a special collection"
       for {
         _ <- collectionService.createCollection(
-          MutationsCreateCollectionArgs(collection, None, None)
+          MutationsCreateCollectionArgs(collection, None, None, None)
         )
         _ <-
           collectionService

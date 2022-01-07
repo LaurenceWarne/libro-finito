@@ -2,14 +2,13 @@ package fin
 
 import cats.effect.Sync
 import cats.implicits._
+import cats.{Monad, ~>}
 import org.typelevel.log4cats.Logger
 
 import fin.implicits._
+import fin.persistence.CollectionRepository
 import fin.service.book._
 import fin.service.collection._
-import fin.persistence.CollectionRepository
-import cats.Monad
-import cats.~>
 
 object SpecialCollectionSetup {
   def setup[F[_]: Sync: Logger, G[_]: Monad](

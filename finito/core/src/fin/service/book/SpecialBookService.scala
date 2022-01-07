@@ -4,6 +4,7 @@ import cats.effect.Sync
 import cats.implicits._
 import org.typelevel.log4cats.Logger
 
+import fin.CollectionAlreadyExistsError
 import fin.Types._
 import fin.implicits._
 import fin.service.collection._
@@ -127,9 +128,15 @@ class SpecialBookService[F[_]: Sync: Logger] private (
   ): F[Unit] =
     wrappedCollectionService
       .createCollection(
-        MutationsCreateCollectionArgs(collection, None, maybeSort)
+        MutationsCreateCollectionArgs(
+          collection,
+          None,
+          maybeSort.map(_.`type`),
+          maybeSort.map(_.sortAscending)
+        )
       )
       .void
+      .recover { case _: CollectionAlreadyExistsError => () }
 }
 
 object SpecialBookService {

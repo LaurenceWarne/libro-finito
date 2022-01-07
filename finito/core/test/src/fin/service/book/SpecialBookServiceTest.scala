@@ -20,42 +20,51 @@ object SpecialBookServiceTest extends IOSuite {
   val onFinishHookCollection    = "finished books collection"
   val hookAlwaysFalseCollection = "hook evals to always false"
   val lazyCollection            = "lazy collection"
-  val collectionHooks = List(
-    CollectionHook(
+  val specialCollections = List(
+    SpecialCollection(
       onRateHookCollection,
-      HookType.Rate,
-      "if rating >= 5 then add = true else remove = true end"
+      false.some,
+      None,
+      None,
+      None,
+      "if rating >= 5 then add = true else remove = true end".some,
+      None
     ),
-    CollectionHook(onStartHookCollection, HookType.ReadStarted, "add = true"),
-    CollectionHook(
+    SpecialCollection(
+      onStartHookCollection,
+      false.some,
+      None,
+      "add = true".some,
+      None,
+      None,
+      None
+    ),
+    SpecialCollection(
       onFinishHookCollection,
-      HookType.ReadCompleted,
-      "add = true"
+      false.some,
+      None,
+      None,
+      "add = true".some,
+      None,
+      None
     ),
-    CollectionHook(
+    SpecialCollection(
       hookAlwaysFalseCollection,
-      HookType.Add,
-      "add = false"
+      false.some,
+      "add = false".some,
+      "add = false".some,
+      "add = false".some,
+      "add = false".some,
+      None
     ),
-    CollectionHook(
-      hookAlwaysFalseCollection,
-      HookType.Rate,
-      "add = false"
-    ),
-    CollectionHook(
-      hookAlwaysFalseCollection,
-      HookType.ReadStarted,
-      "add = false"
-    ),
-    CollectionHook(
-      hookAlwaysFalseCollection,
-      HookType.ReadCompleted,
-      "add = false"
-    ),
-    CollectionHook(
+    SpecialCollection(
       lazyCollection,
-      HookType.Rate,
-      show"if rating == $triggerRating then add = true else add = false end"
+      true.some,
+      None,
+      None,
+      None,
+      show"if rating == $triggerRating then add = true else add = false end".some,
+      None
     )
   )
 
@@ -91,20 +100,21 @@ object SpecialBookServiceTest extends IOSuite {
       specialBookService = SpecialBookService[IO](
         wrappedCollectionService,
         wrappedBookService,
-        collectionHooks,
+        specialCollections,
         hookExecutionService
       )
-      _ <- (List(
-          onRateHookCollection,
-          onStartHookCollection,
-          onFinishHookCollection,
-          hookAlwaysFalseCollection
-        )).traverse { collection =>
-        Resource.eval(
-          wrappedCollectionService.createCollection(
-            MutationsCreateCollectionArgs(collection, None)
+      _ <- specialCollections.filter(_.`lazy`.contains(false)).traverse {
+        collection =>
+          Resource.eval(
+            wrappedCollectionService.createCollection(
+              MutationsCreateCollectionArgs(
+                collection.name,
+                None,
+                collection.preferredSort.map(_.`type`),
+                collection.preferredSort.map(_.sortAscending)
+              )
+            )
           )
-        )
       }
     } yield (wrappedCollectionService, specialBookService)
 

@@ -87,7 +87,8 @@ type Mutations {
   createCollection(
     name: String!,
     books: [BookInput!],
-    preferredSort: Sort
+    preferredSortType: SortType,
+    sortAscending: Boolean
   ): Collection!
   """
   Delete a collection, will error if the collection does not exist.

@@ -2,6 +2,7 @@ package fin
 
 import java.time.LocalDate
 
+import caliban.client.ArgEncoder._
 import caliban.client.Operations._
 import caliban.client.SelectionBuilder
 import cats.effect._

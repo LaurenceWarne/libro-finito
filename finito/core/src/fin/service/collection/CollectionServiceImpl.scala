@@ -27,7 +27,10 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
   ): F[Collection] = {
     val transaction = for {
       maybeExistingCollection <- collectionRepo.collection(args.name)
-      sort = args.preferredSort.getOrElse(defaultSort)
+      sort = Sort(
+        args.preferredSortType.getOrElse(defaultSort.`type`),
+        args.sortAscending.getOrElse(defaultSort.sortAscending)
+      )
       _ <- maybeExistingCollection.fold(
         collectionRepo.createCollection(args.name, sort)
       ) { collection =>
@@ -38,7 +41,7 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
     } yield Collection(
       args.name,
       args.books.fold(List.empty[UserBook])(_.map(toUserBook(_))),
-      defaultSort
+      sort
     )
     transact(transaction)
   }
@@ -89,7 +92,7 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
         collection <- collectionOrError(collectionName).ensureOr { c =>
           BookAlreadyInCollectionError(c.name, args.book.title)
         } { c =>
-          c.books.exists(_.isbn === args.book.isbn)
+          c.books.forall(_.isbn =!= args.book.isbn)
         }
         _ <- collectionRepo.addBookToCollection(collectionName, args.book, date)
       } yield collection.copy(books = toUserBook(args.book) :: collection.books)
@@ -124,7 +127,7 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
   private def errorIfCollectionExists(collection: String): G[Unit] =
     collectionRepo
       .collection(collection)
-      .ensure(CollectionAlreadyExistsError(collection))(_.nonEmpty)
+      .ensure(CollectionAlreadyExistsError(collection))(_.isEmpty)
       .void
 
   def sortBooksFor(collection: Collection): Collection =
