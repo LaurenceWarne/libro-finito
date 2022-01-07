@@ -73,5 +73,4 @@ object ServiceConfig {
           |  ]
           |}""".stripMargin
     )
-
 }
