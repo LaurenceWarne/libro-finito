@@ -11,6 +11,7 @@ object SortConversions {
       case "title"         => SortType.Title.asRight
       case "author"        => SortType.Author.asRight
       case "rating"        => SortType.Rating.asRight
+      case "lastread"      => SortType.LastRead.asRight
       case unmatchedString => InvalidSortStringError(unmatchedString).asLeft
     }
 }

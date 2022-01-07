@@ -25,13 +25,10 @@ object SpecialCollectionSetup {
           .map(_.name)
           .mkString(", ")
       )
-      _ <-
+      _ <- transact(
         specialCollections
-          .filter(_.`lazy`.contains(false))
-          .traverse { c =>
-            transact(processSpecialCollection[G](collectionRepo, c))
-              .flatMap(Logger[F].info(_))
-          }
+          .traverse(c => processSpecialCollection[G](collectionRepo, c))
+      ).flatMap(_.traverse(s => Logger[F].info(s)))
       hookExecutionService = HookExecutionServiceImpl[F]
       wrappedCollectionService = SpecialCollectionService[F](
         defaultCollection,
@@ -53,7 +50,9 @@ object SpecialCollectionSetup {
   ): G[String] =
     for {
       maybeCollection <- collectionRepo.collection(collection.name)
-      _ <- Monad[G].whenA(maybeCollection.isEmpty) {
+      _ <- Monad[G].whenA(
+        maybeCollection.isEmpty && collection.`lazy`.contains(false)
+      ) {
         val sort = collection.preferredSort.getOrElse(
           CollectionServiceImpl.defaultSort
         )

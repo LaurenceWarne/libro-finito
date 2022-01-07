@@ -49,15 +49,15 @@ object ServiceConfig {
           |    },
           |    {
           |      name = Currently Reading,
-          |      sort = {
-          |        type = last-read,
-          |        sort-ascending = false
-          |      },
           |      read-started-hook = \"\"\"add = true\"\"\",
           |      read-completed-hook = \"\"\"remove = true\"\"\"
           |    },
           |    {
           |      name = Read,
+          |      preferred-sort = {
+          |        type = last-read,
+          |        sort-ascending = false
+          |      },
           |      read-completed-hook = \"\"\"add = true\"\"\"
           |    },
           |    {
