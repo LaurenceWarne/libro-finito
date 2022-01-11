@@ -104,7 +104,7 @@ class SpecialBookService[F[_]: Sync: Logger] private (
       book: BookInput
   ): F[Unit] = {
     Logger[F].info(
-      show"Removing $book from special collection '${collection.name}'"
+      show"Removing ${book.title} from special collection '${collection.name}'"
     ) *>
       createCollectionIfNotExists(collection.name, collection.preferredSort) *>
       wrappedCollectionService

@@ -50,9 +50,9 @@ object SpecialCollectionSetup {
   ): G[String] =
     for {
       maybeCollection <- collectionRepo.collection(collection.name)
-      _ <- Monad[G].whenA(
+      createCollection =
         maybeCollection.isEmpty && collection.`lazy`.contains(false)
-      ) {
+      _ <- Monad[G].whenA(createCollection) {
         val sort = collection.preferredSort.getOrElse(
           CollectionServiceImpl.defaultSort
         )
@@ -76,6 +76,8 @@ object SpecialCollectionSetup {
         )
       )
       .getOrElse(
-        show"Created collection marked as not lazy: '${collection.name}'"
+        if (createCollection)
+          show"Created collection marked as not lazy: '${collection.name}'"
+        else show"Left lazy collection '${collection.name}' unitialized"
       )
 }

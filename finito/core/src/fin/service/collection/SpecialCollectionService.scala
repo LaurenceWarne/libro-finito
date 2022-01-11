@@ -124,7 +124,7 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
       book: BookInput
   ): F[Unit] = {
     Logger[F].info(
-      show"Removing $book from special collection '${collection.name}'"
+      show"Removing ${book.title} from special collection '${collection.name}'"
     ) *>
       wrappedCollectionService
         .removeBookFromCollection(
@@ -133,6 +133,8 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
         .void
         .handleErrorWith { err =>
           Logger[F].error(
+            // TODO don't log error if it's a CollectionAlreadyExistsError
+            // use .recover instead
             show"""
                |Unable to remove book from special collection
                |'${collection.name}', reason: ${err.getMessage}""".stripMargin
