@@ -16,7 +16,6 @@ import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.server.middleware.{Logger, ResponseTiming}
 import natchez.EntryPoint
-import cats.implicits._
 
 import fin.Types._
 import fin.implicits._
