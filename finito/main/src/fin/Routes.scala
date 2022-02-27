@@ -6,10 +6,10 @@ import cats.data.{Kleisli, OptionT}
 import cats.effect._
 import cats.implicits._
 import fs2.Stream
+import natchez.EntryPoint
 import org.http4s._
 import org.http4s.server.Router
 import org.http4s.server.middleware.{Logger, ResponseTiming}
-import natchez.EntryPoint
 
 object Routes {
 

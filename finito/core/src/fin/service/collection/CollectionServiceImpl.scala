@@ -50,8 +50,13 @@ class CollectionServiceImpl[F[_]: Async, G[_]: MonadThrow] private (
   }
 
   override def collection(
-      args: QueriesCollectionArgs
-  ): F[Collection] = transact(collectionOrError(args.name).map(sortBooksFor))
+      args: QueriesCollectionArgs,
+      span: Span[F]
+  ): F[Collection] =
+    span.span("collection").use { _ =>
+      transact(collectionOrError(args.name).map(sortBooksFor))
+
+    }
 
   override def deleteCollection(
       args: MutationsDeleteCollectionArgs

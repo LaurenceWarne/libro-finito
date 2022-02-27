@@ -1,11 +1,16 @@
 package fin
 
+import _root_.cats.data.Kleisli
 import _root_.cats.effect._
 import _root_.cats.effect.std.Dispatcher
 import _root_.cats.implicits._
 import caseapp._
 import caseapp.cats._
+import com.ovoenergy.natchez.extras.doobie.TracedTransactor
 import doobie._
+import io.jaegertracing.Configuration
+import natchez.jaeger.Jaeger
+import natchez.{EntryPoint, Span}
 import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.client.Client
@@ -13,15 +18,9 @@ import org.typelevel.ci._
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import zio.Runtime
-import com.ovoenergy.natchez.extras.doobie.TracedTransactor
 
 import fin.config._
 import fin.persistence._
-import natchez.jaeger.Jaeger
-import io.jaegertracing.Configuration
-import natchez.EntryPoint
-import _root_.cats.data.Kleisli
-import natchez.Span
 
 object Main extends IOCaseApp[CliOptions] {
 
