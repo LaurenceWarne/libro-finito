@@ -17,6 +17,7 @@ import cats.effect.std.Dispatcher
 import cats.effect.{Async, Temporal}
 import cats.implicits._
 import org.typelevel.log4cats.Logger
+import natchez.EntryPoint
 
 import fin.Operations._
 import fin.Types._
@@ -25,7 +26,7 @@ import CalibanError._
 import ResponseValue._
 import Value._
 import FinitoSchema._
-import natchez.EntryPoint
+//import caliban.wrappers.Wrapper._
 
 object CalibanSetup {
 
@@ -64,7 +65,13 @@ object CalibanSetup {
           root.put("gql" -> "collections") *> collectionService
             .collections(root)
         ),
-      collectionArgs => collectionService.collection(collectionArgs),
+      collectionArgs =>
+        ep
+          .root("root_span")
+          .use(root =>
+            root.put("gql" -> "collections") *> collectionService
+              .collection(collectionArgs, root)
+          ),
       _ => ???,
       summaryArgs => summaryService.summary(summaryArgs)
     )
@@ -81,6 +88,18 @@ object CalibanSetup {
       args => bookManagementService.deleteBookData(args).as(None),
       _ => ???
     )
+
+    // val parsingSpan =
+    //   new ParsingWrapper[Any] {
+    //     def wrap[R1 <: Any](
+    //         process: String => zio.ZIO[R1, ParsingError, Document]
+    //     ) =
+    //       string =>
+    //         ep.root("graphql parsing").use { root =>
+    //           root.put("gql" -> "parsing") *> process(string)
+    //         }
+    //   }
+
     val api = GraphQL.graphQL(RootResolver(queries, mutations))
     (api @@ apolloTracing @@ Wrappers.printErrors)
       .interpreterAsync[F]

@@ -8,6 +8,7 @@ import cats.implicits._
 import fs2.Stream
 import io.circe.literal._
 import io.circe.syntax._
+import natchez.EntryPoint
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl._
@@ -15,7 +16,6 @@ import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.server.middleware.{Logger, ResponseTiming}
-import natchez.EntryPoint
 
 import fin.Types._
 import fin.implicits._

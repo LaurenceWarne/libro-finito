@@ -7,7 +7,7 @@ import fin.Types._
 trait CollectionService[F[_]] {
   def collections(span: Span[F]): F[List[Collection]]
   def createCollection(args: MutationsCreateCollectionArgs): F[Collection]
-  def collection(args: QueriesCollectionArgs): F[Collection]
+  def collection(args: QueriesCollectionArgs, span: Span[F]): F[Collection]
   def deleteCollection(args: MutationsDeleteCollectionArgs): F[Unit]
   def updateCollection(args: MutationsUpdateCollectionArgs): F[Collection]
   def addBookToCollection(args: MutationsAddBookArgs): F[Collection]

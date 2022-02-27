@@ -2,6 +2,7 @@ package fin.service.collection
 
 import cats.effect.Sync
 import cats.implicits._
+import natchez.Span
 import org.typelevel.log4cats.Logger
 
 import fin.Types._
@@ -10,7 +11,6 @@ import fin.implicits._
 
 import HookType._
 import Bindable._
-import natchez.Span
 
 /**
   * This class manages special collection hooks on top of a collection
@@ -39,8 +39,9 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
   ): F[Collection] = wrappedCollectionService.createCollection(args)
 
   override def collection(
-      args: QueriesCollectionArgs
-  ): F[Collection] = wrappedCollectionService.collection(args)
+      args: QueriesCollectionArgs,
+      span: Span[F]
+  ): F[Collection] = wrappedCollectionService.collection(args, span)
 
   override def deleteCollection(
       args: MutationsDeleteCollectionArgs

@@ -53,14 +53,17 @@ class CollectionServiceImpl[F[_]: Async, G[_]: MonadThrow] private (
 
   override def collection(
       args: QueriesCollectionArgs
+      span: Span[F]
   ): F[Collection] =
-    transact(
-      collectionOrError(
-        args.name,
-        args.booksPagination.map(_.first),
-        args.booksPagination.map(_.after)
+    span.span("collection").use { _ =>
+      transact(
+        collectionOrError(
+          args.name,
+          args.booksPagination.map(_.first),
+          args.booksPagination.map(_.after)
+        )
       )
-    )
+    }
 
   override def deleteCollection(
       args: MutationsDeleteCollectionArgs
