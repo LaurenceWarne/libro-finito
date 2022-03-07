@@ -6,6 +6,7 @@ import scala.annotation.nowarn
 import scala.util.Try
 
 import caliban.CalibanError.ExecutionError
+import caliban.Macros.gqldoc
 import caliban._
 import caliban.interop.cats.implicits._
 import caliban.schema._
@@ -26,6 +27,16 @@ import FinitoSchema._
 object CalibanSetup {
 
   type Env = zio.clock.Clock with zio.console.Console
+
+  val introspectionQuery =
+    gqldoc("""
+{
+  __schema {
+    types {
+      name
+    }
+  }
+}""")
 
   def interpreter[F[_]: Async](services: Services[F])(implicit
       runtime: zio.Runtime[Env],
