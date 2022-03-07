@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.7.1
+
+* [a1d8951](https://github.com/LaurenceWarne/libro-finito/commit/a1d8951caf1f894408bdfcb1082b76c6079c17cc): Performance tidbits
+
 ## v0.7.0
 
 * [de8f239](https://github.com/LaurenceWarne/libro-finito/commit/de8f239ad7e45a1af41a7d3caa34eb42020a8d67): Support for (yearly) summaries
