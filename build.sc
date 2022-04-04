@@ -161,7 +161,8 @@ object finito extends Module {
 // }
 
 trait LibroFinitoModuleNoLinting extends ScalaModule with ScoverageModule {
-  def scalaVersion = Deps.scalaVersion
+  def scalaVersion    = Deps.scalaVersion
+  def ammoniteVersion = Deps.ammoniteVersion
   // https://github.com/com-lihaoyi/mill/blob/main/docs/antora/modules/ROOT/pages/Contrib_Modules.adoc#scoverage
   def scoverageVersion = Deps.scoverageVersion
   def scalacOptions    = Options.scalacOptions
@@ -255,6 +256,7 @@ object Options {
 
 object Deps {
   val scalaVersion     = "2.13.6"
+  val ammoniteVersion  = "2.5.2"
   val scoverageVersion = "1.4.8"
   val logback          = ivy"ch.qos.logback:logback-classic:1.1.3"
   val weaver           = ivy"com.disneystreaming::weaver-cats:0.7.4"
