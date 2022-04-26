@@ -3,6 +3,7 @@ package fin
 import java.time.LocalDate
 
 import scala.annotation.nowarn
+import scala.concurrent.duration._
 import scala.util.Try
 
 import caliban.CalibanError.ExecutionError
@@ -12,8 +13,8 @@ import caliban.interop.cats.implicits._
 import caliban.schema._
 import caliban.wrappers.ApolloTracing.apolloTracing
 import caliban.wrappers.Wrappers
-import cats.effect.Async
 import cats.effect.std.Dispatcher
+import cats.effect.{Async, Temporal}
 import cats.implicits._
 
 import fin.Operations._
@@ -28,13 +29,11 @@ object CalibanSetup {
 
   type Env = zio.clock.Clock with zio.console.Console
 
-  val introspectionQuery =
+  val freshnessQuery =
     gqldoc("""
 {
-  __schema {
-    types {
-      name
-    }
+  collections {
+    name
   }
 }""")
 
@@ -76,6 +75,16 @@ object CalibanSetup {
       .interpreterAsync[F]
       .map(_.provide(runtime.environment))
       .map(withErrors(_))
+  }
+
+  def keepFresh[F[+_]: Async](
+      interpreter: GraphQLInterpreter[Any, CalibanError],
+      timer: Temporal[F]
+  )(implicit runtime: zio.Runtime[Env]): F[Nothing] = {
+    (interpreter
+      .executeAsync[F](freshnessQuery)
+      .attempt >> timer
+      .sleep(1.minutes)).foreverM
   }
 
   // 'Effect failure' is from this line:

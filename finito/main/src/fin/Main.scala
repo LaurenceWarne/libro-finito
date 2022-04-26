@@ -3,7 +3,6 @@ package fin
 import _root_.cats.effect._
 import _root_.cats.effect.std.Dispatcher
 import _root_.cats.implicits._
-import caliban.interop.cats.implicits._
 import caseapp._
 import caseapp.cats._
 import doobie._
@@ -37,9 +36,10 @@ object Main extends IOCaseApp[CliOptions] {
         services    <- Services[IO](serviceResources)
         _           <- logger.debug("Bootstrapping caliban...")
         interpreter <- CalibanSetup.interpreter[IO](services)
-        _           <- interpreter.executeAsync[IO](CalibanSetup.introspectionQuery)
-        debug       <- IO(sys.env.get("LOG_LEVEL").exists(CIString(_) === ci"DEBUG"))
-        _           <- logger.debug("Starting http4s server...")
+
+        debug <- IO(sys.env.get("LOG_LEVEL").exists(CIString(_) === ci"DEBUG"))
+        _     <- logger.debug("Starting http4s server...")
+        _     <- CalibanSetup.keepFresh[IO](interpreter, Temporal[IO]).start
         server <-
           BlazeServerBuilder[IO]
             .withBanner(Seq(Banner.value))
