@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.7.2
+
+* [fa8d24e](https://github.com/LaurenceWarne/libro-finito/commit/fa8d24e8ee480850fe248bbe9c233475770805d5): Improve performance by keeping the server warm
+
 ## v0.7.1
 
 * [a1d8951](https://github.com/LaurenceWarne/libro-finito/commit/a1d8951caf1f894408bdfcb1082b76c6079c17cc): Performance tidbits
