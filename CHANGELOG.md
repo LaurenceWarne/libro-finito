@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.7.3
+
+* [f7075ff](https://github.com/LaurenceWarne/libro-finito/commit/f7075ffa9930155aedb4f256e67c547011bfab1f): Update dependencies and log info about the server at startup
+
 ## v0.7.2
 
 * [fa8d24e](https://github.com/LaurenceWarne/libro-finito/commit/fa8d24e8ee480850fe248bbe9c233475770805d5): Improve performance by keeping the server warm

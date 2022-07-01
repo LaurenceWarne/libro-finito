@@ -33,7 +33,7 @@ jobs:
         uses: codecov/codecov-action@v1
         with:
           # TODO do for all modules automatically
-          files: ./out/finito/core/scoverage/xmlReport/dest/scoverage.xml,./out/finito/persistence/scoverage/xmlReport/dest/scoverage.xml #,./out/main/scoverage/xmlReport/dest/scoverage.xml # optional
+          files: ./out/finito/core/scoverage/xmlReport.dest/scoverage.xml,./out/finito/persistence/scoverage/xmlReport.dest/scoverage.xml #,./out/main/scoverage/xmlReport/dest/scoverage.xml # optional
           flags: unittests # optional
           fail_ci_if_error: true # optional (default = false)
       ####################
@@ -47,6 +47,6 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
-            out/finito/main/assembly/dest/*.jar
+            out/finito/main/assembly.dest/*.jar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

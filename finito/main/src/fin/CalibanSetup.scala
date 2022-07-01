@@ -16,6 +16,7 @@ import caliban.wrappers.Wrappers
 import cats.effect.std.Dispatcher
 import cats.effect.{Async, Temporal}
 import cats.implicits._
+import org.typelevel.log4cats.Logger
 
 import fin.Operations._
 import fin.Types._
@@ -24,7 +25,6 @@ import CalibanError._
 import ResponseValue._
 import Value._
 import FinitoSchema._
-import org.typelevel.log4cats.Logger
 
 object CalibanSetup {
 
