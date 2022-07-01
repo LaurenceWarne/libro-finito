@@ -32,6 +32,9 @@ object Main extends IOCaseApp[CliOptions] {
           config.databaseUser,
           config.databasePassword
         )
+        _ <- logger.info(
+          show"Starting finito server version ${BuildInfo.version}"
+        )
         _           <- logger.debug("Creating services...")
         services    <- Services[IO](serviceResources)
         _           <- logger.debug("Bootstrapping caliban...")

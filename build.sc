@@ -2,8 +2,8 @@
 import $ivy.`com.lihaoyi::mill-contrib-buildinfo:$MILL_VERSION`
 import $ivy.`com.lihaoyi::mill-contrib-docker:$MILL_VERSION`
 import $ivy.`com.lihaoyi::mill-contrib-scoverage:$MILL_VERSION`
-import $ivy.`com.goyeau::mill-scalafix:0.2.4`
-import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version_mill0.9:0.1.2`
+import $ivy.`com.goyeau::mill-scalafix_mill0.10:0.2.8`
+import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version_mill0.10:0.1.4`
 import $file.plugins.calibanSchemaGen
 import mill._, scalalib._, scalafmt._
 import mill.scalalib.publish._
@@ -255,9 +255,9 @@ object Options {
 }
 
 object Deps {
-  val scalaVersion     = "2.13.6"
+  val scalaVersion     = "2.13.8"
   val ammoniteVersion  = "2.5.2"
-  val scoverageVersion = "1.4.8"
+  val scoverageVersion = "1.4.11"
   val logback          = ivy"ch.qos.logback:logback-classic:1.1.3"
   val weaver           = ivy"com.disneystreaming::weaver-cats:0.7.4"
   val sqlite           = ivy"org.xerial:sqlite-jdbc:3.36.0.3"
@@ -271,7 +271,7 @@ object Deps {
   object Compiler {
     val semanticDb       = ivy"org.scalameta::semanticdb-scalac:4.4.22"
     val betterMonadicFor = ivy"com.olegpy::better-monadic-for:0.3.1"
-    val kindProjector    = ivy"org.typelevel:::kind-projector:0.13.0"
+    val kindProjector    = ivy"org.typelevel:::kind-projector:0.13.2"
   }
 
   object Scalafix {
@@ -279,7 +279,7 @@ object Deps {
   }
 
   object CatsEffect {
-    val version    = "3.3.0"
+    val version    = "3.3.12"
     val catsEffect = ivy"org.typelevel::cats-effect:$version"
   }
 
@@ -296,7 +296,7 @@ object Deps {
   }
 
   object Caliban {
-    val version = "1.3.3"
+    val version = "1.4.1"
     val core    = ivy"com.github.ghostdogpr::caliban:$version"
     val http4s  = ivy"com.github.ghostdogpr::caliban-http4s:$version"
     val cats    = ivy"com.github.ghostdogpr::caliban-cats:$version"
@@ -304,13 +304,13 @@ object Deps {
   }
 
   object Doobie {
-    val version = "1.0.0-RC1"
+    val version = "1.0.0-RC2"
     val core    = ivy"org.tpolecat::doobie-core:$version"
     val hikari  = ivy"org.tpolecat::doobie-hikari:$version"
   }
 
   object Http4s {
-    val version           = "0.23.6"
+    val version           = "0.23.12"
     val http4sDsl         = ivy"org.http4s::http4s-dsl:$version"
     val http4sBlazeServer = ivy"org.http4s::http4s-blaze-server:$version"
     val http4sBlazeClient = ivy"org.http4s::http4s-blaze-client:$version"

@@ -24,6 +24,7 @@ import CalibanError._
 import ResponseValue._
 import Value._
 import FinitoSchema._
+import org.typelevel.log4cats.Logger
 
 object CalibanSetup {
 
@@ -77,14 +78,18 @@ object CalibanSetup {
       .map(withErrors(_))
   }
 
-  def keepFresh[F[+_]: Async](
+  def keepFresh[F[+_]: Async: Logger](
       interpreter: GraphQLInterpreter[Any, CalibanError],
       timer: Temporal[F]
   )(implicit runtime: zio.Runtime[Env]): F[Nothing] = {
     (interpreter
       .executeAsync[F](freshnessQuery)
-      .attempt >> timer
-      .sleep(1.minutes)).foreverM
+      .attempt
+      .flatMap { resp =>
+        Logger[F].debug(s"Freshness query response: $resp")
+      }
+      >> timer
+        .sleep(1.minutes)).foreverM
   }
 
   // 'Effect failure' is from this line:
