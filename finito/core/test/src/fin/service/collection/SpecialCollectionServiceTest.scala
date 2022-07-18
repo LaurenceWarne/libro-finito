@@ -124,10 +124,12 @@ object SpecialCollectionServiceTest extends IOSuite {
       val argsBook = MutationsAddBookArgs(otherCollection.some, book)
       for {
         _ <- collectionService.addBookToCollection(argsBook)
-        hook1Response <-
-          collectionService.collection(QueriesCollectionArgs(hook1Collection))
-        hook2Response <-
-          collectionService.collection(QueriesCollectionArgs(hook2Collection))
+        hook1Response <- collectionService.collection(
+          QueriesCollectionArgs(hook1Collection, None)
+        )
+        hook2Response <- collectionService.collection(
+          QueriesCollectionArgs(hook2Collection, None)
+        )
       } yield expect(hook1Response.books.contains(toUserBook(book))) and expect(
         !hook2Response.books.contains(toUserBook(book))
       )
@@ -146,10 +148,12 @@ object SpecialCollectionServiceTest extends IOSuite {
           MutationsAddBookArgs(hook2Collection.some, book)
         )
         _ <- collectionService.addBookToCollection(argsBook)
-        hook1Response <-
-          collectionService.collection(QueriesCollectionArgs(hook1Collection))
-        hook2Response <-
-          collectionService.collection(QueriesCollectionArgs(hook2Collection))
+        hook1Response <- collectionService.collection(
+          QueriesCollectionArgs(hook1Collection, None)
+        )
+        hook2Response <- collectionService.collection(
+          QueriesCollectionArgs(hook2Collection, None)
+        )
       } yield expect(hook1Response.books.contains(userBook)) and expect(
         !hook2Response.books.contains(userBook)
       )
@@ -161,8 +165,9 @@ object SpecialCollectionServiceTest extends IOSuite {
     val argsBook = MutationsAddBookArgs(otherCollection.some, book)
     for {
       _ <- collectionService.addBookToCollection(argsBook)
-      hook3Response <-
-        collectionService.collection(QueriesCollectionArgs(hook3Collection))
+      hook3Response <- collectionService.collection(
+        QueriesCollectionArgs(hook3Collection, None)
+      )
     } yield expect(!hook3Response.books.contains(userBook))
   }
 
@@ -175,7 +180,7 @@ object SpecialCollectionServiceTest extends IOSuite {
         hookResponse <-
           collectionService
             .collection(
-              QueriesCollectionArgs(hookAlwaysFalseCollection)
+              QueriesCollectionArgs(hookAlwaysFalseCollection, None)
             )
             .attempt
       } yield expect(
@@ -194,7 +199,7 @@ object SpecialCollectionServiceTest extends IOSuite {
         hookResponse <-
           collectionService
             .collection(
-              QueriesCollectionArgs(hookNotCreatedCollection)
+              QueriesCollectionArgs(hookNotCreatedCollection, None)
             )
             .attempt
       } yield expect(hookResponse.isRight)
@@ -207,8 +212,9 @@ object SpecialCollectionServiceTest extends IOSuite {
     val argsBook = MutationsAddBookArgs(None, book)
     for {
       _ <- collectionService.addBookToCollection(argsBook)
-      hook1Collection <-
-        collectionService.collection(QueriesCollectionArgs(hook1Collection))
+      hook1Collection <- collectionService.collection(
+        QueriesCollectionArgs(hook1Collection, None)
+      )
     } yield expect(hook1Collection.books.map(_.isbn).contains(book.isbn))
   }
 
@@ -264,8 +270,9 @@ object SpecialCollectionServiceTest extends IOSuite {
               newSort.sortAscending.some
             )
           )
-      hookResponse <-
-        collectionService.collection(QueriesCollectionArgs(hook1Collection))
+      hookResponse <- collectionService.collection(
+        QueriesCollectionArgs(hook1Collection, None)
+      )
     } yield expect(hookResponse.preferredSort === newSort)
   }
 
@@ -292,7 +299,7 @@ object SpecialCollectionServiceTest extends IOSuite {
             .deleteCollection(MutationsDeleteCollectionArgs(collection))
         collection <-
           collectionService
-            .collection(QueriesCollectionArgs(collection))
+            .collection(QueriesCollectionArgs(collection, None))
             .attempt
       } yield expect(collection.isLeft)
   }

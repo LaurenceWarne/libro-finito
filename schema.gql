@@ -34,6 +34,11 @@ input MontageInput {
   largeImageRatingThreshold: Int! = 5
 }
 
+input PaginationInput {
+  first: Int! = 15
+  after: Int! = 0
+}
+
 type Sort {
   type: SortType!
   sortAscending: Boolean!
@@ -78,7 +83,7 @@ type Queries {
   book(isbn: String!, langRestrict: String = "en"): [UserBook!]!
   series(book: BookInput!): [UserBook!]!
   collections: [Collection!]!
-  collection(name: String!): Collection!
+  collection(name: String!, booksPagination: PaginationInput): Collection!
   export(collection: String!, exportType: PortType!): String!
   summary(from: Date, to: Date, montageInput: MontageInput): Summary!
 }

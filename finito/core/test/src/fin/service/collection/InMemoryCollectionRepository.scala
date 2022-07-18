@@ -22,7 +22,11 @@ class InMemoryCollectionRepository[F[_]: MonadThrow](
     collectionsRef.getAndUpdate(collection :: _).void
   }
 
-  override def collection(name: String): F[Option[Collection]] =
+  override def collection(
+      name: String,
+      bookLimit: Option[Int],
+      bookOffset: Option[Int]
+  ): F[Option[Collection]] =
     collectionsRef.get.map(_.find(_.name === name))
 
   override def deleteCollection(name: String): F[Unit] =
@@ -72,7 +76,7 @@ class InMemoryCollectionRepository[F[_]: MonadThrow](
 
   private def collectionOrError(collectionName: String): F[Collection] =
     for {
-      maybeCollection <- collection(collectionName)
+      maybeCollection <- collection(collectionName, None, None)
       retrievedCollection <- MonadThrow[F].fromOption(
         maybeCollection,
         CollectionDoesNotExistError(collectionName)

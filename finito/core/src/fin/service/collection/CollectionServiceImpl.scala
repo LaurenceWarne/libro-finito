@@ -20,13 +20,14 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
 ) extends CollectionService[F] {
 
   override def collections: F[List[Collection]] =
-    transact(collectionRepo.collections).nested.map(sortBooksFor).value
+    transact(collectionRepo.collections)
 
   override def createCollection(
       args: MutationsCreateCollectionArgs
   ): F[Collection] = {
     val transaction = for {
-      maybeExistingCollection <- collectionRepo.collection(args.name)
+      maybeExistingCollection <-
+        collectionRepo.collection(args.name, None, None)
       sort = Sort(
         args.preferredSortType.getOrElse(defaultSort.`type`),
         args.sortAscending.getOrElse(defaultSort.sortAscending)
@@ -48,7 +49,14 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
 
   override def collection(
       args: QueriesCollectionArgs
-  ): F[Collection] = transact(collectionOrError(args.name).map(sortBooksFor))
+  ): F[Collection] =
+    transact(
+      collectionOrError(
+        args.name,
+        args.booksPagination.map(_.first),
+        args.booksPagination.map(_.after)
+      )
+    )
 
   override def deleteCollection(
       args: MutationsDeleteCollectionArgs
@@ -115,9 +123,14 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
     transact(transaction).void
   }
 
-  private def collectionOrError(collection: String): G[Collection] =
+  private def collectionOrError(
+      collection: String,
+      bookLimit: Option[Int] = None,
+      bookOffset: Option[Int] = None
+  ): G[Collection] =
     for {
-      maybeCollection <- collectionRepo.collection(collection)
+      maybeCollection <-
+        collectionRepo.collection(collection, bookLimit, bookOffset)
       collection <- MonadThrow[G].fromOption(
         maybeCollection,
         CollectionDoesNotExistError(collection)
@@ -126,26 +139,9 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
 
   private def errorIfCollectionExists(collection: String): G[Unit] =
     collectionRepo
-      .collection(collection)
+      .collection(collection, None, None)
       .ensure(CollectionAlreadyExistsError(collection))(_.isEmpty)
       .void
-
-  def sortBooksFor(collection: Collection): Collection =
-    collection.copy(books = collection.books.sortWith {
-      case (book1, book2) =>
-        val (b1, b2) =
-          if (collection.preferredSort.sortAscending) (book1, book2)
-          else (book2, book1)
-        (collection.preferredSort.`type` match {
-          case SortType.DateAdded =>
-            b1.dateAdded.map(_.toEpochDay) < b2.dateAdded.map(_.toEpochDay)
-          case SortType.LastRead =>
-            b1.lastRead.map(_.toEpochDay) < b2.lastRead.map(_.toEpochDay)
-          case SortType.Title  => b1.title < b2.title
-          case SortType.Author => b1.authors < b2.authors
-          case SortType.Rating => b1.rating < b2.rating
-        })
-    })
 }
 
 object CollectionServiceImpl {

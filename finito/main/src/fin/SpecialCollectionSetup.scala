@@ -49,7 +49,8 @@ object SpecialCollectionSetup {
       collection: SpecialCollection
   ): G[String] =
     for {
-      maybeCollection <- collectionRepo.collection(collection.name)
+      maybeCollection <-
+        collectionRepo.collection(collection.name, 1.some, 0.some)
       createCollection =
         maybeCollection.isEmpty && collection.`lazy`.contains(false)
       _ <- Monad[G].whenA(createCollection) {

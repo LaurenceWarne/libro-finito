@@ -34,34 +34,50 @@ object SqliteCollectionRepository extends CollectionRepository[ConnectionIO] {
       preferredSort: Sort
   ): ConnectionIO[Unit] =
     if (currentName == newName)
-      Fragments.updateSort(currentName, preferredSort).update.run.void
+      CollectionFragments.updateSort(currentName, preferredSort).update.run.void
     else
-      Fragments
+      CollectionFragments
         .create(newName, preferredSort.`type`, preferredSort.sortAscending)
         .update
         .run *>
-        Fragments.updateCollectonBooks(currentName, newName).update.run *>
-        Fragments.delete(currentName).update.run.void
+        CollectionFragments
+          .updateCollectonBooks(currentName, newName)
+          .update
+          .run *>
+        CollectionFragments.delete(currentName).update.run.void
 
-  override def collection(name: String): ConnectionIO[Option[Collection]] =
-    Fragments
-      .fromName(name)
+  override def collection(
+      name: String,
+      bookLimit: Option[Int],
+      bookOffset: Option[Int]
+  ): ConnectionIO[Option[Collection]] = {
+    val limFrag =
+      bookLimit
+        .zip(bookOffset)
+        .map {
+          case (l, o) => CollectionFragments.limitOffset(l, o)
+        }
+        .getOrElse(Fragment.empty)
+    (CollectionFragments
+      .fromName(name) ++ CollectionFragments.orderBooks ++ limFrag)
       .query[CollectionBookRow]
       .to[List]
       .flatMap(rows => MonadThrow[ConnectionIO].fromEither(toCollections(rows)))
       .map(_.headOption)
+  }
 
-  override def collections: ConnectionIO[List[Collection]] =
-    Fragments.retrieveCollections
+  override def collections: ConnectionIO[List[Collection]] = {
+    CollectionFragments.retrieveCollections
       .query[CollectionBookRow]
       .to[List]
       .flatMap(rows => MonadThrow[ConnectionIO].fromEither(toCollections(rows)))
+  }
 
   override def createCollection(
       name: String,
       preferredSort: Sort
   ): ConnectionIO[Unit] = {
-    Fragments
+    CollectionFragments
       .create(name, preferredSort.`type`, preferredSort.sortAscending)
       .update
       .run
@@ -69,7 +85,7 @@ object SqliteCollectionRepository extends CollectionRepository[ConnectionIO] {
   }
 
   override def deleteCollection(name: String): ConnectionIO[Unit] =
-    Fragments
+    CollectionFragments
       .delete(name)
       .update
       .run
@@ -79,7 +95,7 @@ object SqliteCollectionRepository extends CollectionRepository[ConnectionIO] {
       collectionName: String,
       isbn: String
   ): ConnectionIO[Unit] =
-    Fragments
+    CollectionFragments
       .deleteReference(collectionName, isbn)
       .update
       .run
@@ -102,7 +118,7 @@ object SqliteCollectionRepository extends CollectionRepository[ConnectionIO] {
   }
 }
 
-object Fragments {
+object CollectionFragments {
 
   implicit val sortPut: Put[SortType] = Put[String].contramap(_.toString)
 
@@ -170,6 +186,33 @@ object Fragments {
        |UPDATE collection_books
        |SET collection_name = $newName
        |WHERE collection_name = $currentName""".stripMargin
+
+  val orderBooksCase: Fragment =
+    fr"""
+       |CASE
+       |  WHEN c.preferred_sort = "DateAdded" THEN ${dateSort("b.added")}
+       |  WHEN c.preferred_sort = "LastRead" THEN ${dateSort("lr.finished")}
+       |  WHEN c.preferred_sort = "Title" THEN b.title
+       |  WHEN c.preferred_sort = "Author" THEN b.authors
+       |  ELSE r.rating
+       |END
+       |""".stripMargin
+
+  val orderBooks: Fragment =
+    fr"""
+       |ORDER BY 
+       |  (CASE sort_ascending WHEN 1 THEN $orderBooksCase ELSE NULL END) ASC,
+       |  (CASE sort_ascending WHEN 0 THEN $orderBooksCase ELSE NULL END) DESC
+       |""".stripMargin
+
+  def dateSort(date: String): Fragment = {
+    val dateFr = Fragment.const(date)
+    List(fr"substr(", fr",1,4)||substr(", fr",6,2)||substr(", fr",9,2)")
+      .intercalate(dateFr)
+  }
+
+  def limitOffset(limit: Int, offset: Int) =
+    fr"LIMIT $limit OFFSET $offset"
 }
 
 final case class CollectionBookRow(

@@ -71,7 +71,7 @@ object CollectionServiceImplTest extends IOSuite {
         MutationsCreateCollectionArgs(name, None, None, None)
       )
       retrievedCollection <-
-        collectionService.collection(QueriesCollectionArgs(name))
+        collectionService.collection(QueriesCollectionArgs(name, None))
     } yield expect(retrievedCollection.name === name)
   }
 
@@ -80,96 +80,9 @@ object CollectionServiceImplTest extends IOSuite {
     for {
       response <-
         collectionService
-          .collection(QueriesCollectionArgs(name))
+          .collection(QueriesCollectionArgs(name, None))
           .attempt
     } yield expect(response == CollectionDoesNotExistError(name).asLeft)
-  }
-
-  test("collection returns collection sorted by title") { collectionService =>
-    val name = "sorted collection"
-    val book2 =
-      book.copy(isbn = "different isbn", title = "alphabetically before")
-    for {
-      _ <- collectionService.createCollection(
-        MutationsCreateCollectionArgs(name, None, None, None)
-      )
-      _ <- collectionService.updateCollection(
-        MutationsUpdateCollectionArgs(
-          name,
-          None,
-          SortType.Title.some,
-          true.some
-        )
-      )
-      _ <- collectionService.addBookToCollection(
-        MutationsAddBookArgs(name.some, book)
-      )
-      _ <- collectionService.addBookToCollection(
-        MutationsAddBookArgs(name.some, book2)
-      )
-      retrievedCollection <-
-        collectionService.collection(QueriesCollectionArgs(name))
-    } yield expect(
-      retrievedCollection.books === List(book2, book).map(toUserBook(_))
-    )
-  }
-
-  test("collection returns collection sorted by title desc") {
-    collectionService =>
-      val name  = "sorted backwards collection"
-      val book2 = book.copy(isbn = "isbn2", title = "alphabetically before 2")
-      val book3 = book.copy(isbn = "isbn3", title = "book after")
-      for {
-        _ <- collectionService.createCollection(
-          MutationsCreateCollectionArgs(name, None, None, None)
-        )
-        _ <- collectionService.updateCollection(
-          MutationsUpdateCollectionArgs(
-            name,
-            None,
-            SortType.Title.some,
-            false.some
-          )
-        )
-        _ <- collectionService.addBookToCollection(
-          MutationsAddBookArgs(name.some, book3)
-        )
-        _ <- collectionService.addBookToCollection(
-          MutationsAddBookArgs(name.some, book2)
-        )
-        retrievedCollection <-
-          collectionService.collection(QueriesCollectionArgs(name))
-      } yield expect(
-        retrievedCollection.books === List(book3, book2).map(toUserBook(_))
-      )
-  }
-
-  test("collection returns collection sorted by author") { collectionService =>
-    val name  = "sorted collection 2"
-    val book2 = book.copy(isbn = "isbn2", authors = List("aauthor", "bauthor"))
-    for {
-      _ <- collectionService.createCollection(
-        MutationsCreateCollectionArgs(name, None, None, None)
-      )
-      _ <- collectionService.updateCollection(
-        MutationsUpdateCollectionArgs(
-          name,
-          None,
-          SortType.Author.some,
-          true.some
-        )
-      )
-      _ <- collectionService.addBookToCollection(
-        MutationsAddBookArgs(name.some, book)
-      )
-      _ <- collectionService.addBookToCollection(
-        MutationsAddBookArgs(name.some, book2)
-      )
-      retrievedCollection <-
-        collectionService.collection(QueriesCollectionArgs(name))
-    } yield expect(
-      retrievedCollection.books === List(book2, book).map(toUserBook(_))
-    )
   }
 
   test("collections returns created collections") { collectionService =>
@@ -393,7 +306,7 @@ object CollectionServiceImplTest extends IOSuite {
         MutationsRemoveBookArgs(name, book.isbn)
       )
       retrievedCollection <-
-        collectionService.collection(QueriesCollectionArgs(name))
+        collectionService.collection(QueriesCollectionArgs(name, None))
     } yield expect(retrievedCollection.books.isEmpty)
   }
 
