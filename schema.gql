@@ -39,6 +39,10 @@ input PaginationInput {
   after: Int! = 0
 }
 
+type PageInfo {
+  totalBooks: Int!
+}
+
 type Sort {
   type: SortType!
   sortAscending: Boolean!
@@ -60,6 +64,7 @@ type Collection {
   name: String!
   books: [UserBook!]!
   preferredSort: Sort!
+  pageInfo: PageInfo
 }
 
 type Summary {

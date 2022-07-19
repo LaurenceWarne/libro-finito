@@ -2,6 +2,7 @@ package fin.persistence
 
 import java.time.LocalDate
 
+import cats.data.OptionT
 import cats.implicits._
 import cats.{Monad, MonadThrow}
 import doobie._
@@ -58,16 +59,37 @@ object SqliteCollectionRepository extends CollectionRepository[ConnectionIO] {
           case (l, o) => CollectionFragments.limitOffset(l, o)
         }
         .getOrElse(Fragment.empty)
-    (CollectionFragments
-      .fromName(name) ++ CollectionFragments.orderBooks ++ limFrag)
-      .query[CollectionBookRow]
-      .to[List]
-      .flatMap(rows => MonadThrow[ConnectionIO].fromEither(toCollections(rows)))
-      .map(_.headOption)
+    val nameFrag = CollectionFragments.fromName(name)
+    val collectionOptionT = for {
+      collectionInfo <- OptionT(
+        (CollectionFragments.collectionInfo ++ nameFrag)
+          .query[CollectionInfo]
+          .option
+      )
+      books <- OptionT.liftF(
+        (CollectionFragments
+          .retrieveCollections(
+            CollectionFragments.bookInfoSelection,
+            fr"INNER"
+          ) ++ nameFrag ++ CollectionFragments.orderBooks ++ limFrag)
+          .query[BookRow]
+          .to[List]
+      )
+      sortType <- OptionT.fromOption[ConnectionIO](
+        SortConversions.fromString(collectionInfo.preferredSort).toOption
+      )
+    } yield Collection(
+      collectionInfo.name,
+      books.map(_.toBook),
+      Sort(sortType, collectionInfo.sortAscending),
+      PageInfo(collectionInfo.totalBooks).some
+    )
+    collectionOptionT.value
   }
 
   override def collections: ConnectionIO[List[Collection]] = {
-    CollectionFragments.retrieveCollections
+    CollectionFragments
+      .retrieveCollections(CollectionFragments.allSelection, fr"LEFT")
       .query[CollectionBookRow]
       .to[List]
       .flatMap(rows => MonadThrow[ConnectionIO].fromEither(toCollections(rows)))
@@ -113,7 +135,7 @@ object SqliteCollectionRepository extends CollectionRepository[ConnectionIO] {
         case ((name, preferredSort, sortAscending), books) =>
           SortConversions
             .fromString(preferredSort)
-            .map(t => Collection(name, books, Sort(t, sortAscending)))
+            .map(t => Collection(name, books, Sort(t, sortAscending), None))
       }
   }
 }
@@ -122,30 +144,48 @@ object CollectionFragments {
 
   implicit val sortPut: Put[SortType] = Put[String].contramap(_.toString)
 
-  val retrieveCollections =
+  def collectionInfo =
     fr"""
-       |SELECT 
+       |SELECT
        |  c.name,
        |  c.preferred_sort,
        |  c.sort_ascending,
-       |  b.isbn,
-       |  b.title, 
-       |  b.authors,
-       |  b.description,
-       |  b.thumbnail_uri,
-       |  b.added,
-       |  cr.started,
-       |  lr.finished,
-       |  r.rating
+       |  ifnull(cb.count, 0)
        |FROM collections c
-       |LEFT JOIN collection_books cb ON c.name = cb.collection_name
-       |LEFT JOIN books b ON cb.isbn = b.isbn
-       |LEFT JOIN currently_reading_books cr ON b.isbn = cr.isbn
-       |LEFT JOIN (${BookFragments.lastRead}) lr ON b.isbn = lr.isbn
-       |LEFT JOIN rated_books r ON b.isbn = r.isbn""".stripMargin
+       |LEFT JOIN (SELECT collection_name, COUNT(*) as count
+       |           FROM collection_books
+       |           GROUP BY collection_name) cb
+       |  ON c.name = cb.collection_name""".stripMargin
 
-  def fromName(name: String): Fragment =
-    retrieveCollections ++ fr"WHERE name = $name"
+  def retrieveCollections(selection: Fragment, join: Fragment) =
+    fr"SELECT" ++ selection ++
+      fr"FROM collections c" ++ join ++
+      fr"""
+     |JOIN collection_books cb ON c.name = cb.collection_name
+     |LEFT JOIN books b ON cb.isbn = b.isbn
+     |LEFT JOIN currently_reading_books cr ON b.isbn = cr.isbn
+     |LEFT JOIN (${BookFragments.lastRead}) lr ON b.isbn = lr.isbn
+     |LEFT JOIN rated_books r ON b.isbn = r.isbn""".stripMargin
+
+  val bookInfoSelection =
+    fr"""
+       |b.title,
+       |b.authors,
+       |b.description,
+       |b.isbn,
+       |b.thumbnail_uri,
+       |b.added,
+       |cr.started,
+       |lr.finished,
+       |r.rating""".stripMargin
+
+  val allSelection =
+    fr"""
+       |c.name,
+       |c.preferred_sort,
+       |c.sort_ascending,""".stripMargin ++ bookInfoSelection
+
+  def fromName(name: String): Fragment = fr"WHERE name = $name"
 
   def create(
       name: String,
@@ -215,14 +255,21 @@ object CollectionFragments {
     fr"LIMIT $limit OFFSET $offset"
 }
 
+final case class CollectionInfo(
+    name: String,
+    preferredSort: String,
+    sortAscending: Boolean,
+    totalBooks: Int
+)
+
 final case class CollectionBookRow(
     name: String,
     preferredSort: String,
     sortAscending: Boolean,
-    maybeIsbn: Option[String],
     maybeTitle: Option[String],
     maybeAuthors: Option[String],
     maybeDescription: Option[String],
+    maybeIsbn: Option[String],
     maybeThumbnailUri: Option[String],
     maybeAdded: Option[LocalDate],
     maybeStarted: Option[LocalDate],

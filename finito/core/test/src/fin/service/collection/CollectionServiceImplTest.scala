@@ -244,7 +244,8 @@ object CollectionServiceImplTest extends IOSuite {
       collection === Collection(
         name,
         List(toUserBook(book)),
-        CollectionServiceImpl.defaultSort
+        CollectionServiceImpl.defaultSort,
+        None
       )
     )
   }

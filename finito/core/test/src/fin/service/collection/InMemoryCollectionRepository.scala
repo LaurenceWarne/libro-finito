@@ -18,7 +18,7 @@ class InMemoryCollectionRepository[F[_]: MonadThrow](
   override def collections: F[List[Collection]] = collectionsRef.get
 
   override def createCollection(name: String, preferredSort: Sort): F[Unit] = {
-    val collection = Collection(name, List.empty, preferredSort)
+    val collection = Collection(name, List.empty, preferredSort, None)
     collectionsRef.getAndUpdate(collection :: _).void
   }
 

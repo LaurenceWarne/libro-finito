@@ -74,19 +74,20 @@ object IntegrationTests extends IOSuite {
       val collectionName = "my collection"
       val newName        = "my new collection"
       val createRequest = createCollection(collectionName)(
-        Collection.view(UserBook.view, Sort.view)
+        Collection.view(UserBook.view, Sort.view, PageInfo.view)
       )
       for {
         // CREATE COLLECTION
         createResponse <- send(uri, backend)(createRequest)
         // UPDATE
         updateRequest = updateCollection(collectionName, newName.some)(
-          Collection.view(UserBook.view, Sort.view)
+          Collection.view(UserBook.view, Sort.view, PageInfo.view)
         )
         updateResponse <- send(uri, backend)(updateRequest)
         // RETRIEVE COLLECTION
-        retrieveRequest =
-          collection(newName)(Collection.view(UserBook.view, Sort.view))
+        retrieveRequest = collection(newName)(
+          Collection.view(UserBook.view, Sort.view, PageInfo.view)
+        )
         retrieveResponse <- send(uri, backend)(retrieveRequest)
       } yield expect(createResponse.name === collectionName) and expect(
         updateResponse.name === newName
@@ -102,19 +103,19 @@ object IntegrationTests extends IOSuite {
 
       val createRequest =
         createCollection(collectionName)(
-          Collection.view(UserBook.view, Sort.view)
+          Collection.view(UserBook.view, Sort.view, PageInfo.view)
         )
       for {
         // CREATE COLLECTION
         _ <- send(uri, backend)(createRequest)
         // ADD BOOK
         addBookRequest = addBook(collectionName.some, book)(
-          Collection.view(UserBook.view, Sort.view)
+          Collection.view(UserBook.view, Sort.view, PageInfo.view)
         )
         addBookResponse <- send(uri, backend)(addBookRequest)
         // RETRIEVE COLLECTION
         retrieveRequest = collection(collectionName)(
-          Collection.view(UserBook.view, Sort.view)
+          Collection.view(UserBook.view, Sort.view, PageInfo.view)
         )
         retrieveResponse <- send(uri, backend)(retrieveRequest)
       } yield expectBooksEqualIgnoringDates(
@@ -133,14 +134,14 @@ object IntegrationTests extends IOSuite {
 
       val createRequest =
         createCollection(collectionName)(
-          Collection.view(UserBook.view, Sort.view)
+          Collection.view(UserBook.view, Sort.view, PageInfo.view)
         )
       for {
         // CREATE COLLECTION
         _ <- send(uri, backend)(createRequest)
         // ADD BOOK
         addBookRequest = addBook(collectionName.some, book)(
-          Collection.view(UserBook.view, Sort.view)
+          Collection.view(UserBook.view, Sort.view, PageInfo.view)
         )
         addBookResponse <- send(uri, backend)(addBookRequest)
         // REMOVE BOOK
@@ -148,7 +149,7 @@ object IntegrationTests extends IOSuite {
         _ <- send(uri, backend)(removeBookRequest)
         // RETRIEVE COLLECTION
         retrieveRequest = collection(collectionName)(
-          Collection.view(UserBook.view, Sort.view)
+          Collection.view(UserBook.view, Sort.view, PageInfo.view)
         )
         retrieveResponse <- send(uri, backend)(retrieveRequest)
       } yield expectBooksEqualIgnoringDates(
@@ -165,14 +166,14 @@ object IntegrationTests extends IOSuite {
 
       val createRequest =
         createCollection(collectionName)(
-          Collection.view(UserBook.view, Sort.view)
+          Collection.view(UserBook.view, Sort.view, PageInfo.view)
         )
       for {
         // CREATE COLLECTION
         _ <- send(uri, backend)(createRequest)
         // ADD BOOK
         addBookRequest = addBook(collectionName.some, book)(
-          Collection.view(UserBook.view, Sort.view)
+          Collection.view(UserBook.view, Sort.view, PageInfo.view)
         )
         _ <- send(uri, backend)(addBookRequest)
         // START BOOK
@@ -189,14 +190,14 @@ object IntegrationTests extends IOSuite {
 
       val createRequest =
         createCollection(collectionName)(
-          Collection.view(UserBook.view, Sort.view)
+          Collection.view(UserBook.view, Sort.view, PageInfo.view)
         )
       for {
         // CREATE COLLECTION
         _ <- send(uri, backend)(createRequest)
         // ADD BOOK
         addBookRequest = addBook(collectionName.some, book)(
-          Collection.view(UserBook.view, Sort.view)
+          Collection.view(UserBook.view, Sort.view, PageInfo.view)
         )
         _ <- send(uri, backend)(addBookRequest)
         // FINISH BOOK
@@ -242,7 +243,7 @@ object IntegrationTests extends IOSuite {
           "https://user-images.githubusercontent.com/17688577/144673930-add9233d-9308-4972-8043-2f519d808874.png"
       )
       val addBookRequest = addBook(None, book)(
-        Collection.view(UserBook.view, Sort.view)
+        Collection.view(UserBook.view, Sort.view, PageInfo.view)
       )
       for {
         // ADD BOOK

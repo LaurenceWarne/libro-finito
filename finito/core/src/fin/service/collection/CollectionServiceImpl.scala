@@ -42,7 +42,8 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
     } yield Collection(
       args.name,
       args.books.fold(List.empty[UserBook])(_.map(toUserBook(_))),
-      sort
+      sort,
+      None
     )
     transact(transaction)
   }

@@ -28,7 +28,12 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
       retrievedCollection <- repo.collection(name, None, None)
     } yield expect(
       retrievedCollection.exists(
-        _ === Collection(name, List.empty, Sort(SortType.DateAdded, true))
+        _ === Collection(
+          name,
+          List.empty,
+          Sort(SortType.DateAdded, true),
+          PageInfo(0).some
+        )
       )
     )
   }
@@ -50,7 +55,8 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
         _ === Collection(
           name,
           List(toUserBook(book, date.some), toUserBook(book2, date2.some)),
-          Sort(SortType.DateAdded, true)
+          Sort(SortType.DateAdded, true),
+          PageInfo(2).some
         )
       )
     ) and expect(
@@ -58,7 +64,8 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
         _ === Collection(
           name,
           List(toUserBook(book2, date2.some), toUserBook(book, date.some)),
-          Sort(SortType.DateAdded, false)
+          Sort(SortType.DateAdded, false),
+          PageInfo(2).some
         )
       )
     )
@@ -81,7 +88,8 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
         _ === Collection(
           name,
           List(toUserBook(book2, date2.some), toUserBook(book, date.some)),
-          Sort(SortType.Title, true)
+          Sort(SortType.Title, true),
+          PageInfo(2).some
         )
       )
     ) and expect(
@@ -89,7 +97,8 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
         _ === Collection(
           name,
           List(toUserBook(book, date.some), toUserBook(book2, date2.some)),
-          Sort(SortType.Title, false)
+          Sort(SortType.Title, false),
+          PageInfo(2).some
         )
       )
     )
@@ -110,7 +119,8 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
         _ === Collection(
           name,
           books.drop(offset).take(limit).map(toUserBook(_, date.some)),
-          Sort(SortType.Title, true)
+          Sort(SortType.Title, true),
+          PageInfo(9).some
         )
       )
     )
@@ -185,7 +195,8 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
         c === Collection(
           newName,
           List(toUserBook(book, dateAdded = date.some)),
-          newSort
+          newSort,
+          PageInfo(1).some
         )
       )
     )
@@ -226,7 +237,8 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
         _ === Collection(
           name,
           List(toUserBook(book, dateAdded = date.some)),
-          sort
+          sort,
+          PageInfo(1).some
         )
       )
     )
@@ -247,7 +259,8 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
         _ === Collection(
           name2,
           List(toUserBook(book, dateAdded = date.some)),
-          sort
+          sort,
+          PageInfo(1).some
         )
       )
     )
