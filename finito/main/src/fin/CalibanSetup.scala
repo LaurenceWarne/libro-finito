@@ -33,8 +33,11 @@ object CalibanSetup {
   val freshnessQuery =
     gqldoc("""
 {
-  collections {
+  collection(name: "My Books", booksPagination: {first: 5, after: 0}) {
     name
+    books {
+      title
+    }
   }
 }""")
 
