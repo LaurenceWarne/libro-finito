@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.7.4
+
+* [d3321fe](https://github.com/LaurenceWarne/libro-finito/commit/d3321fed2b53a1ecfcc003c58a990588204e297b): Implement pagination for collections
+
 ## v0.7.3
 
 * [f7075ff](https://github.com/LaurenceWarne/libro-finito/commit/f7075ffa9930155aedb4f256e67c547011bfab1f): Update dependencies and log info about the server at startup
