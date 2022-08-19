@@ -104,7 +104,9 @@ object finito extends Module {
       Agg(
         Deps.Caliban.core,
         Deps.Caliban.cats,
-        Deps.CatsEffect.catsEffect
+        Deps.CatsEffect.catsEffect,
+        Deps.Circe.core,
+        Deps.Circe.generic
       )
   }
 
@@ -122,6 +124,7 @@ object finito extends Module {
         Deps.Circe.parser,
         Deps.Http4s.http4sBlazeClient,
         Deps.Http4s.http4sDsl,
+        Deps.Http4s.http4sCirce,
         Deps.CatsEffect.catsEffect,
         Deps.CatsLogging.core,
         Deps.luaj
@@ -314,6 +317,7 @@ object Deps {
     val http4sDsl         = ivy"org.http4s::http4s-dsl:$version"
     val http4sBlazeServer = ivy"org.http4s::http4s-blaze-server:$version"
     val http4sBlazeClient = ivy"org.http4s::http4s-blaze-client:$version"
+    val http4sCirce = ivy"org.http4s::http4s-circe:$version"
   }
 
   object Circe {

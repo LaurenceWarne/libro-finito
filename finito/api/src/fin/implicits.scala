@@ -2,6 +2,8 @@ package fin
 
 import cats.kernel.Eq
 import cats.Show
+import io.circe._
+import io.circe.generic.semiauto._
 
 import fin.Types._
 
@@ -18,4 +20,10 @@ object implicits {
   implicit val sortShow: Show[Sort]             = Show.fromToString
   implicit val summaryShow: Show[Summary] = s =>
     s.copy(montage = "<base64>").toString
+
+  implicit val userBookEncoder: Encoder[UserBook]     = deriveEncoder
+  implicit val pageInfoEncoder: Encoder[PageInfo]     = deriveEncoder
+  implicit val sortTypeEncoder: Encoder[SortType]     = deriveEncoder
+  implicit val sortEncoder: Encoder[Sort]             = deriveEncoder
+  implicit val collectionEncoder: Encoder[Collection] = deriveEncoder
 }

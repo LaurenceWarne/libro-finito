@@ -39,6 +39,7 @@ object Main extends IOCaseApp[CliOptions] {
         services    <- Services[IO](serviceResources)
         _           <- logger.debug("Bootstrapping caliban...")
         interpreter <- CalibanSetup.interpreter[IO](services)
+        restApi = HTTPService.routes(services)
 
         debug <- IO(sys.env.get("LOG_LEVEL").exists(CIString(_) === ci"DEBUG"))
         _     <- logger.debug("Starting http4s server...")
@@ -47,7 +48,7 @@ object Main extends IOCaseApp[CliOptions] {
           BlazeServerBuilder[IO]
             .withBanner(Seq(Banner.value))
             .bindHttp(config.port, config.host)
-            .withHttpApp(Routes.routes[IO](interpreter, debug))
+            .withHttpApp(Routes.routes[IO](interpreter, restApi, debug))
             .serve
             .compile
             .drain
