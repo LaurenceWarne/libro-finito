@@ -80,6 +80,7 @@ object finito extends Module {
         Deps.Circe.core,
         Deps.Circe.generic,
         Deps.Circe.parser,
+        Deps.Circe.literal,
         Deps.Doobie.core,
         Deps.Doobie.hikari,
         Deps.Fs2.core,
@@ -317,7 +318,7 @@ object Deps {
     val http4sDsl         = ivy"org.http4s::http4s-dsl:$version"
     val http4sBlazeServer = ivy"org.http4s::http4s-blaze-server:$version"
     val http4sBlazeClient = ivy"org.http4s::http4s-blaze-client:$version"
-    val http4sCirce = ivy"org.http4s::http4s-circe:$version"
+    val http4sCirce       = ivy"org.http4s::http4s-circe:$version"
   }
 
   object Circe {
@@ -325,6 +326,7 @@ object Deps {
     val core    = ivy"io.circe::circe-core:$version"
     val generic = ivy"io.circe::circe-generic:$version"
     val parser  = ivy"io.circe::circe-parser:$version"
+    val literal = ivy"io.circe::circe-literal:$version"
   }
 
   object CaseApp {
