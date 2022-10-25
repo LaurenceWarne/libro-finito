@@ -5,6 +5,7 @@ import $ivy.`com.lihaoyi::mill-contrib-scoverage:$MILL_VERSION`
 import $ivy.`com.goyeau::mill-scalafix_mill0.10:0.2.8`
 import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version_mill0.10:0.1.4`
 import $file.plugins.calibanSchemaGen
+import $file.plugins.jmh
 import mill._, scalalib._, scalafmt._
 import mill.scalalib.publish._
 import mill.contrib.buildinfo.BuildInfo
@@ -14,6 +15,7 @@ import mill.eval.Evaluator
 import com.goyeau.mill.scalafix.ScalafixModule
 import coursier.maven.MavenRepository
 import calibanSchemaGen.{CalibanClientModule, CalibanSchemaModule}
+import jmh.Jmh
 import de.tobiasroeser.mill.vcs.version.VcsVersion
 
 val gqlSchemaPath  = "schema.gql"
@@ -157,6 +159,12 @@ object finito extends Module {
 
     object test extends Tests with ScoverageTests with LibroFinitoTest
   }
+
+  object benchmark extends LibroFinitoModule with Jmh {
+    def moduleDeps = Seq(main)
+
+    def ivyDeps = super.ivyDeps() ++ Agg(Deps.jmh)
+  }
 }
 // TODO use this when https://github.com/com-lihaoyi/mill/pull/1309 is merged
 // object scoverage extends ScoverageReport {
@@ -271,6 +279,7 @@ object Deps {
   val luaj           = ivy"org.luaj:luaj-jse:3.0.1"
   val testContainers = ivy"com.dimafeng::testcontainers-scala:0.39.7"
   val sttpHttp4s     = ivy"com.softwaremill.sttp.client3::http4s-backend:3.3.17"
+  val jmh            = ivy"org.openjdk.jmh:jmh-core:1.35"
 
   object Compiler {
     val semanticDb       = ivy"org.scalameta::semanticdb-scalac:4.4.22"
@@ -300,7 +309,7 @@ object Deps {
   }
 
   object Caliban {
-    val version = "1.4.1"
+    val version = "2.0.1"
     val core    = ivy"com.github.ghostdogpr::caliban:$version"
     val http4s  = ivy"com.github.ghostdogpr::caliban-http4s:$version"
     val cats    = ivy"com.github.ghostdogpr::caliban-cats:$version"

@@ -28,7 +28,7 @@ import FinitoSchema._
 
 object CalibanSetup {
 
-  type Env = zio.clock.Clock with zio.console.Console
+  type Env = zio.Clock with zio.Console
 
   val freshnessQuery =
     gqldoc("""
@@ -77,7 +77,7 @@ object CalibanSetup {
     val api = GraphQL.graphQL(RootResolver(queries, mutations))
     (api @@ apolloTracing @@ Wrappers.printErrors)
       .interpreterAsync[F]
-      .map(_.provide(runtime.environment))
+      .map(_.provideLayer(zio.ZLayer.succeed(runtime.environment)))
       .map(withErrors(_))
   }
 

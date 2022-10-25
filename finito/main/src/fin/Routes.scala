@@ -21,7 +21,7 @@ import fin.implicits._
 
 object Routes {
 
-  type Env = zio.clock.Clock with zio.blocking.Blocking
+  type Env = zio.Clock
 
   def routes[F[_]: Async](
       interpreter: GraphQLInterpreter[Any, CalibanError],

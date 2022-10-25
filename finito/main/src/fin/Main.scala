@@ -19,7 +19,10 @@ import fin.persistence._
 
 object Main extends IOCaseApp[CliOptions] {
 
-  implicit val zioRuntime         = Runtime.default
+  implicit val zioRuntime =
+    Runtime.default.withEnvironment(
+      zio.ZEnvironment(zio.Clock.ClockLive, zio.Console.ConsoleLive)
+    )
   implicit val logger: Logger[IO] = Slf4jLogger.getLogger
 
   def run(options: CliOptions, arg: RemainingArgs): IO[ExitCode] = {
