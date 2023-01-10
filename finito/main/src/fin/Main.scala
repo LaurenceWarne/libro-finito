@@ -21,6 +21,7 @@ import zio.Runtime
 
 import fin.config._
 import fin.persistence._
+import org.http4s.HttpRoutes
 
 object Main extends IOCaseApp[CliOptions] {
 
@@ -48,7 +49,6 @@ object Main extends IOCaseApp[CliOptions] {
         services    <- Services[IO](serviceResources)
         _           <- logger.debug("Bootstrapping caliban...")
         interpreter <- CalibanSetup.interpreter[IO](services, ep)
-        restApi = HTTPService.routes(services)
 
         debug <- IO(sys.env.get("LOG_LEVEL").exists(CIString(_) === ci"DEBUG"))
         _     <- logger.debug("Starting http4s server...")
@@ -57,7 +57,9 @@ object Main extends IOCaseApp[CliOptions] {
           BlazeServerBuilder[IO]
             .withBanner(Seq(Banner.value))
             .bindHttp(config.port, config.host)
-            .withHttpApp(Routes.routes[IO](interpreter, ep, restApi, debug))
+            .withHttpApp(
+              Routes.routes[IO](interpreter, ep, HttpRoutes.empty[IO], debug)
+            )
             .serve
             .compile
             .drain

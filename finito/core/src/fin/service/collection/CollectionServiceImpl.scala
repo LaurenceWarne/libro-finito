@@ -52,7 +52,7 @@ class CollectionServiceImpl[F[_]: Async, G[_]: MonadThrow] private (
   }
 
   override def collection(
-      args: QueriesCollectionArgs
+      args: QueriesCollectionArgs,
       span: Span[F]
   ): F[Collection] =
     span.span("collection").use { _ =>
