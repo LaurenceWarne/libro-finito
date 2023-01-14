@@ -3,20 +3,17 @@ package fin
 import java.time.LocalDate
 
 import scala.annotation.nowarn
-import scala.concurrent.duration._
 import scala.util.Try
 
 import caliban.CalibanError.ExecutionError
-import caliban.Macros.gqldoc
 import caliban._
 import caliban.interop.cats.implicits._
 import caliban.schema._
 import caliban.wrappers.ApolloTracing.apolloTracing
 import caliban.wrappers.Wrappers
+import cats.effect.Async
 import cats.effect.std.Dispatcher
-import cats.effect.{Async, Temporal}
 import cats.implicits._
-import org.typelevel.log4cats.Logger
 
 import fin.Operations._
 import fin.Types._
@@ -29,17 +26,6 @@ import FinitoSchema._
 object CalibanSetup {
 
   type Env = zio.Clock with zio.Console
-
-  val freshnessQuery =
-    gqldoc("""
-{
-  collection(name: "My Books", booksPagination: {first: 5, after: 0}) {
-    name
-    books {
-      title
-    }
-  }
-}""")
 
   def interpreter[F[_]: Async](services: Services[F])(implicit
       runtime: zio.Runtime[Env],
@@ -79,20 +65,6 @@ object CalibanSetup {
       .interpreterAsync[F]
       .map(_.provideLayer(zio.ZLayer.succeed(runtime.environment)))
       .map(withErrors(_))
-  }
-
-  def keepFresh[F[+_]: Async: Logger](
-      interpreter: GraphQLInterpreter[Any, CalibanError],
-      timer: Temporal[F]
-  )(implicit runtime: zio.Runtime[Env]): F[Nothing] = {
-    (interpreter
-      .executeAsync[F](freshnessQuery)
-      .attempt
-      .flatMap { resp =>
-        Logger[F].debug(s"Freshness query response: $resp")
-      }
-      >> timer
-        .sleep(1.minutes)).foreverM
   }
 
   // 'Effect failure' is from this line:

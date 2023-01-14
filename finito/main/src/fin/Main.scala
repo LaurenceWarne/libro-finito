@@ -45,22 +45,20 @@ object Main extends IOCaseApp[CliOptions] {
         services    <- Services[IO](serviceResources)
         _           <- logger.debug("Bootstrapping caliban...")
         interpreter <- CalibanSetup.interpreter[IO](services)
-        restApi = HTTPService.routes(services)
 
         debug <- IO(sys.env.get("LOG_LEVEL").exists(CIString(_) === ci"DEBUG"))
-        _     <- logger.debug("Starting http4s server...")
-        // _     <- CalibanSetup.keepFresh[IO](interpreter, Temporal[IO]).start
         _ <- (timer.sleep(1.minute) >> Routes.keepFresh[IO](
             serviceResources.client,
             timer,
             config.port,
             config.host
           )).start
+        _ <- logger.debug("Starting http4s server...")
         server <-
           BlazeServerBuilder[IO]
             .withBanner(Seq(Banner.value))
             .bindHttp(config.port, config.host)
-            .withHttpApp(Routes.routes[IO](interpreter, restApi, debug))
+            .withHttpApp(Routes.routes[IO](interpreter, debug))
             .serve
             .compile
             .drain

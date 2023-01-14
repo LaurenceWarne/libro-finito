@@ -8,21 +8,13 @@ import cats.data.{Kleisli, OptionT}
 import cats.effect._
 import cats.implicits._
 import fs2.Stream
-import io.circe.literal._
-import io.circe.syntax._
 import org.http4s._
-import org.http4s.circe._
 import org.http4s.client.Client
-import org.http4s.dsl._
-import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.server.middleware.ResponseTiming
 import org.typelevel.ci._
 import org.typelevel.log4cats.Logger
-
-import fin.Types._
-import fin.implicits._
 
 object Routes {
 
@@ -30,7 +22,6 @@ object Routes {
 
   def routes[F[_]: Async](
       interpreter: GraphQLInterpreter[Any, CalibanError],
-      restApiRoutes: HttpRoutes[F],
       debug: Boolean
   )(implicit
       runtime: zio.Runtime[Env]
@@ -48,7 +39,6 @@ object Routes {
         )
       ),
       "/api/graphql" -> serviceRoutes,
-      "/api"         -> restApiRoutes,
       "/graphiql" -> Kleisli.liftF(
         StaticFile.fromResource("/graphql-playground.html", None)
       )
@@ -110,46 +100,6 @@ object Routes {
             )
         }
       }
-    }
-  }
-}
-
-object HTTPService {
-
-  object CollectionNameMatcher
-      extends QueryParamDecoderMatcher[String]("collection-name")
-
-  def routes[F[_]: Async](services: Services[F]): HttpRoutes[F] = {
-    errorMiddleware[F](raw_routes[F](services))
-  }
-
-  private def errorMiddleware[F[_]: Async](
-      service: HttpRoutes[F]
-  ): HttpRoutes[F] = {
-    val dsl = Http4sDsl[F]
-    import dsl._
-    Kleisli { req: Request[F] =>
-      service(req).handleErrorWith { e =>
-        OptionT.liftF(
-          Ok(json"""{"data": null, "errors": [{"message": ${e.getMessage}}]}""")
-        )
-      }
-    }
-
-  }
-
-  private def raw_routes[F[_]: Async](services: Services[F]): HttpRoutes[F] = {
-    val dsl = Http4sDsl[F]
-    import dsl._
-    HttpRoutes.of[F] {
-      case GET -> Root / "collection" :? CollectionNameMatcher(
-            collectionName
-          ) =>
-        services.collectionService
-          .collection(
-            QueriesCollectionArgs(collectionName, None)
-          )
-          .flatMap(c => Ok(c.asJson))
     }
   }
 }
