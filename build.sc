@@ -309,7 +309,7 @@ object Deps {
   }
 
   object Caliban {
-    val version = "2.0.1"
+    val version = "2.0.2"
     val core    = ivy"com.github.ghostdogpr::caliban:$version"
     val http4s  = ivy"com.github.ghostdogpr::caliban-http4s:$version"
     val cats    = ivy"com.github.ghostdogpr::caliban-cats:$version"
@@ -323,7 +323,7 @@ object Deps {
   }
 
   object Http4s {
-    val version           = "0.23.12"
+    val version           = "0.23.13"
     val http4sDsl         = ivy"org.http4s::http4s-dsl:$version"
     val http4sBlazeServer = ivy"org.http4s::http4s-blaze-server:$version"
     val http4sBlazeClient = ivy"org.http4s::http4s-blaze-client:$version"

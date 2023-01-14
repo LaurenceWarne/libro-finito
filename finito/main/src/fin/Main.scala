@@ -1,5 +1,7 @@
 package fin
 
+import scala.concurrent.duration._
+
 import _root_.cats.effect._
 import _root_.cats.effect.std.Dispatcher
 import _root_.cats.implicits._
@@ -29,6 +31,7 @@ object Main extends IOCaseApp[CliOptions] {
     val server = serviceResources(options).use { serviceResources =>
       implicit val dispatcherEv = serviceResources.dispatcher
       val config                = serviceResources.config
+      val timer                 = Temporal[IO]
       for {
         _ <- FlywaySetup.init[IO](
           config.databaseUri,
@@ -46,7 +49,13 @@ object Main extends IOCaseApp[CliOptions] {
 
         debug <- IO(sys.env.get("LOG_LEVEL").exists(CIString(_) === ci"DEBUG"))
         _     <- logger.debug("Starting http4s server...")
-        _     <- CalibanSetup.keepFresh[IO](interpreter, Temporal[IO]).start
+        // _     <- CalibanSetup.keepFresh[IO](interpreter, Temporal[IO]).start
+        _ <- (timer.sleep(1.minute) >> Routes.keepFresh[IO](
+            serviceResources.client,
+            timer,
+            config.port,
+            config.host
+          )).start
         server <-
           BlazeServerBuilder[IO]
             .withBanner(Seq(Banner.value))
@@ -72,7 +81,7 @@ object Main extends IOCaseApp[CliOptions] {
           ec
         )
       }
-      dispatcher <- Dispatcher[IO]
+      dispatcher <- Dispatcher.parallel[IO]
     } yield ServiceResources(client, config, transactor, dispatcher)
 }
 
