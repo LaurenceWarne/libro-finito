@@ -19,6 +19,7 @@ import org.http4s.implicits._
 import org.http4s.server.Router
 import org.http4s.server.middleware.ResponseTiming
 import org.typelevel.ci._
+import org.typelevel.log4cats.Logger
 
 import fin.Types._
 import fin.implicits._
@@ -59,21 +60,23 @@ object Routes {
   "operationName": null,
   "query": "{collection(name: \"My Books\", booksPagination: {first: 5, after: 0}) {name books {title}}}",
   "variables": {}}"""
+  private val headers =
+    Headers(("Accept", "application/json"), ("X-Client-Id", "finito"))
 
-  def keepFresh[F[_]: Async](
+  def keepFresh[F[_]: Async: Logger](
       client: Client[F],
       timer: Temporal[F],
       port: Int,
       host: String
   ): F[Unit] = {
     val uriStr = show"http://$host:$port/api/graphql"
-    val headers =
-      Headers(("Accept", "application/json"), ("X-Client-Id", "finito"))
-    val body = fs2.Stream.emits(queryJson.getBytes("UTF-8"))
+    val body   = fs2.Stream.emits(queryJson.getBytes("UTF-8"))
     val result = for {
       uri <- Concurrent[F].fromEither(Uri.fromString(uriStr))
       request = Request[F](Method.POST, uri, headers = headers, body = body)
-      _ <- client.expect[String](request)
+      _ <- client.expect[String](request).void.handleErrorWith { e =>
+        Logger[F].error(show"Error running freshness query '${e.getMessage()}'")
+      }
     } yield ()
     (result >> timer.sleep(1.minutes)).foreverM
   }
