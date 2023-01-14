@@ -73,7 +73,8 @@ object SummaryServiceImplTest extends IOSuite {
           QueriesSummaryArgs(
             constantDate.some,
             constantDate.plusYears(1).some,
-            None
+            None,
+            true
           )
         )
       } yield expect(summary.added == noImages)

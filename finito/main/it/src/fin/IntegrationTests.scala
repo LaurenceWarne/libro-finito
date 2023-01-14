@@ -249,7 +249,7 @@ object IntegrationTests extends IOSuite {
         // ADD BOOK
         _ <- send(uri, backend)(addBookRequest)
         // SUMMARY
-        summaryRequest = summary(None, None, None)(Summary.view)
+        summaryRequest = summary(None, None, None, true)(Summary.view)
         summaryResponse <- send(uri, backend)(summaryRequest)
       } yield expect(summaryResponse.added > 0)
   }

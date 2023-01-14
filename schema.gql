@@ -90,7 +90,12 @@ type Queries {
   collections: [Collection!]!
   collection(name: String!, booksPagination: PaginationInput): Collection!
   export(collection: String!, exportType: PortType!): String!
-  summary(from: Date, to: Date, montageInput: MontageInput): Summary!
+  summary(
+    from: Date,
+    to: Date,
+    montageInput: MontageInput,
+    includeAdded: Boolean! = true
+  ): Summary!
 }
 
 type Mutations {

@@ -20,10 +20,13 @@ class SummaryServiceImpl[F[_]: Async, G[_]] private (
       from        <- args.from.fold(currentDate.map(_.withDayOfYear(1)))(_.pure[F])
       to          <- args.to.fold(currentDate)(_.pure[F])
       books       <- transact(bookRepo.retrieveBooksInside(from, to))
-      read      = books.filter(_.lastRead.nonEmpty).length
+      readBooks = books.filter(_.lastRead.nonEmpty)
       ratingAvg = mean(books.flatMap(_.rating.toList))
-      montage <- montageService.montage(books, args.montageInput)
-    } yield Summary(read, books.length, ratingAvg, montage)
+      montage <- montageService.montage(
+        if (args.includeAdded) books else readBooks,
+        args.montageInput
+      )
+    } yield Summary(readBooks.length, books.length, ratingAvg, montage)
 
   private def mean(ls: List[Int]): Float =
     if (ls.isEmpty) 0f else (ls.sum / ls.size).toFloat
