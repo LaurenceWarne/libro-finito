@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.7.5
+
+* [635701c](https://github.com/LaurenceWarne/libro-finito/commit/635701c7af61ef2510157729b782c0520b36d4e7): Add `includeAdded` parameter to `summary` query to allow showing only read books in montage images
+* [88623de](https://github.com/LaurenceWarne/libro-finito/commit/88623de9efdd629926bcedf2e2fc05c4e674d5a9): Improve server performance after periods of inactivity
+
 ## v0.7.4
 
 * [d3321fe](https://github.com/LaurenceWarne/libro-finito/commit/d3321fed2b53a1ecfcc003c58a990588204e297b): Implement pagination for collections
