@@ -271,14 +271,14 @@ object Deps {
   val ammoniteVersion  = "2.5.2"
   val scoverageVersion = "1.4.11"
   val logback          = ivy"ch.qos.logback:logback-classic:1.1.3"
-  val weaver           = ivy"com.disneystreaming::weaver-cats:0.7.4"
+  val weaver           = ivy"com.disneystreaming::weaver-cats:0.8.1"
   val sqlite           = ivy"org.xerial:sqlite-jdbc:3.36.0.3"
   val flyway           = ivy"org.flywaydb:flyway-core:7.10.0"
   val pureconfig       = ivy"com.github.pureconfig::pureconfig:0.16.0"
   // https://github.com/luaj/luaj/issues/91 ):
   val luaj           = ivy"org.luaj:luaj-jse:3.0.1"
-  val testContainers = ivy"com.dimafeng::testcontainers-scala:0.39.7"
-  val sttpHttp4s     = ivy"com.softwaremill.sttp.client3::http4s-backend:3.3.17"
+  val testContainers = ivy"com.dimafeng::testcontainers-scala:0.40.2"
+  val sttpHttp4s     = ivy"com.softwaremill.sttp.client3::http4s-backend:3.8.8"
   val jmh            = ivy"org.openjdk.jmh:jmh-core:1.35"
 
   object Compiler {
@@ -292,12 +292,12 @@ object Deps {
   }
 
   object CatsEffect {
-    val version    = "3.3.12"
+    val version    = "3.4.4"
     val catsEffect = ivy"org.typelevel::cats-effect:$version"
   }
 
   object Fs2 {
-    val version = "3.2.0"
+    val version = "3.4.0"
     val core    = ivy"co.fs2::fs2-core:$version"
     val io      = ivy"co.fs2::fs2-io:$version"
   }
