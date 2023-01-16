@@ -11,26 +11,26 @@ The server may be configured in a number of ways via a file whose expected locat
 
 ```hocon
 {
-  database-path = ~/.config/libro-finito/db.sqlite,
+  database-path = "~/.config/libro-finito/db.sqlite",
   port = 56848,
-  default-collection = My Books,
+  default-collection = "My Books",
   special-collections = [
     {
-      name = My Books,
+      name = "My Books",
       lazy = false,
       add-hook = "add = true"
     },
     {
-      name = Currently Reading,
+      name = "Currently Reading",
       read-begun-hook = "add = true",
       read-complete-hook = "remove = true"
     },
     {
-      name = Read,
+      name = "Read",
       read-completed-hook = "add = true"
     },
     {
-      name = Favourites,
+      name = "Favourites",
       rate-hook = """
         if(rating >= 5) then
           add = true
