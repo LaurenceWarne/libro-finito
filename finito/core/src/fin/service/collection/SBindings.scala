@@ -51,10 +51,12 @@ object Bindable {
 
   implicit def mapBindable[T]: Bindable[Map[String, T]] =
     m => SBindings(m.asInstanceOf[Map[String, Object]])
+
   implicit val collectionBindable: Bindable[Collection] =
     mapBindable.contramap { c =>
       Map("collection" -> c.name, "sort" -> c.preferredSort.toString)
     }
+
   implicit val bookBindable: Bindable[BookInput] =
     mapBindable.contramap { b =>
       Map("title" -> b.title, "isbn" -> b.isbn, "authors" -> b.authors)

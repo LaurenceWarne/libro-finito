@@ -1,46 +1,44 @@
 # Fin
 [![codecov](https://codecov.io/gh/LaurenceWarne/libro-finito/branch/master/graph/badge.svg?token=IFT4R8T4F3)](https://codecov.io/gh/LaurenceWarne/libro-finito)
 
-`libro-finito` is a http server whose goal is to provide a local book management service.  Its main features are searching for books and aggregating books into user defined collections.  The main entry point is a graphql API located [here](/schema.gql).  Currently the only client application is [finito.el](https://github.com/LaurenceWarne/finito.el) (for Emacs).
+`libro-finito` is a HTTP server which provides a local book management service.  Its main features are searching for books and aggregating books into user defined collections, which are persisted on disk on an sqlite db.  The main entry point is a graphql API located [here](/schema.gql).  Currently the only client application is [finito.el](https://github.com/LaurenceWarne/finito.el) (for Emacs).
 
 Also check out the [Changelog](/CHANGELOG.md).
 
 # Configuration
 
-The server may be configured in a number of ways via a file whose expected location is `~/.config/libro-finito/service.conf`:
+The server may be configured in a number of ways via a [HOCON](https://github.com/lightbend/config/blob/main/HOCON.md) file whose expected location is `~/.config/libro-finito/service.conf`:
 
 ```hocon
-{
-  database-path = "~/.config/libro-finito/db.sqlite",
-  port = 56848,
-  default-collection = "My Books",
-  special-collections = [
-    {
-      name = "My Books",
-      lazy = false,
-      add-hook = "add = true"
-    },
-    {
-      name = "Currently Reading",
-      read-begun-hook = "add = true",
-      read-complete-hook = "remove = true"
-    },
-    {
-      name = "Read",
-      read-completed-hook = "add = true"
-    },
-    {
-      name = "Favourites",
-      rate-hook = """
-        if(rating >= 5) then
-          add = true
-        else
-          remove = true
-        end
-      """
-    }
-  ]
-}
+database-path = "~/.config/libro-finito/db.sqlite",
+port = 56848,
+default-collection = "My Books",
+special-collections = [
+  {
+    name = "My Books",
+    lazy = false,
+    add-hook = "add = true"
+  },
+  {
+    name = "Currently Reading",
+    read-begun-hook = "add = true",
+    read-complete-hook = "remove = true"
+  },
+  {
+    name = "Read",
+    read-completed-hook = "add = true"
+  },
+  {
+    name = "Favourites",
+    rate-hook = """
+      if(rating >= 5) then
+        add = true
+      else
+        remove = true
+      end
+    """
+  }
+]
 ```
 
 `database-path` is the path of the sqlite database the service will use whilst `port` is the port which the http server will use.
