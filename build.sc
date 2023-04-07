@@ -2,7 +2,7 @@
 import $ivy.`com.lihaoyi::mill-contrib-buildinfo:$MILL_VERSION`
 import $ivy.`com.lihaoyi::mill-contrib-docker:$MILL_VERSION`
 import $ivy.`com.lihaoyi::mill-contrib-scoverage:$MILL_VERSION`
-import $ivy.`com.goyeau::mill-scalafix_mill0.10:0.2.8`
+import $ivy.`com.goyeau::mill-scalafix_mill0.10:0.2.11`
 import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version_mill0.10:0.1.4`
 import $file.plugins.calibanSchemaGen
 import $file.plugins.jmh
@@ -199,14 +199,14 @@ trait LibroFinitoModule
     extends LibroFinitoModuleNoLinting
     with ScalafmtModule
     with ScalafixModule {
-  def scalafixIvyDeps = Agg(Deps.Scalafix.organizeImports)
+  def scalafixIvyDeps = Deps.Scalafix.all
 }
 
 trait LibroFinitoTest
     extends TestModule
     with ScalafmtModule
     with ScalafixModule {
-  def scalafixIvyDeps = Agg(Deps.Scalafix.organizeImports)
+  def scalafixIvyDeps = Deps.Scalafix.all
   def scalacOptions   = Options.scalacOptions
 
   def ivyDeps = Agg(Deps.weaver)
@@ -288,11 +288,19 @@ object Deps {
   }
 
   object Scalafix {
-    val organizeImports = ivy"com.github.liancheng::organize-imports:0.4.0"
+    private val typelevelVersion = "0.1.5"
+    val all = Agg(
+      ivy"com.github.liancheng::organize-imports:0.4.0",
+      ivy"org.typelevel::typelevel-scalafix:$typelevelVersion",
+      ivy"org.typelevel::typelevel-scalafix-cats:$typelevelVersion",
+      ivy"org.typelevel::typelevel-scalafix-cats-effect:$typelevelVersion",
+      ivy"org.typelevel::typelevel-scalafix-fs2:$typelevelVersion",
+      ivy"org.typelevel::typelevel-scalafix-http4s:$typelevelVersion"
+    )
   }
 
   object CatsEffect {
-    val version    = "3.4.4"
+    val version    = "3.4.8"
     val catsEffect = ivy"org.typelevel::cats-effect:$version"
   }
 
