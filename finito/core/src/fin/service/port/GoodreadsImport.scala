@@ -1,12 +1,15 @@
 package fin.service.port
 
-import fin.Types._
-import fs2.text
-import fs2.io.file.{Files, Path}
+import java.time.LocalDate
+
+import scala.util.Try
+
 import cats.effect.kernel.Async
 import cats.implicits._
-import java.time.LocalDate
-import scala.util.Try
+import fs2.io.file.{Files, Path}
+import fs2.text
+
+import fin.Types._
 
 trait CollectionImport[F[_]] {
   def importResource(resource: String): F[Collection]

@@ -7,6 +7,7 @@ import scala.util.Try
 import cats.effect.Sync
 import cats.implicits._
 import org.luaj.vm2.LuaBoolean
+import org.typelevel.log4cats.Logger
 
 import fin.Types._
 
@@ -18,7 +19,7 @@ trait HookExecutionService[F[_]] {
   ): F[List[(CollectionHook, ProcessResult)]]
 }
 
-class HookExecutionServiceImpl[F[_]: Sync] private ()
+class HookExecutionServiceImpl[F[_]: Sync: Logger] private ()
     extends HookExecutionService[F] {
 
   private val scriptEngineManager: ScriptEngineManager = new ScriptEngineManager
@@ -33,7 +34,15 @@ class HookExecutionServiceImpl[F[_]: Sync] private ()
       results <-
         collectionHooks
           .traverse { hook =>
-            processHook(hook, engine, additionalBindings).map(r => (hook, r))
+            processHook(hook, engine, additionalBindings)
+              .tupleLeft(hook)
+              .flatTap {
+                case (hook, result) =>
+                  Logger[F].debug(
+                    s"Hook for ${hook.collection} ran with result $result"
+                  )
+              }
+
           }
     } yield results.collect { case (hook, Some(result)) => (hook, result) }
 
@@ -60,7 +69,7 @@ class HookExecutionServiceImpl[F[_]: Sync] private ()
 }
 
 object HookExecutionServiceImpl {
-  def apply[F[_]: Sync] = new HookExecutionServiceImpl[F]
+  def apply[F[_]: Sync: Logger] = new HookExecutionServiceImpl[F]
 }
 
 sealed trait ProcessResult extends Product with Serializable
