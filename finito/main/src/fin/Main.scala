@@ -47,14 +47,14 @@ object Main extends IOCaseApp[CliOptions] {
         interpreter <- CalibanSetup.interpreter[IO](services)
 
         debug <- IO(sys.env.get("LOG_LEVEL").exists(CIString(_) === ci"DEBUG"))
-        _ <- (timer.sleep(1.minute) >> Routes.keepFresh[IO](
+        refresherIO = (timer.sleep(1.minute) >> Routes.keepFresh[IO](
             serviceResources.client,
             timer,
             config.port,
             config.host
-          )).start
+          )).background.useForever
         _ <- logger.debug("Starting http4s server...")
-        server <-
+        _ <-
           BlazeServerBuilder[IO]
             .withBanner(Seq(Banner.value))
             .bindHttp(config.port, config.host)
@@ -62,7 +62,8 @@ object Main extends IOCaseApp[CliOptions] {
             .serve
             .compile
             .drain
-      } yield server
+            .both(refresherIO)
+      } yield ()
     }
     server.as(ExitCode.Success)
   }
