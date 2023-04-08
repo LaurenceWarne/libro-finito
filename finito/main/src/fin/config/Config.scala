@@ -18,9 +18,16 @@ object Config {
       configDirectory = Path(expandedPathStr).absolute
       _ <- Logger[F].info(show"Using config directory $configDirectory")
       _ <- Files[F].createDirectories(configDirectory)
+      configFile = configDirectory / "service.conf"
+      configFileExists <- Files[F].exists(configFile)
+      _ <- Logger[F].info(
+        if (configFileExists) show"Found config file at $configFile"
+        else
+          show"No config file found at $configFile, defaulting to fallback config"
+      )
       configResponse =
         ConfigSource
-          .file((configDirectory / "service.conf").toString)
+          .file(configFile.toString)
           .optional
           .withFallback(ServiceConfig.default(configDirectory.toString))
           .load[ServiceConfig]

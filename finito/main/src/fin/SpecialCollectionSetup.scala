@@ -8,6 +8,7 @@ import org.typelevel.log4cats.Logger
 import fin.implicits._
 import fin.persistence.CollectionRepository
 import fin.service.book._
+import fin.service.collection.SpecialCollection._
 import fin.service.collection._
 
 object SpecialCollectionSetup {
@@ -25,6 +26,7 @@ object SpecialCollectionSetup {
           .map(_.name)
           .mkString(", ")
       )
+      _ <- Logger[F].debug(show"Special collection info: $specialCollections")
       _ <- transact(
         specialCollections
           .traverse(c => processSpecialCollection[G](collectionRepo, c))

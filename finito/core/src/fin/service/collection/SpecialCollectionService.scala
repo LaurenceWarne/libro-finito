@@ -1,12 +1,12 @@
 package fin.service.collection
 
+import cats.Show
 import cats.effect.Sync
 import cats.implicits._
 import org.typelevel.log4cats.Logger
 
 import fin.Types._
 import fin._
-import fin.implicits._
 
 import HookType._
 import Bindable._
@@ -102,7 +102,7 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
       book: BookInput
   ): F[Unit] = {
     Logger[F].info(
-      show"Adding $book to special collection '${collection.name}'"
+      show"Adding ${book.title} to special collection '${collection.name}'"
     ) *>
       createCollectionIfNotExists(collection.name, collection.preferredSort) *>
       wrappedCollectionService
@@ -187,4 +187,9 @@ final case class SpecialCollection(
       readStartedHook.map(CollectionHook(name, HookType.ReadStarted, _)) ++
       readCompletedHook.map(CollectionHook(name, HookType.ReadCompleted, _)) ++
       rateHook.map(CollectionHook(name, HookType.Rate, _))).toList
+}
+
+object SpecialCollection {
+  implicit val specialCollectionShow: Show[SpecialCollection] =
+    Show.fromToString
 }

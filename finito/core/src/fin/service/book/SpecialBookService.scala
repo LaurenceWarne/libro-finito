@@ -6,7 +6,6 @@ import org.typelevel.log4cats.Logger
 
 import fin.CollectionAlreadyExistsError
 import fin.Types._
-import fin.implicits._
 import fin.service.collection._
 
 import HookType._
@@ -82,7 +81,7 @@ class SpecialBookService[F[_]: Sync: Logger] private (
       book: BookInput
   ): F[Unit] = {
     Logger[F].info(
-      show"Adding $book to special collection '${collection.name}'"
+      show"Adding ${book.title} to special collection '${collection.name}'"
     ) *>
       createCollectionIfNotExists(collection.name, collection.preferredSort) *>
       wrappedCollectionService
