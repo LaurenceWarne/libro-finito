@@ -29,15 +29,14 @@ object SBindings {
   }
 }
 
-trait Bindable[T] {
+trait Bindable[-T] {
   def asBindings(b: T): SBindings
 }
 
 object Bindable {
   def apply[T](implicit b: Bindable[T]): Bindable[T] = b
 
-  def asBindings[T: Bindable](b: T): SBindings =
-    implicitly[Bindable[T]].asBindings(b)
+  def asBindings[T: Bindable](b: T): SBindings = Bindable[T].asBindings(b)
 
   implicit class BindableOps[T: Bindable](b: T) {
     def asBindings: SBindings = Bindable[T].asBindings(b)

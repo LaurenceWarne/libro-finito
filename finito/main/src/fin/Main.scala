@@ -46,7 +46,9 @@ object Main extends IOCaseApp[CliOptions] {
         _           <- logger.debug("Bootstrapping caliban...")
         interpreter <- CalibanSetup.interpreter[IO](services)
 
-        debug <- IO(sys.env.get("LOG_LEVEL").exists(CIString(_) === ci"DEBUG"))
+        debug <- IO.blocking(
+          sys.env.get("LOG_LEVEL").exists(CIString(_) === ci"DEBUG")
+        )
         refresherIO = (timer.sleep(1.minute) >> Routes.keepFresh[IO](
             serviceResources.client,
             timer,
