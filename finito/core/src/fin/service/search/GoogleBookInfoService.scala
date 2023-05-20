@@ -92,6 +92,7 @@ object GoogleBookInfoService {
         None,
         None,
         None,
+        None,
         None
       )
   }
@@ -110,6 +111,7 @@ object GoogleBookInfoService {
           .headOption
           .fold("???")(_.getIsbn13),
         bookItem.imageLinks.fold(emptyThumbnailUri)(_.thumbnail),
+        None,
         None,
         None,
         None,

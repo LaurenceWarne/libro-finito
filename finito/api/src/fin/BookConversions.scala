@@ -10,7 +10,8 @@ object BookConversions {
       dateAdded: Option[LocalDate] = None,
       rating: Option[Int] = None,
       startedReading: Option[LocalDate] = None,
-      lastRead: Option[LocalDate] = None
+      lastRead: Option[LocalDate] = None,
+      review: Option[String] = None
   ): UserBook =
     UserBook(
       book.title,
@@ -21,6 +22,7 @@ object BookConversions {
       dateAdded,
       rating,
       startedReading,
-      lastRead
+      lastRead,
+      review
     )
 }

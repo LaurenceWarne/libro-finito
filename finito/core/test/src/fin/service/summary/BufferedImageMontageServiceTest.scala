@@ -56,6 +56,7 @@ object BufferedImageMontageServiceTest extends SimpleIOSuite {
           None,
           Some(5 - (Random.nextInt() % 5)),
           None,
+          None,
           None
         )
       )

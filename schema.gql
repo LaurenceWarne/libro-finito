@@ -58,6 +58,7 @@ type UserBook {
   rating: Int
   startedReading: Date
   lastRead: Date
+  review: String
 }
 
 type Collection {

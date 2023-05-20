@@ -285,7 +285,8 @@ object IntegrationTests extends IOSuite {
       dateAdded = book.dateAdded.map(LocalDate.parse),
       rating = book.rating,
       startedReading = book.startedReading.map(LocalDate.parse),
-      lastRead = book.lastRead.map(LocalDate.parse)
+      lastRead = book.lastRead.map(LocalDate.parse),
+      review = None
     )
 
   def inputToUserBook(
@@ -304,6 +305,7 @@ object IntegrationTests extends IOSuite {
       dateAdded,
       rating,
       startedReading,
-      lastRead
+      lastRead,
+      None
     )
 }

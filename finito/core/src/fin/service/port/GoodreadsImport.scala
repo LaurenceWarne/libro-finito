@@ -9,17 +9,28 @@ import cats.implicits._
 import fs2.io.file.{Files, Path}
 import fs2.text
 
+import fin.DefaultCollectionNotSupportedError
 import fin.Types._
+import fin.service.search.BookInfoService
 
 trait CollectionImport[F[_]] {
-  def importResource(resource: String): F[Collection]
+  def importResource(
+      resource: String,
+      collection: Option[String]
+  ): F[Collection]
 }
 
 /**
   * https://www.goodreads.com/review/import
   */
-class GoodreadsImport[F[_]: Async] extends CollectionImport[F] {
-  override def importResource(resource: String): F[Collection] = {
+class GoodreadsImport[F[_]: Async](
+    maybeDefaultCollection: Option[String],
+    infoService: BookInfoService[F]
+) extends CollectionImport[F] {
+  override def importResource(
+      resource: String,
+      collection: Option[String]
+  ): F[Collection] = {
     val result = Files[F]
       .readAll(Path(resource))
       .through(text.utf8.decode)
@@ -42,16 +53,29 @@ class GoodreadsImport[F[_]: Async] extends CollectionImport[F] {
         ).toUserBook("", "")
       }
       .flattenOption
+      .parEvalMapUnbounded { book =>
+        val args =
+          QueriesBooksArgs(book.title.some, book.authors.headOption, None, None)
+        infoService.search(args).map { ls =>
+          ls.headOption.map(ub => book.copy(thumbnailUri = ub.thumbnailUri))
+        }
+      }
+      .flattenOption
       .compile
       .toList
-    result.map(
-      Collection(
-        "foobar",
-        _,
+    for {
+      books <- result
+      collectionName <- Async[F].fromOption(
+        collection.orElse(maybeDefaultCollection),
+        DefaultCollectionNotSupportedError
+      )
+      collection = Collection(
+        collectionName,
+        books,
         Sort(SortType.Author, true),
         None
       )
-    )
+    } yield collection
   }
 }
 
@@ -73,6 +97,7 @@ final case class GoodreadsCSVRow(
       dateAdded = dateAdded,
       rating = rating,
       startedReading = None,
-      lastRead = lastRead
+      lastRead = lastRead,
+      review = None
     )
 }

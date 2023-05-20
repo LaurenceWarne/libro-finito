@@ -219,6 +219,7 @@ final case class BookRow(
       maybeAdded,
       maybeRating,
       maybeStarted,
-      maybeFinished
+      maybeFinished,
+      None
     )
 }

@@ -272,7 +272,7 @@ object Deps {
   val scoverageVersion = "1.4.11"
   val logback          = ivy"ch.qos.logback:logback-classic:1.1.3"
   val weaver           = ivy"com.disneystreaming::weaver-cats:0.8.1"
-  val sqlite           = ivy"org.xerial:sqlite-jdbc:3.36.0.3"
+  val sqlite           = ivy"org.xerial:sqlite-jdbc:3.41.2.1"
   val flyway           = ivy"org.flywaydb:flyway-core:7.10.0"
   val pureconfig       = ivy"com.github.pureconfig::pureconfig:0.16.0"
   // https://github.com/luaj/luaj/issues/91 ):

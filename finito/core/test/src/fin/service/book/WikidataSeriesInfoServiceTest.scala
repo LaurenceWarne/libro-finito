@@ -14,7 +14,8 @@ object WikidataSeriesInfoServiceTest extends SimpleIOSuite {
 
   implicit def unsafeLogger: Logger[IO] = Slf4jLogger.getLogger
 
-  val emptyBook = UserBook("", List.empty, "", "", "", None, None, None, None)
+  val emptyBook =
+    UserBook("", List.empty, "", "", "", None, None, None, None, None)
 
   test("series returns correct response") {
     val (title1, title2, title3) =
