@@ -36,6 +36,7 @@ object CalibanSetup {
       seriesInfoService,
       bookManagementService,
       collectionService,
+      exportService,
       summaryService
     ) = services
     val queries = Queries[F](
@@ -44,7 +45,7 @@ object CalibanSetup {
       seriesArgs => seriesInfoService.series(seriesArgs),
       collectionService.collections,
       collectionArgs => collectionService.collection(collectionArgs),
-      _ => ???,
+      exportArgs => exportService.exportCollection(exportArgs),
       summaryArgs => summaryService.summary(summaryArgs)
     )
     val mutations = Mutations[F](

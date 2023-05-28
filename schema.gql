@@ -90,7 +90,7 @@ type Queries {
   series(book: BookInput!): [UserBook!]!
   collections: [Collection!]!
   collection(name: String!, booksPagination: PaginationInput): Collection!
-  export(collection: String!, exportType: PortType!): String!
+  export(exportType: PortType!, collection: String): String!
   summary(
     from: Date,
     to: Date,

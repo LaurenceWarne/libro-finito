@@ -13,7 +13,8 @@ import org.typelevel.log4cats.Logger
 import fin.persistence.{SqliteBookRepository, SqliteCollectionRepository}
 import fin.service.book._
 import fin.service.collection._
-import fin.service.search.{GoogleBookInfoService, _}
+import fin.service.port._
+import fin.service.search._
 import fin.service.summary._
 
 final case class Services[F[_]](
@@ -21,6 +22,7 @@ final case class Services[F[_]](
     seriesInfoService: SeriesInfoService[F],
     bookManagementService: BookManagementService[F],
     collectionService: CollectionService[F],
+    collectionExportService: CollectionExportService[F],
     summaryService: SummaryService[F]
 )
 
@@ -51,6 +53,8 @@ object Services {
     )
     val seriesInfoService =
       WikidataSeriesInfoService[F](client, wrappedInfoService)
+    val exportService =
+      GoodreadsExportService[F](config.defaultCollection, collectionService)
     val summaryService = SummaryServiceImpl[F, ConnectionIO](
       bookRepo,
       BufferedImageMontageService[F],
@@ -73,6 +77,7 @@ object Services {
             seriesInfoService,
             wrappedBookManagementService,
             wrappedCollectionService,
+            exportService,
             summaryService
           )
       }
