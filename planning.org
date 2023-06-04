@@ -113,3 +113,5 @@ https://gist.github.com/greenlaw110/e32d0cb433ee89b12790ad75e94d3a91
 ** Bugs
 *** DONE Adding the same book to a collection results in an uhelpful sql error
 *** DONE Author search of 'tolkien' returns an error (bad google data?)
+*** TODO ~books~ parameter for ~createCollection~ does not result in books being added to the collection
+

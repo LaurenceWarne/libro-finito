@@ -7,13 +7,6 @@ import fin.DefaultCollectionNotSupportedError
 import fin.Types._
 import fin.service.collection._
 
-/**
-  * https://www.goodreads.com/review/import
-  */
-trait CollectionExportService[F[_]] {
-  def exportCollection(exportArgs: QueriesExportArgs): F[String]
-}
-
 class GoodreadsExportService[F[_]: Async](
     maybeDefaultCollection: Option[String],
     collectionService: CollectionService[F]
