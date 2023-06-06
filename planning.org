@@ -109,6 +109,7 @@ https://gist.github.com/greenlaw110/e32d0cb433ee89b12790ad75e94d3a91
 *** DONE Why do we get mulitple:
 18:29:07.639 [blaze-selector-0] INFO  o.h.b.c.nio1.NIO1SocketServerGroup - Accepted connection from /0:0:0:0:0:0:0:1:43412
 *** DONE Log response timings on the INFO log level
+*** TODO Add generic fixtures, and functions to get e.g. mocked services
 
 ** Bugs
 *** DONE Adding the same book to a collection results in an uhelpful sql error

@@ -11,7 +11,7 @@ import fin.service.port._
 
 object GoodreadsExportServiceTest extends IOSuite {
 
-  val book = BookInput(
+  val defaultCollectionBook = BookInput(
     "Neuromancer",
     List("William Gibson"),
     "description",
@@ -37,7 +37,9 @@ object GoodreadsExportServiceTest extends IOSuite {
             None
           )
         ) *> collectionService
-        .addBookToCollection(MutationsAddBookArgs(defaultCollection.some, book))
+        .addBookToCollection(
+          MutationsAddBookArgs(defaultCollection.some, defaultCollectionBook)
+        )
         .as(GoodreadsExportService(defaultCollection.some, collectionService))
     })
 
@@ -48,8 +50,36 @@ object GoodreadsExportServiceTest extends IOSuite {
     val args = exportArgs()
     for {
       csv <- exportService.exportCollection(args)
-    } yield expect(csv.contains(book.title)) &&
-      expect(csv.contains(book.isbn)) &&
-      expect(csv.contains(book.authors.headOption.getOrElse("")))
+    } yield expect(csv.contains(defaultCollectionBook.title)) &&
+      expect(csv.contains(defaultCollectionBook.isbn)) &&
+      expect(
+        csv.contains(defaultCollectionBook.authors.headOption.getOrElse(""))
+      )
+  }
+
+  test("exportCollection defaults to exporting default collection") {
+    exportService =>
+      val args = exportArgs(None)
+      for {
+        csv <- exportService.exportCollection(args)
+      } yield expect(csv.contains(defaultCollectionBook.title)) &&
+        expect(csv.contains(defaultCollectionBook.isbn)) &&
+        expect(
+          csv.contains(defaultCollectionBook.authors.headOption.getOrElse(""))
+        )
+  }
+
+  test("exportCollection errors when no collection specified") { _ =>
+    val args = exportArgs()
+    for {
+      ref <- Ref.of[IO, List[Collection]](List.empty)
+      collectionService = CollectionServiceImpl[IO, IO](
+        new InMemoryCollectionRepository(ref),
+        Clock[IO],
+        FunctionK.id[IO]
+      )
+      exportService = GoodreadsExportService(None, collectionService)
+      response <- exportService.exportCollection(args).attempt
+    } yield expect(response.isLeft)
   }
 }
