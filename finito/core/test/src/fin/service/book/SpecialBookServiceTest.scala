@@ -9,6 +9,7 @@ import weaver._
 
 import fin.BookConversions._
 import fin.Types._
+import fin.fixtures
 import fin.service.collection._
 
 object SpecialBookServiceTest extends IOSuite {
@@ -68,16 +69,6 @@ object SpecialBookServiceTest extends IOSuite {
     )
   )
 
-  val baseBook =
-    BookInput(
-      "title",
-      List("auth"),
-      "description",
-      "isbn",
-      "thumbnail uri"
-    )
-  val book2 = baseBook.copy(title = "my cool book")
-
   implicit def unsafeLogger: Logger[IO] = Slf4jLogger.getLogger
 
   override type Res = (CollectionService[IO], BookManagementService[IO])
@@ -120,7 +111,7 @@ object SpecialBookServiceTest extends IOSuite {
 
   test("rateBook adds for matching hook, but not for others") {
     case (collectionService, bookService) =>
-      val book     = baseBook.copy(isbn = "book to rate")
+      val book     = fixtures.bookInput.copy(isbn = "book to rate")
       val rateArgs = MutationsRateBookArgs(book, 5)
       for {
         _ <- bookService.rateBook(rateArgs)
@@ -139,7 +130,7 @@ object SpecialBookServiceTest extends IOSuite {
 
   test("startReading adds for matching hook, but not for others") {
     case (collectionService, bookService) =>
-      val book             = baseBook.copy(isbn = "book to start reading")
+      val book             = fixtures.bookInput.copy(isbn = "book to start reading")
       val startReadingArgs = MutationsStartReadingArgs(book, None)
       for {
         _ <- bookService.startReading(startReadingArgs)
@@ -158,7 +149,7 @@ object SpecialBookServiceTest extends IOSuite {
 
   test("finishReading adds for matching hook, but not for others") {
     case (collectionService, bookService) =>
-      val book              = baseBook.copy(isbn = "book to finish reading")
+      val book              = fixtures.bookInput.copy(isbn = "book to finish reading")
       val finishReadingArgs = MutationsFinishReadingArgs(book, None)
       for {
         _ <- bookService.finishReading(finishReadingArgs)
@@ -177,7 +168,7 @@ object SpecialBookServiceTest extends IOSuite {
 
   test("rateBook creates collection if not exists") {
     case (collectionService, bookService) =>
-      val book     = baseBook.copy(isbn = "book to trigger creation")
+      val book     = fixtures.bookInput.copy(isbn = "book to trigger creation")
       val rateArgs = MutationsRateBookArgs(book, triggerRating)
       for {
         _ <- bookService.rateBook(rateArgs)
@@ -189,7 +180,7 @@ object SpecialBookServiceTest extends IOSuite {
 
   test("rateBook silent error if add to special collection fails") {
     case (collectionService, bookService) =>
-      val book     = baseBook.copy(isbn = "book to rate twice")
+      val book     = fixtures.bookInput.copy(isbn = "book to rate twice")
       val rateArgs = MutationsRateBookArgs(book, 5)
       for {
         _ <- bookService.rateBook(rateArgs)
@@ -203,7 +194,7 @@ object SpecialBookServiceTest extends IOSuite {
 
   test("rateBook removes from collection") {
     case (collectionService, bookService) =>
-      val book     = baseBook.copy(isbn = "book to rate good then bad")
+      val book     = fixtures.bookInput.copy(isbn = "book to rate good then bad")
       val rateArgs = MutationsRateBookArgs(book, 5)
       for {
         _ <- bookService.rateBook(rateArgs)

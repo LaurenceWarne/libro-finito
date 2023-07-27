@@ -7,19 +7,10 @@ import weaver._
 
 import fin.BookConversions._
 import fin.Types._
-import fin._
 import fin.implicits._
+import fin.{fixtures, _}
 
 object CollectionServiceImplTest extends IOSuite {
-
-  val book =
-    BookInput(
-      "title",
-      List("author"),
-      "cool description",
-      "???",
-      "uri"
-    )
 
   override type Res = CollectionService[IO]
   override def sharedResource: Resource[IO, CollectionService[IO]] =
@@ -238,12 +229,12 @@ object CollectionServiceImplTest extends IOSuite {
         MutationsCreateCollectionArgs(name, None, None, None)
       )
       collection <- collectionService.addBookToCollection(
-        MutationsAddBookArgs(name.some, book)
+        MutationsAddBookArgs(name.some, fixtures.bookInput)
       )
     } yield expect(
       collection === Collection(
         name,
-        List(toUserBook(book)),
+        List(toUserBook(fixtures.bookInput)),
         CollectionServiceImpl.defaultSort,
         None
       )
@@ -257,7 +248,7 @@ object CollectionServiceImplTest extends IOSuite {
         response <-
           collectionService
             .addBookToCollection(
-              MutationsAddBookArgs(name.some, book)
+              MutationsAddBookArgs(name.some, fixtures.bookInput)
             )
             .attempt
       } yield expect(response == CollectionDoesNotExistError(name).asLeft)
@@ -268,7 +259,7 @@ object CollectionServiceImplTest extends IOSuite {
       for {
         response <-
           collectionService
-            .addBookToCollection(MutationsAddBookArgs(None, book))
+            .addBookToCollection(MutationsAddBookArgs(None, fixtures.bookInput))
             .attempt
       } yield expect(response == DefaultCollectionNotSupportedError.asLeft)
   }
@@ -284,13 +275,20 @@ object CollectionServiceImplTest extends IOSuite {
             )
         _ <-
           collectionService
-            .addBookToCollection(MutationsAddBookArgs(name.some, book))
+            .addBookToCollection(
+              MutationsAddBookArgs(name.some, fixtures.bookInput)
+            )
         response <-
           collectionService
-            .addBookToCollection(MutationsAddBookArgs(name.some, book))
+            .addBookToCollection(
+              MutationsAddBookArgs(name.some, fixtures.bookInput)
+            )
             .attempt
       } yield expect(
-        response == BookAlreadyInCollectionError(name, book.title).asLeft
+        response == BookAlreadyInCollectionError(
+          name,
+          fixtures.bookInput.title
+        ).asLeft
       )
   }
 
@@ -301,10 +299,10 @@ object CollectionServiceImplTest extends IOSuite {
         MutationsCreateCollectionArgs(name, None, None, None)
       )
       _ <- collectionService.addBookToCollection(
-        MutationsAddBookArgs(name.some, book)
+        MutationsAddBookArgs(name.some, fixtures.bookInput)
       )
       _ <- collectionService.removeBookFromCollection(
-        MutationsRemoveBookArgs(name, book.isbn)
+        MutationsRemoveBookArgs(name, fixtures.bookInput.isbn)
       )
       retrievedCollection <-
         collectionService.collection(QueriesCollectionArgs(name, None))
@@ -335,7 +333,7 @@ object CollectionServiceImplTest extends IOSuite {
         response <-
           collectionService
             .removeBookFromCollection(
-              MutationsRemoveBookArgs(name, book.isbn)
+              MutationsRemoveBookArgs(name, fixtures.bookInput.isbn)
             )
             .attempt
       } yield expect(response.isRight)

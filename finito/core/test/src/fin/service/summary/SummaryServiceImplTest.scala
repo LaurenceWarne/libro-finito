@@ -1,7 +1,5 @@
 package fin.service.summary
 
-import java.time.{LocalDate, ZoneId}
-
 import cats.arrow.FunctionK
 import cats.effect._
 import cats.implicits._
@@ -10,27 +8,11 @@ import org.typelevel.log4cats.slf4j.Slf4jLogger
 import weaver._
 
 import fin.Types._
-import fin._
+import fin.fixtures
 import fin.persistence.BookRepository
 import fin.service.book.InMemoryBookRepository
 
 object SummaryServiceImplTest extends IOSuite {
-
-  val constantDate = LocalDate.parse("2021-11-30")
-  val testClock = TestClock[IO](
-    constantDate
-      .atStartOfDay(ZoneId.systemDefault())
-      .toEpochSecond * 1000L
-  )
-
-  val book =
-    BookInput(
-      "title",
-      List("author"),
-      "cool description",
-      "???",
-      "uri"
-    )
 
   val imgUri =
     "https://user-images.githubusercontent.com/17688577/144673930-add9233d-9308-4972-8043-2f519d808874.png"
@@ -49,7 +31,7 @@ object SummaryServiceImplTest extends IOSuite {
         SummaryServiceImpl[IO, IO](
           repo,
           montageService,
-          testClock,
+          fixtures.clock,
           FunctionK.id[IO]
         )
       )
@@ -61,18 +43,18 @@ object SummaryServiceImplTest extends IOSuite {
       for {
         _ <- (1 to noImages).toList.traverse { idx =>
           repo.createBook(
-            book.copy(
+            fixtures.bookInput.copy(
               title = show"book-$idx",
               isbn = show"isbn-$idx",
               thumbnailUri = imgUri
             ),
-            constantDate.plusDays(idx.toLong)
+            fixtures.date.plusDays(idx.toLong)
           )
         }
         summary <- summaryService.summary(
           QueriesSummaryArgs(
-            constantDate.some,
-            constantDate.plusYears(1).some,
+            fixtures.date.some,
+            fixtures.date.plusYears(1).some,
             None,
             true
           )

@@ -134,7 +134,9 @@ object finito extends Module {
       )
 
     object test extends Tests with ScoverageTests with LibroFinitoTest {
-      def ivyDeps = super.ivyDeps() ++ Agg(Deps.CatsLogging.slf4j)
+      def ivyDeps =
+        super.ivyDeps() ++ Agg(Deps.CatsLogging.slf4j)
+      def moduleDeps = super.moduleDeps ++ Seq(persistence.test)
     }
   }
 
@@ -157,7 +159,9 @@ object finito extends Module {
         Deps.sqlite
       )
 
-    object test extends Tests with ScoverageTests with LibroFinitoTest
+    object test extends Tests with ScoverageTests with LibroFinitoTest {
+      def ivyDeps = super.ivyDeps() ++ Agg(Deps.Http4s.client)
+    }
   }
 
   object benchmark extends LibroFinitoModule with Jmh {
@@ -332,6 +336,8 @@ object Deps {
 
   object Http4s {
     val version           = "0.23.13"
+    val core              = ivy"org.http4s::http4s-core:$version"
+    val client            = ivy"org.http4s::http4s-client:$version"
     val http4sDsl         = ivy"org.http4s::http4s-dsl:$version"
     val http4sBlazeServer = ivy"org.http4s::http4s-blaze-server:$version"
     val http4sBlazeClient = ivy"org.http4s::http4s-blaze-client:$version"

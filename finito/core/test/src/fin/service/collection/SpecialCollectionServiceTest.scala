@@ -9,8 +9,8 @@ import weaver._
 
 import fin.BookConversions._
 import fin.Types._
-import fin._
 import fin.implicits._
+import fin.{fixtures, _}
 
 object SpecialCollectionServiceTest extends IOSuite {
 
@@ -76,14 +76,6 @@ object SpecialCollectionServiceTest extends IOSuite {
       None
     )
   )
-  val baseBook =
-    BookInput(
-      "title",
-      List("auth"),
-      "description",
-      "isbn",
-      "thumbnail uri"
-    )
 
   implicit def unsafeLogger: Logger[IO] = Slf4jLogger.getLogger
 
@@ -120,7 +112,7 @@ object SpecialCollectionServiceTest extends IOSuite {
 
   test("addBookToCollection adds for matching hook, but not for others") {
     collectionService =>
-      val book     = baseBook.copy(isbn = "isbn1")
+      val book     = fixtures.bookInput.copy(isbn = "isbn1")
       val argsBook = MutationsAddBookArgs(otherCollection.some, book)
       for {
         _ <- collectionService.addBookToCollection(argsBook)
@@ -137,7 +129,7 @@ object SpecialCollectionServiceTest extends IOSuite {
 
   test("addBookToCollection removes for matching hook, but not for others") {
     collectionService =>
-      val book     = baseBook.copy(isbn = "isbn2")
+      val book     = fixtures.bookInput.copy(isbn = "isbn2")
       val userBook = toUserBook(book)
       val argsBook = MutationsAddBookArgs(otherCollection.some, book)
       for {
@@ -160,7 +152,7 @@ object SpecialCollectionServiceTest extends IOSuite {
   }
 
   test("addBookToCollection ignores hook of wrong type") { collectionService =>
-    val book     = baseBook.copy(isbn = "isbn3")
+    val book     = fixtures.bookInput.copy(isbn = "isbn3")
     val userBook = toUserBook(book)
     val argsBook = MutationsAddBookArgs(otherCollection.some, book)
     for {
@@ -173,7 +165,7 @@ object SpecialCollectionServiceTest extends IOSuite {
 
   test("addBookToCollection does not create special collection if add false") {
     collectionService =>
-      val book     = baseBook.copy(isbn = "isbn4")
+      val book     = fixtures.bookInput.copy(isbn = "isbn4")
       val argsBook = MutationsAddBookArgs(otherCollection.some, book)
       for {
         _ <- collectionService.addBookToCollection(argsBook)
@@ -192,7 +184,7 @@ object SpecialCollectionServiceTest extends IOSuite {
 
   test("addBookToCollection creates special collection if not exists") {
     collectionService =>
-      val book     = baseBook.copy(title = "special", isbn = "isbn5")
+      val book     = fixtures.bookInput.copy(title = "special", isbn = "isbn5")
       val argsBook = MutationsAddBookArgs(otherCollection.some, book)
       for {
         _ <- collectionService.addBookToCollection(argsBook)
@@ -208,7 +200,7 @@ object SpecialCollectionServiceTest extends IOSuite {
   test(
     "addBookToCollection adds to default collection when no collection in args"
   ) { collectionService =>
-    val book     = baseBook.copy(isbn = "isbn-to-default")
+    val book     = fixtures.bookInput.copy(isbn = "isbn-to-default")
     val argsBook = MutationsAddBookArgs(None, book)
     for {
       _ <- collectionService.addBookToCollection(argsBook)
@@ -227,7 +219,7 @@ object SpecialCollectionServiceTest extends IOSuite {
       List.empty,
       HookExecutionServiceImpl[IO]
     )
-    val book     = baseBook.copy(isbn = "isbn will never be added")
+    val book     = fixtures.bookInput.copy(isbn = "isbn will never be added")
     val argsBook = MutationsAddBookArgs(None, book)
     for {
       response <- stubbedService.addBookToCollection(argsBook).attempt

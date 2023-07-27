@@ -8,7 +8,7 @@ import doobie._
 import doobie.implicits._
 
 import fin.BookConversions._
-import fin.Types._
+import fin.fixtures
 import fin.implicits._
 
 object SqliteBookRepositoryTest extends SqliteSuite {
@@ -18,64 +18,57 @@ object SqliteBookRepositoryTest extends SqliteSuite {
   implicit val dateEq: Eq[LocalDate] = Eq.fromUniversalEquals
 
   val repo = SqliteBookRepository
-  val date = LocalDate.parse("2020-03-20")
-  val book =
-    BookInput(
-      "title",
-      List("author"),
-      "cool description",
-      "???",
-      "uri"
-    )
 
   testDoobie("createBook creates book") {
     for {
-      _         <- repo.createBook(book, date)
-      maybeBook <- repo.retrieveBook(book.isbn)
+      _         <- repo.createBook(fixtures.bookInput, fixtures.date)
+      maybeBook <- repo.retrieveBook(fixtures.bookInput.isbn)
     } yield expect(
-      maybeBook.exists(_ === toUserBook(book, dateAdded = date.some))
+      maybeBook.exists(
+        _ === toUserBook(fixtures.bookInput, dateAdded = fixtures.date.some)
+      )
     )
   }
 
   testDoobie("rateBook rates book") {
-    val bookToRate = book.copy(isbn = "rateme")
+    val bookToRate = fixtures.bookInput.copy(isbn = "rateme")
     val rating     = 5
     for {
-      _           <- repo.createBook(bookToRate, date)
+      _           <- repo.createBook(bookToRate, fixtures.date)
       _           <- repo.rateBook(bookToRate, rating)
       maybeRating <- retrieveRating(bookToRate.isbn)
     } yield expect(maybeRating.exists(_ === rating))
   }
 
   testDoobie("startReading starts book reading") {
-    val bookToRead = book.copy(isbn = "reading")
+    val bookToRead = fixtures.bookInput.copy(isbn = "reading")
     for {
-      _          <- repo.createBook(bookToRead, date)
-      _          <- repo.startReading(bookToRead, date)
+      _          <- repo.createBook(bookToRead, fixtures.date)
+      _          <- repo.startReading(bookToRead, fixtures.date)
       maybeEpoch <- retrieveReading(bookToRead.isbn)
-    } yield expect(maybeEpoch.exists(_ === date))
+    } yield expect(maybeEpoch.exists(_ === fixtures.date))
   }
 
   testDoobie("finishReading finishes book reading") {
     val finishedDate = LocalDate.parse("2020-03-24")
-    val bookToFinish = book.copy(isbn = "finished")
+    val bookToFinish = fixtures.bookInput.copy(isbn = "finished")
     for {
-      _          <- repo.createBook(bookToFinish, date)
-      _          <- repo.startReading(bookToFinish, date)
+      _          <- repo.createBook(bookToFinish, fixtures.date)
+      _          <- repo.startReading(bookToFinish, fixtures.date)
       _          <- repo.finishReading(bookToFinish, finishedDate)
       maybeDates <- retrieveFinished(bookToFinish.isbn)
       (maybeStarted, maybeFinished) = maybeDates.unzip
-    } yield expect(maybeStarted.flatten.exists(_ === date)) and expect(
+    } yield expect(maybeStarted.flatten.exists(_ === fixtures.date)) and expect(
       maybeFinished.exists(_ === finishedDate)
     )
   }
 
   testDoobie("finishReading deletes row from currently_reading table") {
     val finishedDate = LocalDate.parse("2020-03-24")
-    val bookToFinish = book.copy(isbn = "finished-and-delete")
+    val bookToFinish = fixtures.bookInput.copy(isbn = "finished-and-delete")
     for {
-      _         <- repo.createBook(bookToFinish, date)
-      _         <- repo.startReading(bookToFinish, date)
+      _         <- repo.createBook(bookToFinish, fixtures.date)
+      _         <- repo.startReading(bookToFinish, fixtures.date)
       _         <- repo.finishReading(bookToFinish, finishedDate)
       maybeDate <- retrieveReading(bookToFinish.isbn)
     } yield expect(maybeDate.isEmpty)
@@ -85,9 +78,9 @@ object SqliteBookRepositoryTest extends SqliteSuite {
     "finishReading sets started to null when no existing currently reading"
   ) {
     val finishedDate = LocalDate.parse("2020-03-24")
-    val bookToFinish = book.copy(isbn = "finished-no-reading")
+    val bookToFinish = fixtures.bookInput.copy(isbn = "finished-no-reading")
     for {
-      _         <- repo.createBook(bookToFinish, date)
+      _         <- repo.createBook(bookToFinish, fixtures.date)
       _         <- repo.finishReading(bookToFinish, finishedDate)
       maybeRead <- retrieveFinished(bookToFinish.isbn).map(_._1F)
       // maybeRead should be Some(None) => ie found a date but was null
@@ -98,77 +91,79 @@ object SqliteBookRepositoryTest extends SqliteSuite {
     "finishReading ignores duplicate entries"
   ) {
     val finishedDate = LocalDate.parse("2020-03-24")
-    val bookToFinish = book.copy(isbn = "finished-duplicated")
+    val bookToFinish = fixtures.bookInput.copy(isbn = "finished-duplicated")
     for {
-      _        <- repo.createBook(bookToFinish, date)
+      _        <- repo.createBook(bookToFinish, fixtures.date)
       _        <- repo.finishReading(bookToFinish, finishedDate)
       response <- repo.finishReading(bookToFinish, finishedDate).attempt
     } yield expect(response.isRight)
   }
 
   testDoobie("retrieveBook retrieves all parts of book") {
-    val bookToUse          = book.copy(isbn = "megabook")
+    val bookToUse          = fixtures.bookInput.copy(isbn = "megabook")
     val rating             = 3
     val startedReadingDate = LocalDate.parse("2020-03-28")
     for {
-      _         <- repo.createBook(bookToUse, date)
+      _         <- repo.createBook(bookToUse, fixtures.date)
       _         <- repo.rateBook(bookToUse, rating)
-      _         <- repo.finishReading(bookToUse, date)
+      _         <- repo.finishReading(bookToUse, fixtures.date)
       _         <- repo.startReading(bookToUse, startedReadingDate)
       maybeBook <- repo.retrieveBook(bookToUse.isbn)
     } yield expect(
       maybeBook.exists(
         _ === toUserBook(
           bookToUse,
-          dateAdded = date.some,
+          dateAdded = fixtures.date.some,
           rating = rating.some,
           startedReading = startedReadingDate.some,
-          lastRead = date.some
+          lastRead = fixtures.date.some
         )
       )
     )
   }
 
   testDoobie("deleteBookData deletes all book data") {
-    val bookToUse          = book.copy(isbn = "book to delete data from")
+    val bookToUse          = fixtures.bookInput.copy(isbn = "book to delete data from")
     val startedReadingDate = LocalDate.parse("2020-03-28")
     for {
-      _         <- repo.createBook(bookToUse, date)
+      _         <- repo.createBook(bookToUse, fixtures.date)
       _         <- repo.rateBook(bookToUse, 3)
-      _         <- repo.finishReading(bookToUse, date)
+      _         <- repo.finishReading(bookToUse, fixtures.date)
       _         <- repo.startReading(bookToUse, startedReadingDate)
       _         <- repo.deleteBookData(bookToUse.isbn)
       maybeBook <- repo.retrieveBook(bookToUse.isbn)
     } yield expect(
-      maybeBook.exists(_ === toUserBook(bookToUse, dateAdded = date.some))
+      maybeBook.exists(
+        _ === toUserBook(bookToUse, dateAdded = fixtures.date.some)
+      )
     )
   }
 
   testDoobie("retrieveMultipleBooks retrieves all matching books") {
     val (isbn1, isbn2, isbn3) = ("book1", "book2", "book3")
     val isbns                 = List(isbn1, isbn2, isbn3)
-    val book1                 = book.copy(isbn = isbn1)
-    val book2                 = book.copy(isbn = isbn2)
-    val book3                 = book.copy(isbn = isbn3)
+    val book1                 = fixtures.bookInput.copy(isbn = isbn1)
+    val book2                 = fixtures.bookInput.copy(isbn = isbn2)
+    val book3                 = fixtures.bookInput.copy(isbn = isbn3)
     for {
-      _     <- repo.createBook(book1, date)
-      _     <- repo.createBook(book2, date)
-      _     <- repo.createBook(book3, date)
+      _     <- repo.createBook(book1, fixtures.date)
+      _     <- repo.createBook(book2, fixtures.date)
+      _     <- repo.createBook(book3, fixtures.date)
       books <- repo.retrieveMultipleBooks(isbns)
     } yield expect(books.size == 3) and expect(
-      books.contains(toUserBook(book1, dateAdded = date.some))
+      books.contains(toUserBook(book1, dateAdded = fixtures.date.some))
     ) and expect(
-      books.contains(toUserBook(book2, dateAdded = date.some))
+      books.contains(toUserBook(book2, dateAdded = fixtures.date.some))
     ) and expect(
-      books.contains(toUserBook(book3, dateAdded = date.some))
+      books.contains(toUserBook(book3, dateAdded = fixtures.date.some))
     )
   }
 
   testDoobie("retrieveBooksInside retrieves books within interval") {
     val date1 = LocalDate.parse("1920-03-20")
     val date2 = LocalDate.parse("1920-05-13")
-    val book1 = book.copy(isbn = "old book 1")
-    val book2 = book.copy(isbn = "old book 2")
+    val book1 = fixtures.bookInput.copy(isbn = "old book 1")
+    val book2 = fixtures.bookInput.copy(isbn = "old book 2")
     for {
       _ <- repo.createBook(book1, date1)
       _ <- repo.createBook(book2, date2)

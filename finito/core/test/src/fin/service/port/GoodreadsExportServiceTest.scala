@@ -6,19 +6,14 @@ import cats.implicits._
 import weaver._
 
 import fin.Types._
+import fin.fixtures
 import fin.service.collection._
 import fin.service.port._
 
 object GoodreadsExportServiceTest extends IOSuite {
 
-  val defaultCollectionBook = BookInput(
-    "Neuromancer",
-    List("William Gibson"),
-    "description",
-    "isbn",
-    "???"
-  )
-  val defaultCollection = "default collection"
+  val defaultCollectionBook = fixtures.bookInput
+  val defaultCollection     = "default collection"
 
   override type Res = GoodreadsExportService[IO]
   override def sharedResource: Resource[IO, GoodreadsExportService[IO]] =

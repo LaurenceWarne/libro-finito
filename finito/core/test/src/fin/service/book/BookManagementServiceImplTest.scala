@@ -1,6 +1,6 @@
 package fin.service.book
 
-import java.time.{LocalDate, ZoneId}
+import java.time.LocalDate
 
 import cats.arrow.FunctionK
 import cats.effect._
@@ -9,43 +9,31 @@ import weaver._
 
 import fin.BookConversions._
 import fin.Types._
-import fin._
 import fin.implicits._
+import fin.{fixtures, _}
 
 object BookManagementServiceImplTest extends IOSuite {
-
-  val constantTime = LocalDate.parse("2021-11-30")
-  val testClock = TestClock[IO](
-    constantTime
-      .atStartOfDay(ZoneId.systemDefault())
-      .toEpochSecond * 1000L
-  )
-
-  val book =
-    BookInput(
-      "title",
-      List("author"),
-      "cool description",
-      "???",
-      "uri"
-    )
 
   override type Res = BookManagementService[IO]
   override def sharedResource: Resource[IO, BookManagementService[IO]] =
     Resource.eval(Ref.of[IO, List[UserBook]](List.empty).map { ref =>
       val repo = new InMemoryBookRepository(ref)
-      BookManagementServiceImpl[IO, IO](repo, testClock, FunctionK.id[IO])
+      BookManagementServiceImpl[IO, IO](
+        repo,
+        fixtures.clock,
+        FunctionK.id[IO]
+      )
     })
 
   test("createBook creates book") {
     case bookService =>
       for {
-        _ <- bookService.createBook(MutationsCreateBookArgs(book))
+        _ <- bookService.createBook(MutationsCreateBookArgs(fixtures.bookInput))
       } yield success
   }
 
   test("createBook errors if book already exists") { bookService =>
-    val copiedBook = book.copy(isbn = "copied")
+    val copiedBook = fixtures.bookInput.copy(isbn = "copied")
     for {
       _ <- bookService.createBook(MutationsCreateBookArgs(copiedBook))
       response <-
@@ -56,7 +44,7 @@ object BookManagementServiceImplTest extends IOSuite {
   }
 
   test("rateBook rates book") { bookService =>
-    val bookToRate = book.copy(isbn = "rate")
+    val bookToRate = fixtures.bookInput.copy(isbn = "rate")
     val rating     = 4
     for {
       _ <- bookService.createBook(MutationsCreateBookArgs(bookToRate))
@@ -66,13 +54,13 @@ object BookManagementServiceImplTest extends IOSuite {
       ratedBook === toUserBook(
         bookToRate,
         rating = rating.some,
-        dateAdded = constantTime.some
+        dateAdded = fixtures.date.some
       )
     )
   }
 
   test("rateBook creates book if not exists") { bookService =>
-    val bookToRate = book.copy(isbn = "rate no book")
+    val bookToRate = fixtures.bookInput.copy(isbn = "rate no book")
     val rating     = 4
     for {
       ratedBook <-
@@ -80,14 +68,14 @@ object BookManagementServiceImplTest extends IOSuite {
     } yield expect(
       ratedBook === toUserBook(
         bookToRate,
-        dateAdded = constantTime.some,
+        dateAdded = fixtures.date.some,
         rating = rating.some
       )
     )
   }
 
   test("startReading starts reading") { bookService =>
-    val bookToRead     = book.copy(isbn = "read")
+    val bookToRead     = fixtures.bookInput.copy(isbn = "read")
     val startedReading = LocalDate.parse("2018-11-30")
     for {
       _ <- bookService.createBook(MutationsCreateBookArgs(bookToRead))
@@ -97,7 +85,7 @@ object BookManagementServiceImplTest extends IOSuite {
     } yield expect(
       updatedBook === toUserBook(
         bookToRead,
-        dateAdded = constantTime.some,
+        dateAdded = fixtures.date.some,
         startedReading = startedReading.some
       )
     )
@@ -105,7 +93,7 @@ object BookManagementServiceImplTest extends IOSuite {
 
   test("startReading gets time from clock if not specified in args") {
     bookService =>
-      val bookToRead = book.copy(isbn = "read no date")
+      val bookToRead = fixtures.bookInput.copy(isbn = "read no date")
       for {
         _ <- bookService.createBook(MutationsCreateBookArgs(bookToRead))
         updatedBook <-
@@ -113,14 +101,14 @@ object BookManagementServiceImplTest extends IOSuite {
       } yield expect(
         updatedBook === toUserBook(
           bookToRead,
-          dateAdded = constantTime.some,
-          startedReading = constantTime.some
+          dateAdded = fixtures.date.some,
+          startedReading = fixtures.date.some
         )
       )
   }
 
   test("startReading errors if already reading") { bookService =>
-    val copiedBook = book.copy(isbn = "copied reading")
+    val copiedBook = fixtures.bookInput.copy(isbn = "copied reading")
     for {
       _ <- bookService.createBook(MutationsCreateBookArgs(copiedBook))
       _ <- bookService.startReading(MutationsStartReadingArgs(copiedBook, None))
@@ -134,7 +122,7 @@ object BookManagementServiceImplTest extends IOSuite {
   }
 
   test("startReading returns lastRead info when applicable") { bookService =>
-    val popularBook = book.copy(isbn = "popular")
+    val popularBook = fixtures.bookInput.copy(isbn = "popular")
     for {
       _ <- bookService.createBook(MutationsCreateBookArgs(popularBook))
       _ <- bookService.finishReading(
@@ -145,15 +133,15 @@ object BookManagementServiceImplTest extends IOSuite {
     } yield expect(
       book === toUserBook(
         popularBook,
-        dateAdded = constantTime.some,
-        startedReading = constantTime.some,
-        lastRead = constantTime.some
+        dateAdded = fixtures.date.some,
+        startedReading = fixtures.date.some,
+        lastRead = fixtures.date.some
       )
     )
   }
 
   test("finishReading finishes reading") { bookService =>
-    val bookToRead      = book.copy(isbn = "finished")
+    val bookToRead      = fixtures.bookInput.copy(isbn = "finished")
     val finishedReading = LocalDate.parse("2018-11-30")
     for {
       _ <- bookService.createBook(MutationsCreateBookArgs(bookToRead))
@@ -164,14 +152,14 @@ object BookManagementServiceImplTest extends IOSuite {
       updatedBook === toUserBook(
         bookToRead,
         lastRead = finishedReading.some,
-        dateAdded = constantTime.some
+        dateAdded = fixtures.date.some
       )
     )
   }
 
   test("finishReading time from clock if not specified in args") {
     bookService =>
-      val bookToRead = book.copy(isbn = "finished no date")
+      val bookToRead = fixtures.bookInput.copy(isbn = "finished no date")
       for {
         _ <- bookService.createBook(MutationsCreateBookArgs(bookToRead))
         updatedBook <- bookService.finishReading(
@@ -180,19 +168,23 @@ object BookManagementServiceImplTest extends IOSuite {
       } yield expect(
         updatedBook === toUserBook(
           bookToRead,
-          lastRead = constantTime.some,
-          dateAdded = constantTime.some
+          lastRead = fixtures.date.some,
+          dateAdded = fixtures.date.some
         )
       )
   }
 
   test("deleteBookData deletes book data") { _ =>
-    val bookToClear     = book.copy(isbn = "book to delete data from")
+    val bookToClear     = fixtures.bookInput.copy(isbn = "book to delete data from")
     val finishedReading = LocalDate.parse("2018-11-30")
     val bookRef         = Ref.unsafe[IO, List[UserBook]](List.empty)
     val repo            = new InMemoryBookRepository(bookRef)
     val service =
-      BookManagementServiceImpl[IO, IO](repo, testClock, FunctionK.id[IO])
+      BookManagementServiceImpl[IO, IO](
+        repo,
+        fixtures.clock,
+        FunctionK.id[IO]
+      )
 
     for {
       _ <- service.finishReading(
@@ -205,7 +197,7 @@ object BookManagementServiceImplTest extends IOSuite {
       )
       book <- repo.retrieveBook(bookToClear.isbn)
     } yield expect(
-      book.exists(_ == toUserBook(bookToClear, dateAdded = constantTime.some))
+      book.exists(_ == toUserBook(bookToClear, dateAdded = fixtures.date.some))
     )
   }
 }
