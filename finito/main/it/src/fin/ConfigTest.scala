@@ -56,15 +56,15 @@ object ConfigTest extends SimpleIOSuite {
       conf <- Config(testDir.toString)
       _    <- Files[IO].deleteRecursively(testDir)
     } yield expect(
-      ServiceConfig
-        .default(testDir.toString)
-        .load[ServiceConfig]
-        .exists(
-          _.copy(
-            port = port,
-            defaultCollection = defaultCollection.some
-          ) === conf
-        )
+      ServiceConfig(
+        ServiceConfig.defaultDatabasePath(testDir.toString),
+        ServiceConfig.defaultDatabaseUser,
+        ServiceConfig.defaultDatabasePassword,
+        ServiceConfig.defaultHost,
+        ServiceConfig.defaultPort,
+        Some(ServiceConfig.defaultDefaultCollection),
+        ServiceConfig.defaultSpecialCollections
+      ) === conf
     )
   }
 }

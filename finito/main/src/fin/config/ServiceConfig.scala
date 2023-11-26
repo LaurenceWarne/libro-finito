@@ -1,11 +1,9 @@
 package fin.config
 
+import cats.Show
 import cats.implicits._
 import cats.kernel.Eq
-import pureconfig._
-import pureconfig.generic.semiauto._
 
-import fin.Types._
 import fin.service.collection._
 
 final case class ServiceConfig(
@@ -21,56 +19,58 @@ final case class ServiceConfig(
 }
 
 object ServiceConfig {
-  implicit val sortTypeReader   = deriveEnumerationReader[SortType]
-  implicit val sortReader       = deriveReader[Sort]
-  implicit val collectionReader = deriveReader[SpecialCollection]
-  implicit val confReader       = deriveReader[ServiceConfig]
-  implicit val serviceConfigEq  = Eq.fromUniversalEquals[ServiceConfig]
+  implicit val serviceConfigEq   = Eq.fromUniversalEquals[ServiceConfig]
+  implicit val serviceConfigShow = Show.fromToString[ServiceConfig]
 
-  val defaultPort: Int = 56848
+  def defaultDatabasePath(configDirectory: String): String =
+    show"$configDirectory/db.sqlite"
 
-  def default(configDirectory: String): ConfigObjectSource =
-    ConfigSource.string(
-      show"""{
-          |  database-path = $configDirectory/db.sqlite,
-          |  database-user = "",
-          |  database-password = "",
-          |  host = "0.0.0.0",
-          |  port = $defaultPort,
-          |  default-collection = My Books,
-          |  special-collections = [
-          |    {
-          |      name = My Books,
-          |      lazy = false,
-          |      add-hook = \"\"\"add = true\"\"\",
-          |      read-started-hook = \"\"\"add = true\"\"\",
-          |      read-completed-hook = \"\"\"add = true\"\"\",
-          |      rate-hook = \"\"\"add = true\"\"\"
-          |    },
-          |    {
-          |      name = Currently Reading,
-          |      read-started-hook = \"\"\"add = true\"\"\",
-          |      read-completed-hook = \"\"\"remove = true\"\"\"
-          |    },
-          |    {
-          |      name = Read,
-          |      preferred-sort = {
-          |        type = last-read,
-          |        sort-ascending = false
-          |      },
-          |      read-completed-hook = \"\"\"add = true\"\"\"
-          |    },
-          |    {
-          |      name = Favourites,
-          |      rate-hook = \"\"\"
-          |        if(rating >= 5) then
-          |          add = true
-          |        else
-          |          remove = true
-          |        end
-          |      \"\"\"
-          |    }
-          |  ]
-          |}""".stripMargin
+  val defaultDatabaseUser: String      = ""
+  val defaultDatabasePassword: String  = ""
+  val defaultHost: String              = "0.0.0.0"
+  val defaultPort: Int                 = 56848
+  val defaultDefaultCollection: String = "My Books"
+  val defaultSpecialCollections: List[SpecialCollection] = List(
+    SpecialCollection(
+      name = "My Books",
+      `lazy` = Some(false),
+      addHook = Some("add = true"),
+      readStartedHook = Some("add = true"),
+      readCompletedHook = Some("add = true"),
+      rateHook = Some("add = true"),
+      preferredSort = None
+    ),
+    SpecialCollection(
+      name = "Currently Reading",
+      `lazy` = Some(true),
+      addHook = None,
+      readStartedHook = Some("add = true"),
+      readCompletedHook = Some("remove = true"),
+      rateHook = None,
+      preferredSort = None
+    ),
+    SpecialCollection(
+      name = "Read",
+      `lazy` = Some(true),
+      addHook = None,
+      readStartedHook = None,
+      readCompletedHook = Some("add = true"),
+      rateHook = None,
+      preferredSort = None
+    ),
+    SpecialCollection(
+      name = "Favourites",
+      `lazy` = Some(true),
+      addHook = None,
+      readStartedHook = None,
+      readCompletedHook = None,
+      rateHook = Some("""
+                      |if(rating >= 5) then
+                      |  add = true
+                      |else
+                      |  remove = true
+                      |end""".stripMargin),
+      preferredSort = None
     )
+  )
 }

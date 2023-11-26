@@ -92,7 +92,7 @@ object finito extends Module {
         Deps.Http4s.http4sDsl,
         Deps.flyway,
         Deps.logback,
-        Deps.pureconfig
+        Deps.typesafeConfig
       )
   }
 
@@ -124,6 +124,7 @@ object finito extends Module {
         Deps.Caliban.http4s,
         Deps.Circe.core,
         Deps.Circe.generic,
+        Deps.Circe.genericExtras,
         Deps.Circe.parser,
         Deps.Http4s.http4sBlazeClient,
         Deps.Http4s.http4sDsl,
@@ -278,12 +279,13 @@ object Deps {
   val weaver           = ivy"com.disneystreaming::weaver-cats:0.8.1"
   val sqlite           = ivy"org.xerial:sqlite-jdbc:3.41.2.1"
   val flyway           = ivy"org.flywaydb:flyway-core:7.10.0"
-  val pureconfig       = ivy"com.github.pureconfig::pureconfig:0.16.0"
   // https://github.com/luaj/luaj/issues/91 ):
   val luaj           = ivy"org.luaj:luaj-jse:3.0.1"
   val testContainers = ivy"com.dimafeng::testcontainers-scala:0.40.2"
   val sttpHttp4s     = ivy"com.softwaremill.sttp.client3::http4s-backend:3.8.8"
   val jmh            = ivy"org.openjdk.jmh:jmh-core:1.35"
+  // Hard to remove this dep without dropping HOCON, lets hope Lightbend don't start charging for it
+  val typesafeConfig = ivy"com.typesafe:config:1.4.3"
 
   object Compiler {
     val semanticDb       = ivy"org.scalameta::semanticdb-scalac:4.4.22"
@@ -345,11 +347,12 @@ object Deps {
   }
 
   object Circe {
-    val version = "0.14.1"
-    val core    = ivy"io.circe::circe-core:$version"
-    val generic = ivy"io.circe::circe-generic:$version"
-    val parser  = ivy"io.circe::circe-parser:$version"
-    val literal = ivy"io.circe::circe-literal:$version"
+    val version       = "0.14.1"
+    val core          = ivy"io.circe::circe-core:$version"
+    val generic       = ivy"io.circe::circe-generic:$version"
+    val genericExtras = ivy"io.circe::circe-generic-extras:$version"
+    val parser        = ivy"io.circe::circe-parser:$version"
+    val literal       = ivy"io.circe::circe-literal:$version"
   }
 
   object CaseApp {

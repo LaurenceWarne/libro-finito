@@ -3,10 +3,14 @@ package fin.service.collection
 import cats.Show
 import cats.effect.Sync
 import cats.implicits._
+import io.circe._
+import io.circe.generic.extras.Configuration
+import io.circe.generic.extras.semiauto._
 import org.typelevel.log4cats.Logger
 
 import fin.Types._
 import fin._
+import fin.implicits._
 
 import HookType._
 import Bindable._
@@ -192,4 +196,9 @@ final case class SpecialCollection(
 object SpecialCollection {
   implicit val specialCollectionShow: Show[SpecialCollection] =
     Show.fromToString
+
+  implicit val customConfig: Configuration =
+    Configuration.default.withKebabCaseMemberNames
+  implicit val specialCollectionDecoder: Decoder[SpecialCollection] =
+    deriveConfiguredDecoder
 }

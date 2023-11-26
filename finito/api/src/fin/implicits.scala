@@ -1,5 +1,6 @@
 package fin
 
+import cats.syntax.all._
 import cats.kernel.Eq
 import cats.Show
 import io.circe._
@@ -26,4 +27,9 @@ object implicits {
   implicit val sortTypeEncoder: Encoder[SortType]     = deriveEncoder
   implicit val sortEncoder: Encoder[Sort]             = deriveEncoder
   implicit val collectionEncoder: Encoder[Collection] = deriveEncoder
+
+  implicit val sortTypeDecoder: Decoder[SortType] = Decoder[String].emap { s =>
+    SortConversions.fromString(s).leftMap(_ => show"Invalid sort type: '$s'")
+  }
+  implicit val sortDecoder: Decoder[Sort] = deriveDecoder
 }
