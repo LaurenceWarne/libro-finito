@@ -61,8 +61,8 @@ object ConfigTest extends SimpleIOSuite {
         ServiceConfig.defaultDatabaseUser,
         ServiceConfig.defaultDatabasePassword,
         ServiceConfig.defaultHost,
-        ServiceConfig.defaultPort,
-        Some(ServiceConfig.defaultDefaultCollection),
+        port,
+        Some(defaultCollection),
         ServiceConfig.defaultSpecialCollections
       ) === conf
     )
