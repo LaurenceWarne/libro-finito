@@ -19,8 +19,10 @@ final case class ServiceConfig(
 }
 
 object ServiceConfig {
-  implicit val serviceConfigEq   = Eq.fromUniversalEquals[ServiceConfig]
-  implicit val serviceConfigShow = Show.fromToString[ServiceConfig]
+  implicit val serviceConfigEq: Eq[ServiceConfig] =
+    Eq.fromUniversalEquals[ServiceConfig]
+  implicit val serviceConfigShow: Show[ServiceConfig] =
+    Show.fromToString[ServiceConfig]
 
   def defaultDatabasePath(configDirectory: String): String =
     show"$configDirectory/db.sqlite"

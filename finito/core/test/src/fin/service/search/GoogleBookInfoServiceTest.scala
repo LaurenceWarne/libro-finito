@@ -3,6 +3,7 @@ package fin.service.search
 import cats.effect._
 import cats.implicits._
 import org.http4s.client.Client
+import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import weaver._
 
@@ -11,7 +12,7 @@ import fin._
 
 object GoogleBookInfoServiceTest extends SimpleIOSuite {
 
-  implicit val logger = Slf4jLogger.getLogger[IO]
+  implicit val logger: Logger[IO] = Slf4jLogger.getLogger[IO]
 
   test("search parses title, author and description from json") {
     val title       = "The Casual Vacancy"

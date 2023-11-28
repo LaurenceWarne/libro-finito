@@ -2,20 +2,20 @@
 import $ivy.`com.lihaoyi::mill-contrib-buildinfo:$MILL_VERSION`
 import $ivy.`com.lihaoyi::mill-contrib-docker:$MILL_VERSION`
 import $ivy.`com.lihaoyi::mill-contrib-scoverage:$MILL_VERSION`
-import $ivy.`com.goyeau::mill-scalafix_mill0.10:0.2.11`
-import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version_mill0.10:0.1.4`
+import $ivy.`com.lihaoyi::mill-contrib-jmh:$MILL_VERSION`
+import $ivy.`com.goyeau::mill-scalafix_mill0.11:0.3.1`
+import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version_mill0.11:0.4.0`
 import $file.plugins.calibanSchemaGen
-import $file.plugins.jmh
 import mill._, scalalib._, scalafmt._
 import mill.scalalib.publish._
 import mill.contrib.buildinfo.BuildInfo
 import mill.contrib.docker.DockerModule
 import mill.contrib.scoverage.{ScoverageModule, ScoverageReport}
+import contrib.jmh.JmhModule
 import mill.eval.Evaluator
 import com.goyeau.mill.scalafix.ScalafixModule
 import coursier.maven.MavenRepository
 import calibanSchemaGen.{CalibanClientModule, CalibanSchemaModule}
-import jmh.Jmh
 import de.tobiasroeser.mill.vcs.version.VcsVersion
 
 val gqlSchemaPath  = "schema.gql"
@@ -27,7 +27,7 @@ object finito extends Module {
 
     object docker extends DockerConfig
 
-    object it extends Tests with LibroFinitoTest with CalibanClientModule {
+    object it extends LibroFinitoTest with ScalaTests with CalibanClientModule {
 
       def schemaPath  = gqlSchemaPath
       def packageName = finPackageName
@@ -44,13 +44,13 @@ object finito extends Module {
     def finitoVersion: T[String] =
       VcsVersion.vcsState().format(tagModifier = tag => tag.stripPrefix("v"))
 
-    def buildInfoPackageName = Some(finPackageName)
+    def buildInfoPackageName = finPackageName
 
-    def buildInfoMembers: T[Map[String, String]] =
+    def buildInfoMembers: T[Seq[BuildInfo.Value]] =
       T {
-        Map(
-          "version"      -> finitoVersion(),
-          "scalaVersion" -> scalaVersion()
+        Seq(
+          BuildInfo.Value("version", finitoVersion()),
+          BuildInfo.Value("scalaVersion", scalaVersion())
         )
       }
 
@@ -58,42 +58,37 @@ object finito extends Module {
 
     def assembly =
       T {
-        val newPath = T.ctx.dest / s"finito-${finitoVersion()}.jar"
+        val newPath = T.ctx().dest / s"finito-${finitoVersion()}.jar"
         os.move(super.assembly().path, newPath)
         PathRef(newPath)
       }
 
-    def scalacPluginIvyDeps =
-      super.scalacPluginIvyDeps() ++ Agg(
-        Deps.Compiler.betterMonadicFor,
-        Deps.Compiler.kindProjector
-      )
-
     def ivyDeps =
-      Agg(
-        Deps.Caliban.cats,
-        Deps.Caliban.core,
-        Deps.Caliban.http4s,
-        Deps.CaseApp.cats,
-        Deps.CaseApp.core,
-        Deps.CatsEffect.catsEffect,
-        Deps.CatsLogging.core,
-        Deps.CatsLogging.slf4j,
-        Deps.Circe.core,
-        Deps.Circe.generic,
-        Deps.Circe.parser,
-        Deps.Circe.literal,
-        Deps.Doobie.core,
-        Deps.Doobie.hikari,
-        Deps.Fs2.core,
-        Deps.Fs2.io,
-        Deps.Http4s.http4sBlazeClient,
-        Deps.Http4s.http4sBlazeServer,
-        Deps.Http4s.http4sDsl,
-        Deps.flyway,
-        Deps.logback,
-        Deps.typesafeConfig
-      )
+      super.ivyDeps() ++
+        Agg(
+          Deps.Caliban.cats,
+          Deps.Caliban.core,
+          Deps.Caliban.http4s,
+          Deps.CaseApp.cats,
+          Deps.CaseApp.core,
+          Deps.CatsEffect.catsEffect,
+          Deps.CatsLogging.core,
+          Deps.CatsLogging.slf4j,
+          Deps.Circe.core,
+          Deps.Circe.generic,
+          Deps.Circe.parser,
+          Deps.Circe.literal,
+          Deps.Doobie.core,
+          Deps.Doobie.hikari,
+          Deps.Fs2.core,
+          Deps.Fs2.io,
+          Deps.Http4s.http4sBlazeClient,
+          Deps.Http4s.http4sBlazeServer,
+          Deps.Http4s.http4sDsl,
+          Deps.flyway,
+          Deps.logback,
+          Deps.typesafeConfig
+        )
   }
 
   object api extends LibroFinitoModuleNoLinting with CalibanSchemaModule {
@@ -134,7 +129,7 @@ object finito extends Module {
         Deps.luaj
       )
 
-    object test extends Tests with ScoverageTests with LibroFinitoTest {
+    object test extends ScoverageTests with LibroFinitoTest with ScalaTests {
       def ivyDeps =
         super.ivyDeps() ++ Agg(Deps.CatsLogging.slf4j)
       def moduleDeps = super.moduleDeps ++ Seq(persistence.test)
@@ -160,17 +155,18 @@ object finito extends Module {
         Deps.sqlite
       )
 
-    object test extends Tests with ScoverageTests with LibroFinitoTest {
+    object test extends ScoverageTests with LibroFinitoTest with ScalaTests {
       def ivyDeps = super.ivyDeps() ++ Agg(Deps.Http4s.client)
     }
   }
 
-  object benchmark extends LibroFinitoModule with Jmh {
-    def moduleDeps = Seq(main)
+  object benchmark extends LibroFinitoModule with JmhModule {
+    def jmhCoreVersion = "1.35"
 
-    def ivyDeps = super.ivyDeps() ++ Agg(Deps.jmh)
+    def moduleDeps = Seq(main)
   }
 }
+// TODO figure out what the below TODO means
 // TODO use this when https://github.com/com-lihaoyi/mill/pull/1309 is merged
 // object scoverage extends ScoverageReport {
 //   def scalaVersion     = Deps.scalaVersion
@@ -184,20 +180,12 @@ trait LibroFinitoModuleNoLinting extends ScalaModule with ScoverageModule {
   def scoverageVersion = Deps.scoverageVersion
   def scalacOptions    = Options.scalacOptions
 
-  // Since compiler plugins are not backwards compatible with scala patches,
-  // the scoverage dep plugin is not published along scala minor versions
-  // but mill currently uses "::" instead of ":::" which grabs an out of
-  // date (and binary incompatible!) scoverage plugin version:
-  // org.scoverage:::scalac-scoverage-plugin_2.13, but we want:
-  // org.scoverage:::scalac-scoverage-plugin_.2.13.6
-  // https://github.com/com-lihaoyi/mill/pull/1309 should remove the need for this
-  def scoveragePluginDep =
-    ivy"org.scoverage:::scalac-scoverage-plugin:${scoverageVersion()}"
-
-  def repositories =
-    super.repositories ++ Seq(
-      MavenRepository("https://jitpack.io")
-    )
+  def repositoriesTask =
+    T.task {
+      super.repositoriesTask() ++ Seq(
+        MavenRepository("https://jitpack.io")
+      )
+    }
 }
 
 trait LibroFinitoModule
@@ -205,10 +193,18 @@ trait LibroFinitoModule
     with ScalafmtModule
     with ScalafixModule {
   def scalafixIvyDeps = Deps.Scalafix.all
+
+  def scalacPluginIvyDeps =
+    super.scalacPluginIvyDeps() ++ Agg(
+      Deps.Compiler.betterMonadicFor,
+      Deps.Compiler.kindProjector,
+      Deps.Compiler.semanticDb
+    )
 }
 
 trait LibroFinitoTest
-    extends TestModule
+    extends ScalaModule
+    with TestModule
     with ScalafmtModule
     with ScalafixModule {
   def scalafixIvyDeps = Deps.Scalafix.all
@@ -272,9 +268,9 @@ object Options {
 }
 
 object Deps {
-  val scalaVersion     = "2.13.8"
+  val scalaVersion     = "2.13.12"
   val ammoniteVersion  = "2.5.2"
-  val scoverageVersion = "1.4.11"
+  val scoverageVersion = "2.0.11"
   val logback          = ivy"ch.qos.logback:logback-classic:1.1.3"
   val weaver           = ivy"com.disneystreaming::weaver-cats:0.8.1"
   val sqlite           = ivy"org.xerial:sqlite-jdbc:3.41.2.1"
@@ -288,7 +284,7 @@ object Deps {
   val typesafeConfig = ivy"com.typesafe:config:1.4.3"
 
   object Compiler {
-    val semanticDb       = ivy"org.scalameta::semanticdb-scalac:4.4.22"
+    val semanticDb       = ivy"org.scalameta:::semanticdb-scalac:4.8.14"
     val betterMonadicFor = ivy"com.olegpy::better-monadic-for:0.3.1"
     val kindProjector    = ivy"org.typelevel:::kind-projector:0.13.2"
   }
@@ -296,7 +292,6 @@ object Deps {
   object Scalafix {
     private val typelevelVersion = "0.1.5"
     val all = Agg(
-      ivy"com.github.liancheng::organize-imports:0.4.0",
       ivy"org.typelevel::typelevel-scalafix:$typelevelVersion",
       ivy"org.typelevel::typelevel-scalafix-cats:$typelevelVersion",
       ivy"org.typelevel::typelevel-scalafix-cats-effect:$typelevelVersion",

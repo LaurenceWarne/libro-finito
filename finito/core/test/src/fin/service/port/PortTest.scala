@@ -23,6 +23,7 @@ object PortTest extends SimpleIOSuite {
     for {
       colRef <- Ref.of[IO, List[Types.Collection]](List.empty)
       repo = new InMemoryCollectionRepository(colRef)
+      _ <- repo.collections
       _ <- new GoodreadsImport[IO](None, bookInfoService).importResource(
         "./assets/sample_goodreads_export.csv",
         None

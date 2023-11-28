@@ -11,7 +11,6 @@ import org.http4s.Response
 import org.http4s.client.Client
 
 import fin.Types._
-import fin._
 
 package object fixtures {
 

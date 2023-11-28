@@ -1,4 +1,4 @@
-import $ivy.`com.github.ghostdogpr::caliban-tools:1.4.1`
+import $ivy.`com.github.ghostdogpr::caliban-tools:2.4.3`
 import caliban.tools.Codegen.GenType
 import caliban.tools._
 import mill._, scalalib._, scalafmt._
@@ -50,11 +50,15 @@ trait CalibanSchemaModule extends ScalaModule with CalibanModule {
         Some(splitFiles),
         Some(enableFmt),
         Some(extensibleEnums),
-        Some(preserveInputNames)
+        Some(preserveInputNames),
+        None,
+        None
       )
-      Runtime.default.unsafeRun(
-        Codegen.generate(options, GenType.Schema).unit
-      )
+      zio.Unsafe.unsafe { implicit unsafe =>
+        Runtime.default.unsafe
+          .run(Codegen.generate(options, GenType.Schema).unit)
+          .getOrThrowFiberFailure()
+      }
       PathRef(outputPath)
     }
 }
@@ -85,11 +89,15 @@ trait CalibanClientModule extends ScalaModule with CalibanModule {
         Some(splitFiles),
         Some(enableFmt),
         Some(extensibleEnums),
-        Some(preserveInputNames)
+        Some(preserveInputNames),
+        None,
+        None
       )
-      Runtime.default.unsafeRun(
-        Codegen.generate(options, GenType.Client).unit
-      )
+      zio.Unsafe.unsafe { implicit unsafe =>
+        Runtime.default.unsafe
+          .run(Codegen.generate(options, GenType.Client).unit)
+          .getOrThrowFiberFailure()
+      }
       PathRef(outputPath)
     }
 }

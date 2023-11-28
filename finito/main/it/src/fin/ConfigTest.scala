@@ -4,6 +4,7 @@ import cats.effect._
 import cats.implicits._
 import fs2._
 import fs2.io.file._
+import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import weaver._
 
@@ -11,8 +12,8 @@ import fin.config.{Config, ServiceConfig}
 
 object ConfigTest extends SimpleIOSuite {
 
-  implicit val logger = Slf4jLogger.getLogger[IO]
-  val testDir         = Path("./out/conf-test").normalize.absolute
+  implicit val logger: Logger[IO] = Slf4jLogger.getLogger[IO]
+  val testDir                     = Path("./out/conf-test").normalize.absolute
 
   override def maxParallelism = 1
 

@@ -23,7 +23,7 @@ trait CollectionImport[F[_]] {
 /**
   * https://www.goodreads.com/review/import
   */
-class GoodreadsImport[F[_]: Async](
+class GoodreadsImport[F[_]: Async: Files](
     maybeDefaultCollection: Option[String],
     infoService: BookInfoService[F]
 ) extends CollectionImport[F] {

@@ -1,7 +1,7 @@
 package fin.service.book
 
 import cats.effect.Sync
-import cats.implicits._
+import cats.syntax.all._
 import org.typelevel.log4cats.Logger
 
 import fin.CollectionAlreadyExistsError

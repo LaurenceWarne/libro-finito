@@ -21,9 +21,12 @@ import fin.persistence._
 
 object Main extends IOCaseApp[CliOptions] {
 
-  implicit val zioRuntime =
+  implicit val zioRuntime: zio.Runtime[zio.Clock with zio.Console] =
     Runtime.default.withEnvironment(
-      zio.ZEnvironment(zio.Clock.ClockLive, zio.Console.ConsoleLive)
+      zio.ZEnvironment[zio.Clock, zio.Console](
+        zio.Clock.ClockLive,
+        zio.Console.ConsoleLive
+      )
     )
   implicit val logger: Logger[IO] = Slf4jLogger.getLogger
 
