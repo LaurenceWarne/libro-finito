@@ -4,19 +4,21 @@ import $ivy.`com.lihaoyi::mill-contrib-docker:$MILL_VERSION`
 import $ivy.`com.lihaoyi::mill-contrib-scoverage:$MILL_VERSION`
 import $ivy.`com.lihaoyi::mill-contrib-jmh:$MILL_VERSION`
 import $ivy.`com.goyeau::mill-scalafix_mill0.11:0.3.1`
+import $ivy.`io.github.davidgregory084::mill-tpolecat::0.3.5`
 import $ivy.`de.tototec::de.tobiasroeser.mill.vcs.version_mill0.11:0.4.0`
 import $file.plugins.calibanSchemaGen
 import mill._, scalalib._, scalafmt._
-import mill.scalalib.publish._
+import calibanSchemaGen.{CalibanClientModule, CalibanSchemaModule}
+import com.goyeau.mill.scalafix.ScalafixModule
+import contrib.jmh.JmhModule
+import coursier.maven.MavenRepository
+import de.tobiasroeser.mill.vcs.version.VcsVersion
+import io.github.davidgregory084.TpolecatModule
 import mill.contrib.buildinfo.BuildInfo
 import mill.contrib.docker.DockerModule
 import mill.contrib.scoverage.{ScoverageModule, ScoverageReport}
-import contrib.jmh.JmhModule
 import mill.eval.Evaluator
-import com.goyeau.mill.scalafix.ScalafixModule
-import coursier.maven.MavenRepository
-import calibanSchemaGen.{CalibanClientModule, CalibanSchemaModule}
-import de.tobiasroeser.mill.vcs.version.VcsVersion
+import mill.scalalib.publish._
 
 val gqlSchemaPath  = "schema.gql"
 val finPackageName = "fin"
@@ -173,12 +175,14 @@ object finito extends Module {
 //   def scoverageVersion = Deps.scoverageVersion
 // }
 
-trait LibroFinitoModuleNoLinting extends ScalaModule with ScoverageModule {
+trait LibroFinitoModuleNoLinting
+    extends ScalaModule
+    with ScoverageModule
+    with TpolecatModule {
   def scalaVersion    = Deps.scalaVersion
   def ammoniteVersion = Deps.ammoniteVersion
   // https://github.com/com-lihaoyi/mill/blob/main/docs/antora/modules/ROOT/pages/Contrib_Modules.adoc#scoverage
   def scoverageVersion = Deps.scoverageVersion
-  def scalacOptions    = Options.scalacOptions
 
   def repositoriesTask =
     T.task {
@@ -208,63 +212,10 @@ trait LibroFinitoTest
     with ScalafmtModule
     with ScalafixModule {
   def scalafixIvyDeps = Deps.Scalafix.all
-  def scalacOptions   = Options.scalacOptions
 
   def ivyDeps = Agg(Deps.weaver)
   // https://github.com/disneystreaming/weaver-test
   def testFramework = "weaver.framework.CatsEffect"
-}
-
-object Options {
-  // From https://gist.github.com/guilgaly/b73ad98384051ecdc7be39b1f053fc87
-  val scalacOptions = Seq(
-    "-encoding",
-    "utf-8",                 // Specify character encoding used by source files.
-    "-Ybackend-parallelism", //
-    "8",
-    "-explaintypes", // Explain type errors in more detail.
-    "-feature",      // Emit warning and location for usages of features that should be imported explicitly.
-    "-unchecked",    // Enable additional warnings where generated code depends on assumptions.
-    "-Xcheckinit",   // Wrap field accessors to throw an exception on uninitialized access.
-
-    // ********** Warning Settings ***********************************************
-    "-Werror",            // Fail the compilation if there are any warnings.
-    "-Wdead-code",        // Warn when dead code is identified.
-    "-Wextra-implicit",   // Warn when more than one implicit parameter section is defined.
-    "-Wmacros:after",     // Only inspect expanded trees when generating unused symbol warnings.
-    "-Wnumeric-widen",    // Warn when numerics are widened.
-    "-Woctal-literal",    // Warn on obsolete octal syntax.
-    "-Wunused:imports",   // Warn if an import selector is not referenced.
-    "-Wunused:patvars",   // Warn if a variable bound in a pattern is unused.
-    "-Wunused:privates",  // Warn if a private member is unused.
-    "-Wunused:locals",    // Warn if a local definition is unused.
-    "-Wunused:explicits", // Warn if an explicit parameter is unused.
-    "-Wunused:implicits", // Warn if an implicit parameter is unused.
-    "-Wunused:params",    // Enable -Wunused:explicits,implicits.
-    "-Wvalue-discard",    // Warn when non-Unit expression results are unused.
-
-    // ********** -Xlint: Enable recommended warnings ****************************
-    "-Xlint:adapted-args",           // Warn if an argument list is modified to match the receiver.
-    "-Xlint:nullary-unit",           // Warn when nullary methods return Unit.
-    "-Xlint:inaccessible",           // Warn about inaccessible types in method signatures.
-    "-Xlint:infer-any",              // Warn when a type argument is inferred to be Any.
-    "-Xlint:doc-detached",           // A Scaladoc comment appears to be detached from its element.
-    "-Xlint:private-shadow",         // A private field (or class parameter) shadows a superclass field.
-    "-Xlint:type-parameter-shadow",  // A local type parameter shadows a type already in scope.
-    "-Xlint:poly-implicit-overload", // Parameterized overloaded implicit methods are not visible as view bounds.
-    "-Xlint:option-implicit",        // Option.apply used implicit view.
-    "-Xlint:delayedinit-select",     // Selecting member of DelayedInit.
-    "-Xlint:package-object-classes", // Class or object defined in package object.
-    "-Xlint:stars-align",            // Pattern sequence wildcard must align with sequence component.
-    "-Xlint:constant",               // Evaluation of a constant arithmetic expression results in an error.
-    "-Xlint:nonlocal-return",        // A return statement used an exception for flow control.
-    "-Xlint:implicit-not-found",     // Check @implicitNotFound and @implicitAmbiguous messages.
-    "-Xlint:serial",                 // @SerialVersionUID on traits and non-serializable classes.
-    "-Xlint:valpattern",             // Enable pattern checks in val definitions.
-    "-Xlint:eta-zero",               // Warn on eta-expansion (rather than auto-application) of zero-ary method.
-    "-Xlint:eta-sam",                // Warn on eta-expansion to meet a Java-defined functional interface that is not explicitly annotated with @FunctionalInterface.
-    "-Xlint:deprecation"             // Enable linted deprecations.
-  )
 }
 
 object Deps {
@@ -290,7 +241,7 @@ object Deps {
   }
 
   object Scalafix {
-    private val typelevelVersion = "0.1.5"
+    private val typelevelVersion = "0.2.0"
     val all = Agg(
       ivy"org.typelevel::typelevel-scalafix:$typelevelVersion",
       ivy"org.typelevel::typelevel-scalafix-cats:$typelevelVersion",

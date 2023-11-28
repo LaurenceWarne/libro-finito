@@ -1,5 +1,7 @@
 package fin.config
 
+import scala.annotation.nowarn
+
 import cats.effect.Async
 import cats.syntax.all._
 import fs2.io.file._
@@ -106,7 +108,7 @@ object Config {
     None
   )
 
-  private implicit val customConfig: Configuration =
+  @nowarn private implicit val customConfig: Configuration =
     Configuration.default.withKebabCaseMemberNames.withDefaults
   private implicit val serviceConfigOptionDecoder
       : Decoder[ServiceConfigNoDefaults] =
