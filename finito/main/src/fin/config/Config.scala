@@ -30,13 +30,16 @@ object Config {
       configPathExists <- Files[F].exists(configPath)
       (config, msg) <-
         if (configPathExists)
-          readUserConfig[F](configDirectory).tupleRight(
+          readUserConfig[F](configPath).tupleRight(
             show"Found config file at $configPath"
           )
         else
           Async[F].pure(
             (
-              emptyServiceConfig.toServiceConfig(configDirectoryStr),
+              emptyServiceConfig.toServiceConfig(
+                configDirectory = configDirectory.toString,
+                configExists = false
+              ),
               show"No config file found at $configPath, using defaults"
             )
           )
@@ -45,16 +48,9 @@ object Config {
   }
 
   private def readUserConfig[F[_]: Async: Logger](
-      configDirectory: Path
+      configPath: Path
   ): F[ServiceConfig] = {
-    val configPath = configDirectory / "service.conf"
     for {
-      configPathExists <- Files[F].exists(configPath)
-      _ <- Logger[F].info(
-        if (configPathExists) show"Found config file at $configPath"
-        else
-          show"No config file found at $configPath, defaulting to fallback config"
-      )
       configContents <- Files[F].readUtf8(configPath).compile.string
       // Working with typesafe config is such a nightmare 🤮 so we read and then straight encode to
       // JSON and then decode that (it was a mistake using HOCON).
@@ -70,7 +66,10 @@ object Config {
       )
       configNoDefaults <-
         Async[F].fromEither(decode[ServiceConfigNoDefaults](configStr))
-      config = configNoDefaults.toServiceConfig(configDirectory.toString)
+      config = configNoDefaults.toServiceConfig(
+        configDirectory = configPath.parent.fold("/")(_.toString),
+        configExists = true
+      )
       _ <- Logger[F].debug(show"Config: $config")
     } yield config
   }
@@ -84,7 +83,10 @@ object Config {
       defaultCollection: Option[String],
       specialCollections: Option[List[SpecialCollection]]
   ) {
-    def toServiceConfig(configDirectory: String): ServiceConfig =
+    def toServiceConfig(
+        configDirectory: String,
+        configExists: Boolean
+    ): ServiceConfig =
       ServiceConfig(
         databasePath.getOrElse(
           ServiceConfig.defaultDatabasePath(configDirectory)
@@ -93,7 +95,12 @@ object Config {
         databasePassword.getOrElse(ServiceConfig.defaultDatabasePassword),
         host.getOrElse(ServiceConfig.defaultHost),
         port.getOrElse(ServiceConfig.defaultPort),
-        defaultCollection,
+        // The only case when we don't set a default collection is when a config file exists
+        // and it doesn't specify a default collection.
+        if (configExists)
+          defaultCollection
+        else
+          Some(ServiceConfig.defaultDefaultCollection),
         specialCollections.getOrElse(ServiceConfig.defaultSpecialCollections)
       )
   }
