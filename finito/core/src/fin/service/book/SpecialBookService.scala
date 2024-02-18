@@ -34,6 +34,9 @@ class SpecialBookService[F[_]: Sync: Logger] private (
       )
     } yield response
 
+  override def addBookReview(args: MutationsAddBookReviewArgs): F[UserBook] =
+    wrappedBookService.addBookReview(args)
+
   override def startReading(args: MutationsStartReadingArgs): F[UserBook] =
     for {
       response <- wrappedBookService.startReading(args)

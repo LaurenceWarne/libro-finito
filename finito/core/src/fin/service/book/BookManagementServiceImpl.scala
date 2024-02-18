@@ -41,6 +41,17 @@ class BookManagementServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
       .flatMap(date => transact(transaction(date)))
   }
 
+  override def addBookReview(args: MutationsAddBookReviewArgs): F[UserBook] = {
+    val transaction: LocalDate => G[UserBook] = date =>
+      for {
+        book <- createIfNotExists(args.book, date)
+        _    <- bookRepo.addBookReview(args.book, args.review)
+      } yield book.copy(review = args.review.some)
+    Dates
+      .currentDate(clock)
+      .flatMap(date => transact(transaction(date)))
+  }
+
   override def startReading(args: MutationsStartReadingArgs): F[UserBook] = {
     val transaction: (LocalDate, LocalDate) => G[UserBook] =
       (currentDate, startDate) =>

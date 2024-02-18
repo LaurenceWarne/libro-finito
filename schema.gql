@@ -121,6 +121,7 @@ type Mutations {
   startReading(book: BookInput!, date: Date): UserBook!
   finishReading(book: BookInput!, date: Date): UserBook!
   rateBook(book: BookInput!, rating: Int!): UserBook!
+  addBookReview(book: BookInput!, review: String!): UserBook!
   """
   Create a custom book, useful for when you can't find a book when searching.
   """

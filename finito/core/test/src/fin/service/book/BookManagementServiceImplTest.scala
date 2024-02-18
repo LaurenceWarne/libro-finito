@@ -74,6 +74,39 @@ object BookManagementServiceImplTest extends IOSuite {
     )
   }
 
+  test("addBookReview adds review to book") { bookService =>
+    val bookToReview = fixtures.bookInput.copy(isbn = "review")
+    val review       = "Excellent book"
+    for {
+      _ <- bookService.createBook(MutationsCreateBookArgs(bookToReview))
+      reviewdBook <- bookService.addBookReview(
+        MutationsAddBookReviewArgs(bookToReview, review)
+      )
+    } yield expect(
+      reviewdBook === toUserBook(
+        bookToReview,
+        review = review.some,
+        dateAdded = fixtures.date.some
+      )
+    )
+  }
+
+  test("addBookReview creates book if not exists") { bookService =>
+    val bookToReview = fixtures.bookInput.copy(isbn = "review with no book")
+    val review       = "Very excellent book"
+    for {
+      reviewdBook <- bookService.addBookReview(
+        MutationsAddBookReviewArgs(bookToReview, review)
+      )
+    } yield expect(
+      reviewdBook === toUserBook(
+        bookToReview,
+        dateAdded = fixtures.date.some,
+        review = review.some
+      )
+    )
+  }
+
   test("startReading starts reading") { bookService =>
     val bookToRead     = fixtures.bookInput.copy(isbn = "read")
     val startedReading = LocalDate.parse("2018-11-30")

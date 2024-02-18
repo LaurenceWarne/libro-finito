@@ -57,6 +57,7 @@ object CalibanSetup {
       args => bookManagementService.startReading(args),
       args => bookManagementService.finishReading(args),
       args => bookManagementService.rateBook(args),
+      args => bookManagementService.addBookReview(args),
       args => bookManagementService.createBook(args),
       args => bookManagementService.deleteBookData(args).as(None),
       _ => ???

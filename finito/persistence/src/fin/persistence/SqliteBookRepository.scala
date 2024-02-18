@@ -48,6 +48,12 @@ object SqliteBookRepository extends BookRepository[ConnectionIO] {
   override def rateBook(book: BookInput, rating: Int): ConnectionIO[Unit] =
     BookFragments.insertRating(book.isbn, rating).update.run.void
 
+  override def addBookReview(
+      book: BookInput,
+      review: String
+  ): ConnectionIO[Unit] =
+    BookFragments.addReview(book.isbn, review).update.run.void
+
   override def startReading(
       book: BookInput,
       date: LocalDate
@@ -117,15 +123,12 @@ object BookFragments {
   def retrieveMultipleBooks(isbns: NonEmptyList[String]): Fragment =
     selectBook ++ fr"WHERE" ++ in(fr"b.isbn", isbns)
 
-  def retrieveByIsbn(isbn: String): Fragment =
-    fr"SELECT * from books WHERE isbn=$isbn"
-
   def checkIsbn(isbn: String): Fragment =
     fr"SELECT isbn from books WHERE isbn=$isbn"
 
   def insert(book: BookInput, date: LocalDate): Fragment =
     fr"""
-       |INSERT INTO books VALUES (
+       |INSERT INTO books (isbn, title, authors, description, thumbnail_uri, added) VALUES (
        |  ${book.isbn},
        |  ${book.title},
        |  ${book.authors.mkString(",")},
@@ -168,6 +171,12 @@ object BookFragments {
        |ON CONFLICT(isbn)
        |DO UPDATE SET rating=excluded.rating""".stripMargin
 
+  def addReview(isbn: String, review: String): Fragment =
+    fr"""
+       |UPDATE books
+       |SET review = $review
+       |WHERE isbn = $isbn""".stripMargin
+
   def deleteRead(isbn: String): Fragment =
     fr"""
        |DELETE FROM read_books
@@ -191,7 +200,8 @@ object BookFragments {
        |  added,
        |  cr.started,
        |  lr.finished,
-       |  r.rating
+       |  r.rating,
+       |  b.review
        |FROM books b
        |LEFT JOIN currently_reading_books cr ON b.isbn = cr.isbn
        |LEFT JOIN (${lastRead}) lr ON b.isbn = lr.isbn
@@ -207,7 +217,8 @@ final case class BookRow(
     maybeAdded: Option[LocalDate],
     maybeStarted: Option[LocalDate],
     maybeFinished: Option[LocalDate],
-    maybeRating: Option[Int]
+    maybeRating: Option[Int],
+    maybeReview: Option[String]
 ) {
   def toBook: UserBook =
     UserBook(
@@ -220,6 +231,6 @@ final case class BookRow(
       maybeRating,
       maybeStarted,
       maybeFinished,
-      None
+      maybeReview
     )
 }

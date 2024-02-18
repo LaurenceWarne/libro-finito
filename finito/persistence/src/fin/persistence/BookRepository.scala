@@ -9,6 +9,7 @@ trait BookRepository[F[_]] {
   def retrieveMultipleBooks(isbns: List[String]): F[List[UserBook]]
   def createBook(book: BookInput, date: LocalDate): F[Unit]
   def rateBook(book: BookInput, rating: Int): F[Unit]
+  def addBookReview(book: BookInput, review: String): F[Unit]
   def startReading(book: BookInput, date: LocalDate): F[Unit]
   def finishReading(book: BookInput, date: LocalDate): F[Unit]
   def deleteBookData(isbn: String): F[Unit]

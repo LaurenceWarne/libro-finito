@@ -40,4 +40,3 @@ CREATE TABLE IF NOT EXISTS rated_books(
   rating INTEGER NOT NULL,
   FOREIGN KEY(isbn) REFERENCES books(isbn)
 );
-

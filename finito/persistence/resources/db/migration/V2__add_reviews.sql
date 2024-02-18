@@ -1,0 +1,2 @@
+ALTER TABLE books
+  ADD COLUMN review TEXT NULL;

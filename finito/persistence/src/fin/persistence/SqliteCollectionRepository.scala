@@ -22,7 +22,7 @@ object SqliteCollectionRepository extends CollectionRepository[ConnectionIO] {
       date: LocalDate
   ): ConnectionIO[Unit] =
     for {
-      exists <- BookFragments.retrieveByIsbn(book.isbn).query[String].option
+      exists <- BookFragments.checkIsbn(book.isbn).query[String].option
       _ <- Monad[ConnectionIO].whenA(exists.isEmpty) {
         BookFragments.insert(book, date).update.run
       }
@@ -175,6 +175,7 @@ object CollectionFragments {
        |b.isbn,
        |b.thumbnail_uri,
        |b.added,
+       |b.review,
        |cr.started,
        |lr.finished,
        |r.rating""".stripMargin
@@ -272,6 +273,7 @@ final case class CollectionBookRow(
     maybeIsbn: Option[String],
     maybeThumbnailUri: Option[String],
     maybeAdded: Option[LocalDate],
+    maybeReview: Option[String],
     maybeStarted: Option[LocalDate],
     maybeFinished: Option[LocalDate],
     maybeRating: Option[Int]
@@ -293,7 +295,7 @@ final case class CollectionBookRow(
       rating = maybeRating,
       startedReading = maybeStarted,
       lastRead = maybeFinished,
-      review = None
+      review = maybeReview
     )
   }
 }

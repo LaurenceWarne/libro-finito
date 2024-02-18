@@ -37,7 +37,17 @@ object SqliteBookRepositoryTest extends SqliteSuite {
       _           <- repo.createBook(bookToRate, fixtures.date)
       _           <- repo.rateBook(bookToRate, rating)
       maybeRating <- retrieveRating(bookToRate.isbn)
-    } yield expect(maybeRating.exists(_ === rating))
+    } yield expect(maybeRating.contains_(rating))
+  }
+
+  testDoobie("addBookReview adds review") {
+    val bookToRate = fixtures.bookInput.copy(isbn = "to-review")
+    val review     = "A great book!"
+    for {
+      _           <- repo.createBook(bookToRate, fixtures.date)
+      _           <- repo.addBookReview(bookToRate, review)
+      maybeReview <- retrieveReview(bookToRate.isbn)
+    } yield expect(maybeReview.contains_(review))
   }
 
   testDoobie("startReading starts book reading") {
@@ -46,7 +56,7 @@ object SqliteBookRepositoryTest extends SqliteSuite {
       _          <- repo.createBook(bookToRead, fixtures.date)
       _          <- repo.startReading(bookToRead, fixtures.date)
       maybeEpoch <- retrieveReading(bookToRead.isbn)
-    } yield expect(maybeEpoch.exists(_ === fixtures.date))
+    } yield expect(maybeEpoch.contains_(fixtures.date))
   }
 
   testDoobie("finishReading finishes book reading") {
@@ -58,9 +68,8 @@ object SqliteBookRepositoryTest extends SqliteSuite {
       _          <- repo.finishReading(bookToFinish, finishedDate)
       maybeDates <- retrieveFinished(bookToFinish.isbn)
       (maybeStarted, maybeFinished) = maybeDates.unzip
-    } yield expect(maybeStarted.flatten.exists(_ === fixtures.date)) and expect(
-      maybeFinished.exists(_ === finishedDate)
-    )
+    } yield expect(maybeStarted.flatten.contains_(fixtures.date)) and
+      expect(maybeFinished.contains_(finishedDate))
   }
 
   testDoobie("finishReading deletes row from currently_reading table") {
@@ -193,6 +202,11 @@ object SqliteBookRepositoryTest extends SqliteSuite {
   private def retrieveRating(isbn: String): ConnectionIO[Option[Int]] =
     fr"SELECT rating FROM rated_books WHERE isbn=$isbn".stripMargin
       .query[Int]
+      .option
+
+  private def retrieveReview(isbn: String): ConnectionIO[Option[String]] =
+    fr"SELECT review FROM books WHERE isbn=$isbn".stripMargin
+      .query[String]
       .option
 
   private def retrieveReading(isbn: String): ConnectionIO[Option[LocalDate]] =

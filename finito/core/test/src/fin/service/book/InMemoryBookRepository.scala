@@ -24,15 +24,23 @@ class InMemoryBookRepository[F[_]: Monad](booksRef: Ref[F, List[UserBook]])
   override def retrieveMultipleBooks(isbns: List[String]): F[List[UserBook]] =
     booksRef.get.map(_.filter(book => isbns.contains(book.isbn)))
 
-  override def rateBook(book: BookInput, rating: Int): F[Unit] = {
-    for {
-      _ <- booksRef.getAndUpdate(_.map { b =>
+  override def rateBook(book: BookInput, rating: Int): F[Unit] =
+    booksRef.getAndUpdate { ls =>
+      ls.map { b =>
         if (b.isbn === book.isbn)
           b.copy(rating = rating.some)
         else b
-      })
-    } yield ()
-  }
+      }
+    }.void
+
+  override def addBookReview(book: BookInput, review: String): F[Unit] =
+    booksRef.getAndUpdate { ls =>
+      ls.map { b =>
+        if (b.isbn === book.isbn)
+          b.copy(review = review.some)
+        else b
+      }
+    }.void
 
   override def startReading(book: BookInput, date: LocalDate): F[Unit] =
     for {
