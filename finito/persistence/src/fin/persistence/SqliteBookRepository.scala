@@ -192,16 +192,16 @@ object BookFragments {
   private def selectBook: Fragment =
     fr"""
        |SELECT 
-       |  title,
-       |  authors,
-       |  description,
+       |  b.title,
+       |  b.authors,
+       |  b.description,
        |  b.isbn,
-       |  thumbnail_uri,
-       |  added,
+       |  b.thumbnail_uri,
+       |  b.added,
+       |  b.review,
        |  cr.started,
        |  lr.finished,
-       |  r.rating,
-       |  b.review
+       |  r.rating
        |FROM books b
        |LEFT JOIN currently_reading_books cr ON b.isbn = cr.isbn
        |LEFT JOIN (${lastRead}) lr ON b.isbn = lr.isbn
@@ -215,10 +215,10 @@ final case class BookRow(
     isbn: String,
     thumbnailUri: String,
     maybeAdded: Option[LocalDate],
+    maybeReview: Option[String],
     maybeStarted: Option[LocalDate],
     maybeFinished: Option[LocalDate],
-    maybeRating: Option[Int],
-    maybeReview: Option[String]
+    maybeRating: Option[Int]
 ) {
   def toBook: UserBook =
     UserBook(
