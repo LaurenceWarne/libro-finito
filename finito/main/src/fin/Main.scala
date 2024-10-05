@@ -5,8 +5,7 @@ import scala.concurrent.duration._
 import _root_.cats.effect._
 import _root_.cats.effect.std.Dispatcher
 import _root_.cats.implicits._
-import caseapp._
-import caseapp.cats._
+import cats.effect.std.Env
 import doobie._
 import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.blaze.server.BlazeServerBuilder
@@ -19,7 +18,7 @@ import zio.Runtime
 import fin.config._
 import fin.persistence._
 
-object Main extends IOCaseApp[CliOptions] {
+object Main extends IOApp {
 
   implicit val zioRuntime: zio.Runtime[zio.Clock with zio.Console] =
     Runtime.default.withEnvironment(
@@ -30,8 +29,10 @@ object Main extends IOCaseApp[CliOptions] {
     )
   implicit val logger: Logger[IO] = Slf4jLogger.getLogger
 
-  def run(options: CliOptions, arg: RemainingArgs): IO[ExitCode] = {
-    val server = serviceResources(options).use { serviceResources =>
+  val env = Env[IO]
+
+  def run(arg: List[String]): IO[ExitCode] = {
+    val server = serviceResources(env).use { serviceResources =>
       implicit val dispatcherEv = serviceResources.dispatcher
       val config                = serviceResources.config
       val timer                 = Temporal[IO]
@@ -49,9 +50,8 @@ object Main extends IOCaseApp[CliOptions] {
         _           <- logger.debug("Bootstrapping caliban...")
         interpreter <- CalibanSetup.interpreter[IO](services)
 
-        debug <- IO.blocking(
-          sys.env.get("LOG_LEVEL").exists(CIString(_) === ci"DEBUG")
-        )
+        logLevel <- env.get("LOG_LEVEL")
+        debug = logLevel.exists(CIString(_) === ci"DEBUG")
         refresherIO = (timer.sleep(1.minute) >> Routes.keepFresh[IO](
             serviceResources.client,
             timer,
@@ -74,11 +74,11 @@ object Main extends IOCaseApp[CliOptions] {
   }
 
   private def serviceResources(
-      options: CliOptions
+      env: Env[IO]
   ): Resource[IO, ServiceResources[IO]] =
     for {
       client <- BlazeClientBuilder[IO].resource
-      config <- Resource.eval(Config[IO](options.config))
+      config <- Resource.eval(Config[IO](env))
       transactor <- ExecutionContexts.fixedThreadPool[IO](4).flatMap { ec =>
         TransactorSetup.sqliteTransactor[IO](
           config.databaseUri,

@@ -3,6 +3,7 @@ package fin.config
 import scala.annotation.nowarn
 
 import cats.effect.Async
+import cats.effect.std.Env
 import cats.syntax.all._
 import fs2.io.file._
 import io.circe._
@@ -16,18 +17,16 @@ import fin.service.collection._
 object Config {
 
   def apply[F[_]: Async: Logger](
-      configDirectoryStr: String
-  ): F[ServiceConfig] = {
+      env: Env[F]
+  ): F[ServiceConfig] =
     for {
-      home <- Async[F].delay(System.getProperty("user.home"))
-      // Java in 2021 :O
-      expandedPathStr = configDirectoryStr.replaceFirst("^~", home)
-      configDirectory = Path(expandedPathStr).absolute
-      _ <- Logger[F].info(show"Using config directory $configDirectory")
-      _ <- Files[F].createDirectories(configDirectory)
-      configPath = configDirectory / "service.conf"
+      configDir <- xdgDirectory(env, "XDG_CONFIG_HOME")
+      _         <- Logger[F].info(show"Using config directory $configDir")
+      _         <- Files[F].createDirectories(configDir)
+      configPath = configDir / "service.conf"
 
       configPathExists <- Files[F].exists(configPath)
+      _ = println(configPath)
       (config, msg) <-
         if (configPathExists)
           readUserConfig[F](configPath).tupleRight(
@@ -37,7 +36,7 @@ object Config {
           Async[F].pure(
             (
               emptyServiceConfig.toServiceConfig(
-                configDirectory = configDirectory.toString,
+                configDirectory = configDir.toString,
                 configExists = false
               ),
               show"No config file found at $configPath, using defaults"
@@ -45,6 +44,21 @@ object Config {
           )
       _ <- Logger[F].info(msg)
     } yield config
+
+  private def xdgDirectory[F[_]: Async](
+      env: Env[F],
+      envVar: String
+  ): F[Path] = {
+    lazy val fallbackConfigDir = Async[F]
+      .delay(System.getProperty("user.home"))
+      .map(s => Path(s) / ".config")
+
+    env
+      .get(envVar)
+      .flatMap { opt =>
+        opt.fold(fallbackConfigDir)(s => Async[F].pure(Path(s)))
+      }
+      .map(path => (path / "libro-finito").absolute)
   }
 
   private def readUserConfig[F[_]: Async: Logger](

@@ -1,6 +1,9 @@
 package fin
 
+import scala.collection.immutable
+
 import cats.effect._
+import cats.effect.std.Env
 import cats.implicits._
 import fs2._
 import fs2.io.file._
@@ -14,17 +17,25 @@ object ConfigTest extends SimpleIOSuite {
 
   implicit val logger: Logger[IO] = Slf4jLogger.getLogger[IO]
   val testDir                     = Path("./out/conf-test").normalize.absolute
+  val configPath                  = testDir / "libro-finito"
 
   override def maxParallelism = 1
+
+  val testEnv = new Env[IO] {
+    private val mp                                     = Map("XDG_CONFIG_HOME" -> testDir.toString)
+    override def get(name: String): IO[Option[String]] = IO.pure(mp.get(name))
+    override def entries: IO[immutable.Iterable[(String, String)]] =
+      IO.pure(mp.toList)
+  }
 
   test("creates config directory if not exists") {
     for {
       _ <- Files[IO].deleteRecursively(testDir).recover {
         case _: NoSuchFileException => ()
       }
-      _      <- Config(testDir.toString)
+      _      <- Config(testEnv)
       exists <- Files[IO].exists(testDir)
-      _      <- Files[IO].deleteIfExists(testDir)
+      _      <- Files[IO].deleteRecursively(testDir)
     } yield expect(exists)
   }
 
@@ -33,8 +44,8 @@ object ConfigTest extends SimpleIOSuite {
       _ <- Files[IO].deleteRecursively(testDir).recover {
         case _: NoSuchFileException => ()
       }
-      _ <- Config(testDir.toString)
-      _ <- Files[IO].deleteIfExists(testDir)
+      _ <- Config(testEnv)
+      _ <- Files[IO].deleteRecursively(testDir)
     } yield success
   }
 
@@ -47,18 +58,20 @@ object ConfigTest extends SimpleIOSuite {
           |  default-collection = $defaultCollection
           |}""".stripMargin
     for {
-      _ <- Files[IO].createDirectories(testDir)
+      _ <- Files[IO].createDirectories(configPath)
       _ <-
         Stream
           .emits(configContents.getBytes("UTF-8"))
-          .through(Files[IO].writeAll(testDir / "service.conf"))
+          .through(
+            Files[IO].writeAll(configPath / "service.conf")
+          )
           .compile
           .drain
-      conf <- Config(testDir.toString)
+      conf <- Config(testEnv)
       _    <- Files[IO].deleteRecursively(testDir)
     } yield expect(
       ServiceConfig(
-        ServiceConfig.defaultDatabasePath(testDir.toString),
+        ServiceConfig.defaultDatabasePath(configPath.toString),
         ServiceConfig.defaultDatabaseUser,
         ServiceConfig.defaultDatabasePassword,
         ServiceConfig.defaultHost,
