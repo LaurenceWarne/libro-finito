@@ -17,7 +17,7 @@ class BookManagementServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
     transact: G ~> F
 ) extends BookManagementService[F] {
 
-  override def createBook(args: MutationsCreateBookArgs): F[UserBook] = {
+  override def createBook(args: MutationCreateBookArgs): F[UserBook] = {
     val transaction: LocalDate => G[UserBook] = date =>
       for {
         maybeBook <- bookRepo.retrieveBook(args.book.isbn)
@@ -30,7 +30,7 @@ class BookManagementServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
       .flatMap(date => transact(transaction(date)))
   }
 
-  override def rateBook(args: MutationsRateBookArgs): F[UserBook] = {
+  override def rateBook(args: MutationRateBookArgs): F[UserBook] = {
     val transaction: LocalDate => G[UserBook] = date =>
       for {
         book <- createIfNotExists(args.book, date)
@@ -41,7 +41,7 @@ class BookManagementServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
       .flatMap(date => transact(transaction(date)))
   }
 
-  override def addBookReview(args: MutationsAddBookReviewArgs): F[UserBook] = {
+  override def addBookReview(args: MutationAddBookReviewArgs): F[UserBook] = {
     val transaction: LocalDate => G[UserBook] = date =>
       for {
         book <- createIfNotExists(args.book, date)
@@ -52,7 +52,7 @@ class BookManagementServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
       .flatMap(date => transact(transaction(date)))
   }
 
-  override def startReading(args: MutationsStartReadingArgs): F[UserBook] = {
+  override def startReading(args: MutationStartReadingArgs): F[UserBook] = {
     val transaction: (LocalDate, LocalDate) => G[UserBook] =
       (currentDate, startDate) =>
         for {
@@ -67,7 +67,7 @@ class BookManagementServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
       .flatMap(date => transact(transaction(date, args.date.getOrElse(date))))
   }
 
-  override def finishReading(args: MutationsFinishReadingArgs): F[UserBook] = {
+  override def finishReading(args: MutationFinishReadingArgs): F[UserBook] = {
     val transaction: (LocalDate, LocalDate) => G[UserBook] =
       (currentDate, finishDate) =>
         for {
@@ -79,7 +79,7 @@ class BookManagementServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
       .flatMap(date => transact(transaction(date, args.date.getOrElse(date))))
   }
 
-  override def deleteBookData(args: MutationsDeleteBookDataArgs): F[Unit] =
+  override def deleteBookData(args: MutationDeleteBookDataArgs): F[Unit] =
     transact(bookRepo.deleteBookData(args.isbn)).void
 
   private def createIfNotExists(

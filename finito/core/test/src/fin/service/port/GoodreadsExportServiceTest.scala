@@ -25,7 +25,7 @@ object GoodreadsExportServiceTest extends IOSuite {
       )
       collectionService
         .createCollection(
-          MutationsCreateCollectionArgs(
+          MutationCreateCollectionArgs(
             defaultCollection,
             None,
             None,
@@ -33,13 +33,13 @@ object GoodreadsExportServiceTest extends IOSuite {
           )
         ) *> collectionService
         .addBookToCollection(
-          MutationsAddBookArgs(defaultCollection.some, defaultCollectionBook)
+          MutationAddBookArgs(defaultCollection.some, defaultCollectionBook)
         )
         .as(GoodreadsExportService(defaultCollection.some, collectionService))
     })
 
   private def exportArgs(collection: Option[String] = defaultCollection.some) =
-    QueriesExportArgs(PortType.Goodreads, collection)
+    QueryExportArgs(PortType.Goodreads, collection)
 
   test("exportCollection csv contains collection data") { exportService =>
     val args = exportArgs()

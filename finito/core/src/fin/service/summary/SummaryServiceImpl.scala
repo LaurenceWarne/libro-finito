@@ -14,12 +14,12 @@ class SummaryServiceImpl[F[_]: Async, G[_]] private (
     transact: G ~> F
 ) extends SummaryService[F] {
 
-  override def summary(args: QueriesSummaryArgs): F[Summary] =
+  override def summary(args: QuerySummaryArgs): F[Summary] =
     for {
       currentDate <- Async[F].memoize(Dates.currentDate(clock))
-      from        <- args.from.fold(currentDate.map(_.withDayOfYear(1)))(_.pure[F])
-      to          <- args.to.fold(currentDate)(_.pure[F])
-      books       <- transact(bookRepo.retrieveBooksInside(from, to))
+      from  <- args.from.fold(currentDate.map(_.withDayOfYear(1)))(_.pure[F])
+      to    <- args.to.fold(currentDate)(_.pure[F])
+      books <- transact(bookRepo.retrieveBooksInside(from, to))
       readBooks = books.filter(_.lastRead.nonEmpty)
       ratingAvg = mean(books.flatMap(_.rating.toList))
       montage <- montageService.montage(

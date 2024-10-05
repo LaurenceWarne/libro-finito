@@ -15,14 +15,14 @@ class GoodreadsExportService[F[_]: Async](
   private val firstRow =
     "Title, Author, ISBN, My Rating, Average Rating, Publisher, Binding, Year Published, Original Publication Year, Date Read, Date Added, Bookshelves, My Review"
 
-  override def exportCollection(exportArgs: QueriesExportArgs): F[String] = {
+  override def exportCollection(exportArgs: QueryExportArgs): F[String] = {
     for {
       collection <- Async[F].fromOption(
         exportArgs.collection.orElse(maybeDefaultCollection),
         DefaultCollectionNotSupportedError
       )
       collection <-
-        collectionService.collection(QueriesCollectionArgs(collection, None))
+        collectionService.collection(QueryCollectionArgs(collection, None))
       rows = collection.books.map { book =>
         show"""|${book.title.replaceAll(",", "")},
                |${book.authors.mkString(" ")},

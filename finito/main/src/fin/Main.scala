@@ -2,14 +2,14 @@ package fin
 
 import scala.concurrent.duration._
 
-import _root_.cats.effect._
-import _root_.cats.effect.std.Dispatcher
-import _root_.cats.implicits._
-import cats.effect.std.Env
+import cats.effect._
+import cats.effect.std.{Dispatcher, Env}
+import cats.implicits._
+import com.comcast.ip4s._
 import doobie._
-import org.http4s.blaze.client.BlazeClientBuilder
-import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.client.Client
+import org.http4s.ember.client.EmberClientBuilder
+import org.http4s.ember.server.EmberServerBuilder
 import org.typelevel.ci._
 import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
@@ -53,20 +53,26 @@ object Main extends IOApp {
         logLevel <- env.get("LOG_LEVEL")
         debug = logLevel.exists(CIString(_) === ci"DEBUG")
         refresherIO = (timer.sleep(1.minute) >> Routes.keepFresh[IO](
-            serviceResources.client,
-            timer,
-            config.port,
-            config.host
-          )).background.useForever
+          serviceResources.client,
+          timer,
+          config.port,
+          config.host
+        )).background.useForever
         _ <- logger.debug("Starting http4s server...")
+        port <- IO.fromOption(Port.fromInt(config.port))(
+          new Exception(show"Invalid value for port: '${config.port}'")
+        )
+        host <- IO.fromOption(Host.fromString(config.host))(
+          new Exception(show"Invalid value for host: '${config.host}'")
+        )
         _ <-
-          BlazeServerBuilder[IO]
-            .withBanner(Seq(Banner.value))
-            .bindHttp(config.port, config.host)
+          EmberServerBuilder
+            .default[IO]
+            .withPort(port)
+            .withHost(host)
             .withHttpApp(Routes.routes[IO](interpreter, debug))
-            .serve
-            .compile
-            .drain
+            .build
+            .use(_ => IO.never)
             .both(refresherIO)
       } yield ()
     }
@@ -77,12 +83,10 @@ object Main extends IOApp {
       env: Env[IO]
   ): Resource[IO, ServiceResources[IO]] =
     for {
-      client <- BlazeClientBuilder[IO].resource
-      config <- Resource.eval(FinitoFiles.config[IO](env))
-      dbUri  <- Resource.eval(FinitoFiles.databaseUri(env))
-      transactor <- ExecutionContexts.fixedThreadPool[IO](4).flatMap { ec =>
-        TransactorSetup.sqliteTransactor[IO](dbUri, ec)
-      }
+      client     <- EmberClientBuilder.default[IO].build
+      config     <- Resource.eval(FinitoFiles.config[IO](env))
+      dbUri      <- Resource.eval(FinitoFiles.databaseUri(env))
+      transactor <- TransactorSetup.sqliteTransactor[IO](dbUri)
       dispatcher <- Dispatcher.parallel[IO]
     } yield ServiceResources(client, config, transactor, dispatcher, dbUri)
 }

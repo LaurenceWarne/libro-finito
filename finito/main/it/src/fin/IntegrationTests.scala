@@ -6,29 +6,27 @@ import caliban.client.ArgEncoder._
 import caliban.client.Operations._
 import caliban.client.SelectionBuilder
 import cats.effect._
-import cats.implicits._
+import cats.syntax.all._
 import com.dimafeng.testcontainers._
 import org.testcontainers.containers.wait.strategy.Wait
 import sttp.capabilities.fs2.Fs2Streams
-import sttp.client3.SttpBackend
+import sttp.client3._
 import sttp.client3.http4s._
 import sttp.model.Uri
 import weaver._
 
 import fin.config.ServiceConfig
 
-import Uri._
-
 object IntegrationTests extends IOSuite {
 
   import Client._
-  import Client.Mutations._
-  import Client.Queries._
+  import Client.Mutation._
+  import Client.Query._
 
   type ClientBackend = SttpBackend[IO, Fs2Streams[IO]]
 
   val backend: Resource[IO, ClientBackend] =
-    Http4sBackend.usingDefaultBlazeClientBuilder[IO]()
+    Http4sBackend.usingDefaultEmberClientBuilder[IO]()
 
   val container: Resource[IO, GenericContainer] =
     Resource.make(
@@ -62,11 +60,9 @@ object IntegrationTests extends IOSuite {
   def testUsingUri(
       name: String
   )(block: (Uri, ClientBackend) => IO[Expectations]) =
-    test(name) {
-      case (backend, container) =>
-        val mappedPort = container.mappedPort(ServiceConfig.defaultPort)
-        val uri        = uri"http://localhost:$mappedPort/api/graphql"
-        block(uri, backend)
+    test(name) { case (backend, container) =>
+      val mappedPort = container.mappedPort(ServiceConfig.defaultPort)
+      block(uri"http://localhost:$mappedPort/api/graphql", backend)
     }
 
   testUsingUri("createCollection, updateCollection, collection") {
@@ -96,41 +92,40 @@ object IntegrationTests extends IOSuite {
       )
   }
 
-  testUsingUri("createCollection, addBook, collection") {
-    case (uri, backend) =>
-      val collectionName = "my collection with books"
-      val book           = bookTemplate.copy(isbn = "create/add/retrieve")
+  testUsingUri("createCollection, addBook, collection") { case (uri, backend) =>
+    val collectionName = "my collection with books"
+    val book           = bookTemplate.copy(isbn = "create/add/retrieve")
 
-      val createRequest =
-        createCollection(collectionName)(
-          Collection.view(UserBook.view, Sort.view, PageInfo.view)
-        )
-      for {
-        // CREATE COLLECTION
-        _ <- send(uri, backend)(createRequest)
-        // ADD BOOK
-        addBookRequest = addBook(collectionName.some, book)(
-          Collection.view(UserBook.view, Sort.view, PageInfo.view)
-        )
-        addBookResponse <- send(uri, backend)(addBookRequest)
-        // RETRIEVE COLLECTION
-        retrieveRequest = collection(collectionName)(
-          Collection.view(UserBook.view, Sort.view, PageInfo.view)
-        )
-        retrieveResponse <- send(uri, backend)(retrieveRequest)
-      } yield expectBooksEqualIgnoringDates(
-        viewToUserBook(addBookResponse.books.head),
-        inputToUserBook(book)
-      ) and expectBooksEqualIgnoringDates(
-        viewToUserBook(retrieveResponse.books.head),
-        inputToUserBook(book)
+    val createRequest =
+      createCollection(collectionName)(
+        Collection.view(UserBook.view, Sort.view, PageInfo.view)
       )
+    for {
+      // CREATE COLLECTION
+      _ <- send(uri, backend)(createRequest)
+      // ADD BOOK
+      addBookRequest = addBook(collectionName.some, book)(
+        Collection.view(UserBook.view, Sort.view, PageInfo.view)
+      )
+      addBookResponse <- send(uri, backend)(addBookRequest)
+      // RETRIEVE COLLECTION
+      retrieveRequest = collection(collectionName)(
+        Collection.view(UserBook.view, Sort.view, PageInfo.view)
+      )
+      retrieveResponse <- send(uri, backend)(retrieveRequest)
+    } yield expectBooksEqualIgnoringDates(
+      viewToUserBook(addBookResponse.books.head),
+      inputToUserBook(book)
+    ) and expectBooksEqualIgnoringDates(
+      viewToUserBook(retrieveResponse.books.head),
+      inputToUserBook(book)
+    )
   }
 
   testUsingUri("createCollection, addBook, collection, removeBook") {
     case (uri, backend) =>
       val collectionName = "my collection with books to remove"
-      val book           = bookTemplate.copy(isbn = "create/add/retrieve/remove")
+      val book = bookTemplate.copy(isbn = "create/add/retrieve/remove")
 
       val createRequest =
         createCollection(collectionName)(
@@ -206,52 +201,49 @@ object IntegrationTests extends IOSuite {
       } yield expect(finishResponse.lastRead.exists(_ == finishedDate))
   }
 
-  testUsingUri("books") {
-    case (uri, backend) =>
-      val title      = "Lord of the Rings"
-      val authors    = "Tolkien"
-      val maxResults = 10
-      val lang       = "en"
-      val booksRequest =
-        books(title.some, authors.some, maxResults.some, lang.some)(
-          UserBook.view
-        )
-      for {
-        // KEYWORD SEARCH
-        booksResponse <- send(uri, backend)(booksRequest)
-      } yield expect(booksResponse.nonEmpty)
+  testUsingUri("books") { case (uri, backend) =>
+    val title      = "Lord of the Rings"
+    val authors    = "Tolkien"
+    val maxResults = 10
+    val lang       = "en"
+    val booksRequest =
+      books(title.some, authors.some, maxResults.some, lang.some)(
+        UserBook.view
+      )
+    for {
+      // KEYWORD SEARCH
+      booksResponse <- send(uri, backend)(booksRequest)
+    } yield expect(booksResponse.nonEmpty)
   }
 
-  testUsingUri("series") {
-    case (uri, backend) =>
-      val bookInput = bookTemplate.copy(
-        title = "Neuromancer",
-        authors = List("William Gibson")
-      )
-      val seriesRequest = series(bookInput)(UserBook.view)
-      for {
-        // SEARCH SERIES
-        seriesResponse <- send(uri, backend)(seriesRequest)
-      } yield expect(seriesResponse.nonEmpty)
+  testUsingUri("series") { case (uri, backend) =>
+    val bookInput = bookTemplate.copy(
+      title = "Neuromancer",
+      authors = List("William Gibson")
+    )
+    val seriesRequest = series(bookInput)(UserBook.view)
+    for {
+      // SEARCH SERIES
+      seriesResponse <- send(uri, backend)(seriesRequest)
+    } yield expect(seriesResponse.nonEmpty)
   }
 
-  testUsingUri("summary") {
-    case (uri, backend) =>
-      val book = bookTemplate.copy(
-        isbn = "summary",
-        thumbnailUri =
-          "https://user-images.githubusercontent.com/17688577/144673930-add9233d-9308-4972-8043-2f519d808874.png"
-      )
-      val addBookRequest = addBook(None, book)(
-        Collection.view(UserBook.view, Sort.view, PageInfo.view)
-      )
-      for {
-        // ADD BOOK
-        _ <- send(uri, backend)(addBookRequest)
-        // SUMMARY
-        summaryRequest = summary(None, None, None, true)(Summary.view)
-        summaryResponse <- send(uri, backend)(summaryRequest)
-      } yield expect(summaryResponse.added > 0)
+  testUsingUri("summary") { case (uri, backend) =>
+    val book = bookTemplate.copy(
+      isbn = "summary",
+      thumbnailUri =
+        "https://user-images.githubusercontent.com/17688577/144673930-add9233d-9308-4972-8043-2f519d808874.png"
+    )
+    val addBookRequest = addBook(None, book)(
+      Collection.view(UserBook.view, Sort.view, PageInfo.view)
+    )
+    for {
+      // ADD BOOK
+      _ <- send(uri, backend)(addBookRequest)
+      // SUMMARY
+      summaryRequest = summary(None, None, None, true)(Summary.view)
+      summaryResponse <- send(uri, backend)(summaryRequest)
+    } yield expect(summaryResponse.added > 0)
   }
 
   private def send[R: IsOperation, A](uri: Uri, backend: ClientBackend)(

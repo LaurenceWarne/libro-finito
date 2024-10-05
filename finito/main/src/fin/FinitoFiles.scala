@@ -1,8 +1,6 @@
 package fin
 
-import scala.annotation.nowarn
-
-import cats.effect.Async
+import cats.effect.kernel.Sync
 import cats.effect.std.Env
 import cats.syntax.all._
 import fs2.io.file._
@@ -19,22 +17,22 @@ object FinitoFiles {
 
   private val FinitoDir = "libro-finito"
 
-  def databaseUri[F[_]: Async: Logger](env: Env[F]): F[String] = {
+  def databaseUri[F[_]: Sync: Files: Logger](env: Env[F]): F[String] = {
     val dbName = "db.sqlite"
     for {
       xdgDataDir <- xdgDirectory(env, "XDG_DATA_HOME", ".local/share")
       dbPath = xdgDataDir / dbName
 
       finitoDataDirExists <- Files[F].exists(xdgDataDir)
-      _ <- Async[F].unlessA(finitoDataDirExists) {
+      _ <- Sync[F].unlessA(finitoDataDirExists) {
         Files[F].createDirectories(xdgDataDir) *>
           xdgConfigDirectory(env).flatMap { confPath =>
             val deprecatedPath = confPath / dbName
-            Async[F].ifM(Files[F].exists(deprecatedPath))(
+            Sync[F].ifM(Files[F].exists(deprecatedPath))(
               Files[F].move(deprecatedPath, dbPath) *> Logger[F].info(
                 show"Moved db in config directory '$deprecatedPath' to new path '$dbPath' (see https://specifications.freedesktop.org/basedir-spec/latest/index.html for more information)"
               ),
-              Async[F].unit
+              Sync[F].unit
             )
           }
       }
@@ -42,7 +40,7 @@ object FinitoFiles {
     } yield s"jdbc:sqlite:${dbPath.absolute}"
   }
 
-  def config[F[_]: Async: Logger](env: Env[F]): F[ServiceConfig] =
+  def config[F[_]: Sync: Files: Logger](env: Env[F]): F[ServiceConfig] =
     for {
       configDir <- xdgConfigDirectory(env)
       _         <- Logger[F].info(show"Using config directory $configDir")
@@ -56,7 +54,7 @@ object FinitoFiles {
             show"Found config file at $configPath"
           )
         else
-          Async[F].pure(
+          Sync[F].pure(
             (
               emptyServiceConfig.toServiceConfig(configExists = false),
               show"No config file found at $configPath, using defaults"
@@ -65,37 +63,37 @@ object FinitoFiles {
       _ <- Logger[F].info(msg)
     } yield config
 
-  private def xdgConfigDirectory[F[_]: Async](env: Env[F]): F[Path] =
+  private def xdgConfigDirectory[F[_]: Sync](env: Env[F]): F[Path] =
     xdgDirectory(env, "XDG_CONFIG_HOME", ".config")
 
-  private def xdgDirectory[F[_]: Async](
+  private def xdgDirectory[F[_]: Sync](
       env: Env[F],
       envVar: String,
       fallback: String
   ): F[Path] = {
-    lazy val fallbackConfigDir = Async[F]
+    lazy val fallbackConfigDir = Sync[F]
       .delay(System.getProperty("user.home"))
       .map(s => Path(s) / fallback)
 
     env
       .get(envVar)
       .flatMap { opt =>
-        opt.fold(fallbackConfigDir)(s => Async[F].pure(Path(s)))
+        opt.fold(fallbackConfigDir)(s => Sync[F].pure(Path(s)))
       }
       .map(path => (path / FinitoDir).absolute)
   }
 
-  private def readUserConfig[F[_]: Async: Logger](
+  private def readUserConfig[F[_]: Sync: Files: Logger](
       configPath: Path
   ): F[ServiceConfig] = {
     for {
       configContents <- Files[F].readUtf8(configPath).compile.string
       // Working with typesafe config is such a nightmare 🤮 so we read and then straight encode to
       // JSON and then decode that (it was a mistake using HOCON).
-      configObj <- Async[F].delay(
+      configObj <- Sync[F].delay(
         com.typesafe.config.ConfigFactory.parseString(configContents)
       )
-      configStr <- Async[F].delay(
+      configStr <- Sync[F].delay(
         configObj
           .root()
           .render(
@@ -103,7 +101,7 @@ object FinitoFiles {
           )
       )
       configNoDefaults <-
-        Async[F].fromEither(decode[ServiceConfigNoDefaults](configStr))
+        Sync[F].fromEither(decode[ServiceConfigNoDefaults](configStr))
       config = configNoDefaults.toServiceConfig(
         configExists = true
       )
@@ -152,8 +150,9 @@ object FinitoFiles {
     None
   )
 
-  @nowarn private implicit val customConfig: Configuration =
+  private implicit val customConfig: Configuration =
     Configuration.default.withKebabCaseMemberNames.withDefaults
+
   private implicit val serviceConfigOptionDecoder
       : Decoder[ServiceConfigNoDefaults] =
     deriveConfiguredDecoder

@@ -13,7 +13,7 @@ class BookInfoAugmentationService[F[_]: Monad, G[_]] private (
 ) extends BookInfoService[F] {
 
   override def search(
-      booksArgs: QueriesBooksArgs
+      booksArgs: QueryBooksArgs
   ): F[List[UserBook]] =
     for {
       searchResult <- wrappedInfoService.search(booksArgs)
@@ -24,7 +24,7 @@ class BookInfoAugmentationService[F[_]: Monad, G[_]] private (
       userBooks.find(_.isbn === book.isbn).getOrElse(book)
     )
 
-  override def fromIsbn(bookArgs: QueriesBookArgs): F[List[UserBook]] =
+  override def fromIsbn(bookArgs: QueryBookArgs): F[List[UserBook]] =
     for {
       matchingBooks <- wrappedInfoService.fromIsbn(bookArgs)
       userBooks <- transact(

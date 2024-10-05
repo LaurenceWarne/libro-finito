@@ -20,8 +20,7 @@ trait CollectionImport[F[_]] {
   ): F[Collection]
 }
 
-/**
-  * https://www.goodreads.com/review/import
+/** https://www.goodreads.com/review/import
   */
 class GoodreadsImport[F[_]: Async: Files](
     maybeDefaultCollection: Option[String],
@@ -41,8 +40,8 @@ class GoodreadsImport[F[_]: Async: Files](
         for {
           (title, author, isbn) <- (r.lift(0), r.lift(1), r.lift(2)).tupled
           maybeRating           <- r.lift(3).map(_.toIntOption)
-          maybeRead             <- r.lift(9).map(st => Try(LocalDate.parse(st)).toOption)
-          added                 <- r.lift(10).map(LocalDate.parse)
+          maybeRead <- r.lift(9).map(st => Try(LocalDate.parse(st)).toOption)
+          added     <- r.lift(10).map(LocalDate.parse)
         } yield GoodreadsCSVRow(
           title = title,
           authors = List(author),
@@ -55,7 +54,7 @@ class GoodreadsImport[F[_]: Async: Files](
       .flattenOption
       .parEvalMapUnbounded { book =>
         val args =
-          QueriesBooksArgs(book.title.some, book.authors.headOption, None, None)
+          QueryBooksArgs(book.title.some, book.authors.headOption, None, None)
         infoService.search(args).map { ls =>
           ls.headOption.map(ub => book.copy(thumbnailUri = ub.thumbnailUri))
         }

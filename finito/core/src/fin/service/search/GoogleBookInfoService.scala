@@ -14,10 +14,12 @@ import fin._
 
 import GoogleBooksAPIDecoding._
 
-/**
-  * A BookInfoService implementation which uses the <a href='https://developers.google.com/books/docs/v1/using'>Google Books API</a>
+/** A BookInfoService implementation which uses the <a
+  * href='https://developers.google.com/books/docs/v1/using'>Google Books
+  * API</a>
   *
-  * @param client http client
+  * @param client
+  *   http client
   */
 class GoogleBookInfoService[F[_]: Concurrent: Logger] private (
     client: Client[F]
@@ -25,14 +27,14 @@ class GoogleBookInfoService[F[_]: Concurrent: Logger] private (
 
   import GoogleBookInfoService._
 
-  def search(booksArgs: QueriesBooksArgs): F[List[UserBook]] =
+  def search(booksArgs: QueryBooksArgs): F[List[UserBook]] =
     for {
       uri   <- MonadThrow[F].fromEither(uriFromBooksArgs(booksArgs))
       _     <- Logger[F].debug(uri.toString)
       books <- booksFromUri(uri, searchPartialFn)
     } yield books
 
-  def fromIsbn(bookArgs: QueriesBookArgs): F[List[UserBook]] = {
+  def fromIsbn(bookArgs: QueryBookArgs): F[List[UserBook]] = {
     val uri = uriFromBookArgs(bookArgs)
     for {
       _     <- Logger[F].debug(uri.toString)
@@ -58,8 +60,7 @@ class GoogleBookInfoService[F[_]: Concurrent: Logger] private (
   }
 }
 
-/**
-  * Utilities for decoding responses from the google books API
+/** Utilities for decoding responses from the google books API
   */
 object GoogleBookInfoService {
 
@@ -124,7 +125,7 @@ object GoogleBookInfoService {
   def apply[F[_]: Concurrent: Logger](client: Client[F]) =
     new GoogleBookInfoService[F](client)
 
-  def uriFromBooksArgs(booksArgs: QueriesBooksArgs): Either[Throwable, Uri] =
+  def uriFromBooksArgs(booksArgs: QueryBooksArgs): Either[Throwable, Uri] =
     Either.cond(
       booksArgs.authorKeywords.exists(_.nonEmpty) ||
         booksArgs.titleKeywords.exists(_.nonEmpty),
@@ -141,6 +142,6 @@ object GoogleBookInfoService {
       NoKeywordsSpecifiedError
     )
 
-  def uriFromBookArgs(bookArgs: QueriesBookArgs): Uri =
+  def uriFromBookArgs(bookArgs: QueryBookArgs): Uri =
     baseUri +? (("q", "isbn:" + bookArgs.isbn))
 }

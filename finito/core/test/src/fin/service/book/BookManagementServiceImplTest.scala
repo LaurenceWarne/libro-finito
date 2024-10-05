@@ -25,19 +25,18 @@ object BookManagementServiceImplTest extends IOSuite {
       )
     })
 
-  test("createBook creates book") {
-    case bookService =>
-      for {
-        _ <- bookService.createBook(MutationsCreateBookArgs(fixtures.bookInput))
-      } yield success
+  test("createBook creates book") { case bookService =>
+    for {
+      _ <- bookService.createBook(MutationCreateBookArgs(fixtures.bookInput))
+    } yield success
   }
 
   test("createBook errors if book already exists") { bookService =>
     val copiedBook = fixtures.bookInput.copy(isbn = "copied")
     for {
-      _ <- bookService.createBook(MutationsCreateBookArgs(copiedBook))
+      _ <- bookService.createBook(MutationCreateBookArgs(copiedBook))
       response <-
-        bookService.createBook(MutationsCreateBookArgs(copiedBook)).attempt
+        bookService.createBook(MutationCreateBookArgs(copiedBook)).attempt
     } yield expect(
       response.swap.exists(_ == BookAlreadyExistsError(copiedBook))
     )
@@ -47,9 +46,9 @@ object BookManagementServiceImplTest extends IOSuite {
     val bookToRate = fixtures.bookInput.copy(isbn = "rate")
     val rating     = 4
     for {
-      _ <- bookService.createBook(MutationsCreateBookArgs(bookToRate))
+      _ <- bookService.createBook(MutationCreateBookArgs(bookToRate))
       ratedBook <-
-        bookService.rateBook(MutationsRateBookArgs(bookToRate, rating))
+        bookService.rateBook(MutationRateBookArgs(bookToRate, rating))
     } yield expect(
       ratedBook === toUserBook(
         bookToRate,
@@ -64,7 +63,7 @@ object BookManagementServiceImplTest extends IOSuite {
     val rating     = 4
     for {
       ratedBook <-
-        bookService.rateBook(MutationsRateBookArgs(bookToRate, rating))
+        bookService.rateBook(MutationRateBookArgs(bookToRate, rating))
     } yield expect(
       ratedBook === toUserBook(
         bookToRate,
@@ -78,9 +77,9 @@ object BookManagementServiceImplTest extends IOSuite {
     val bookToReview = fixtures.bookInput.copy(isbn = "review")
     val review       = "Excellent book"
     for {
-      _ <- bookService.createBook(MutationsCreateBookArgs(bookToReview))
+      _ <- bookService.createBook(MutationCreateBookArgs(bookToReview))
       reviewdBook <- bookService.addBookReview(
-        MutationsAddBookReviewArgs(bookToReview, review)
+        MutationAddBookReviewArgs(bookToReview, review)
       )
     } yield expect(
       reviewdBook === toUserBook(
@@ -96,7 +95,7 @@ object BookManagementServiceImplTest extends IOSuite {
     val review       = "Very excellent book"
     for {
       reviewdBook <- bookService.addBookReview(
-        MutationsAddBookReviewArgs(bookToReview, review)
+        MutationAddBookReviewArgs(bookToReview, review)
       )
     } yield expect(
       reviewdBook === toUserBook(
@@ -111,9 +110,9 @@ object BookManagementServiceImplTest extends IOSuite {
     val bookToRead     = fixtures.bookInput.copy(isbn = "read")
     val startedReading = LocalDate.parse("2018-11-30")
     for {
-      _ <- bookService.createBook(MutationsCreateBookArgs(bookToRead))
+      _ <- bookService.createBook(MutationCreateBookArgs(bookToRead))
       updatedBook <- bookService.startReading(
-        MutationsStartReadingArgs(bookToRead, startedReading.some)
+        MutationStartReadingArgs(bookToRead, startedReading.some)
       )
     } yield expect(
       updatedBook === toUserBook(
@@ -128,9 +127,9 @@ object BookManagementServiceImplTest extends IOSuite {
     bookService =>
       val bookToRead = fixtures.bookInput.copy(isbn = "read no date")
       for {
-        _ <- bookService.createBook(MutationsCreateBookArgs(bookToRead))
+        _ <- bookService.createBook(MutationCreateBookArgs(bookToRead))
         updatedBook <-
-          bookService.startReading(MutationsStartReadingArgs(bookToRead, None))
+          bookService.startReading(MutationStartReadingArgs(bookToRead, None))
       } yield expect(
         updatedBook === toUserBook(
           bookToRead,
@@ -143,11 +142,11 @@ object BookManagementServiceImplTest extends IOSuite {
   test("startReading errors if already reading") { bookService =>
     val copiedBook = fixtures.bookInput.copy(isbn = "copied reading")
     for {
-      _ <- bookService.createBook(MutationsCreateBookArgs(copiedBook))
-      _ <- bookService.startReading(MutationsStartReadingArgs(copiedBook, None))
+      _ <- bookService.createBook(MutationCreateBookArgs(copiedBook))
+      _ <- bookService.startReading(MutationStartReadingArgs(copiedBook, None))
       response <-
         bookService
-          .startReading(MutationsStartReadingArgs(copiedBook, None))
+          .startReading(MutationStartReadingArgs(copiedBook, None))
           .attempt
     } yield expect(
       response.swap.exists(_ == BookAlreadyBeingReadError(copiedBook))
@@ -157,12 +156,12 @@ object BookManagementServiceImplTest extends IOSuite {
   test("startReading returns lastRead info when applicable") { bookService =>
     val popularBook = fixtures.bookInput.copy(isbn = "popular")
     for {
-      _ <- bookService.createBook(MutationsCreateBookArgs(popularBook))
+      _ <- bookService.createBook(MutationCreateBookArgs(popularBook))
       _ <- bookService.finishReading(
-        MutationsFinishReadingArgs(popularBook, None)
+        MutationFinishReadingArgs(popularBook, None)
       )
       book <-
-        bookService.startReading(MutationsStartReadingArgs(popularBook, None))
+        bookService.startReading(MutationStartReadingArgs(popularBook, None))
     } yield expect(
       book === toUserBook(
         popularBook,
@@ -177,9 +176,9 @@ object BookManagementServiceImplTest extends IOSuite {
     val bookToRead      = fixtures.bookInput.copy(isbn = "finished")
     val finishedReading = LocalDate.parse("2018-11-30")
     for {
-      _ <- bookService.createBook(MutationsCreateBookArgs(bookToRead))
+      _ <- bookService.createBook(MutationCreateBookArgs(bookToRead))
       updatedBook <- bookService.finishReading(
-        MutationsFinishReadingArgs(bookToRead, finishedReading.some)
+        MutationFinishReadingArgs(bookToRead, finishedReading.some)
       )
     } yield expect(
       updatedBook === toUserBook(
@@ -194,9 +193,9 @@ object BookManagementServiceImplTest extends IOSuite {
     bookService =>
       val bookToRead = fixtures.bookInput.copy(isbn = "finished no date")
       for {
-        _ <- bookService.createBook(MutationsCreateBookArgs(bookToRead))
+        _ <- bookService.createBook(MutationCreateBookArgs(bookToRead))
         updatedBook <- bookService.finishReading(
-          MutationsFinishReadingArgs(bookToRead, None)
+          MutationFinishReadingArgs(bookToRead, None)
         )
       } yield expect(
         updatedBook === toUserBook(
@@ -208,7 +207,7 @@ object BookManagementServiceImplTest extends IOSuite {
   }
 
   test("deleteBookData deletes book data") { _ =>
-    val bookToClear     = fixtures.bookInput.copy(isbn = "book to delete data from")
+    val bookToClear = fixtures.bookInput.copy(isbn = "book to delete data from")
     val finishedReading = LocalDate.parse("2018-11-30")
     val bookRef         = Ref.unsafe[IO, List[UserBook]](List.empty)
     val repo            = new InMemoryBookRepository(bookRef)
@@ -221,12 +220,12 @@ object BookManagementServiceImplTest extends IOSuite {
 
     for {
       _ <- service.finishReading(
-        MutationsFinishReadingArgs(bookToClear, finishedReading.some)
+        MutationFinishReadingArgs(bookToClear, finishedReading.some)
       )
-      _ <- service.startReading(MutationsStartReadingArgs(bookToClear, None))
-      _ <- service.rateBook(MutationsRateBookArgs(bookToClear, 3))
+      _ <- service.startReading(MutationStartReadingArgs(bookToClear, None))
+      _ <- service.rateBook(MutationRateBookArgs(bookToClear, 3))
       _ <- service.deleteBookData(
-        MutationsDeleteBookDataArgs(bookToClear.isbn)
+        MutationDeleteBookDataArgs(bookToClear.isbn)
       )
       book <- repo.retrieveBook(bookToClear.isbn)
     } yield expect(

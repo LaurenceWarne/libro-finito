@@ -29,7 +29,7 @@ object WikidataSeriesInfoServiceTest extends SimpleIOSuite {
       response <-
         service
           .series(
-            QueriesSeriesArgs(
+            QuerySeriesArgs(
               BookInput(fixtures.title1, List(fixtures.author), "", "", "")
             )
           )
@@ -48,7 +48,7 @@ object WikidataSeriesInfoServiceTest extends SimpleIOSuite {
       response <-
         service
           .series(
-            QueriesSeriesArgs(
+            QuerySeriesArgs(
               BookInput(fixtures.title1, List(fixtures.author), "", "", "")
             )
           )
@@ -57,14 +57,14 @@ object WikidataSeriesInfoServiceTest extends SimpleIOSuite {
   }
 
   test("series returns error when ordinal not integral") {
-    val client          = fixtures.HTTPClient(fixtures.SeriesResponses.badOrdinal)
+    val client = fixtures.HTTPClient(fixtures.SeriesResponses.badOrdinal)
     val bookInfoService = new BookInfoServiceUsingTitles(List.empty)
     val service         = WikidataSeriesInfoService(client, bookInfoService)
     for {
       response <-
         service
           .series(
-            QueriesSeriesArgs(BookInput("", List(fixtures.author), "", "", ""))
+            QuerySeriesArgs(BookInput("", List(fixtures.author), "", "", ""))
           )
           .attempt
     } yield expect(response.isLeft)
@@ -74,8 +74,8 @@ object WikidataSeriesInfoServiceTest extends SimpleIOSuite {
 class BookInfoServiceUsingTitles(books: List[UserBook])
     extends BookInfoService[IO] {
 
-  override def search(booksArgs: QueriesBooksArgs): IO[List[UserBook]] =
+  override def search(booksArgs: QueryBooksArgs): IO[List[UserBook]] =
     books.filter(b => booksArgs.titleKeywords.exists(_ === b.title)).pure[IO]
 
-  override def fromIsbn(bookArgs: QueriesBookArgs): IO[List[UserBook]] = ???
+  override def fromIsbn(bookArgs: QueryBookArgs): IO[List[UserBook]] = ???
 }

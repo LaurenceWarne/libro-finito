@@ -1,4 +1,4 @@
-import $ivy.`com.github.ghostdogpr::caliban-tools:2.4.3`
+import $ivy.`com.github.ghostdogpr::caliban-tools:2.9.0`
 import caliban.tools.Codegen.GenType
 import caliban.tools._
 import mill._, scalalib._, scalafmt._
@@ -13,8 +13,8 @@ trait CalibanModule {
   def headers: List[Options.Header] = List.empty
   def clientName: String            = "Client"
   def packageName: String
-  def genView: Boolean                    = false
-  def effect: String                      = if (abstractEffectType) "F" else "zio.UIO"
+  def genView: Boolean = false
+  def effect: String   = if (abstractEffectType) "F" else "zio.UIO"
   def scalarMappings: Map[String, String] = Map.empty
   def imports: List[String]               = List.empty
   def splitFiles: Boolean                 = false
@@ -51,6 +51,9 @@ trait CalibanSchemaModule extends ScalaModule with CalibanModule {
         Some(enableFmt),
         Some(extensibleEnums),
         Some(preserveInputNames),
+        None,
+        None,
+        None,
         None,
         None
       )
@@ -90,6 +93,9 @@ trait CalibanClientModule extends ScalaModule with CalibanModule {
         Some(enableFmt),
         Some(extensibleEnums),
         Some(preserveInputNames),
+        None,
+        None,
+        None,
         None,
         None
       )

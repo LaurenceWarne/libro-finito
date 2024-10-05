@@ -22,7 +22,7 @@ object FinitoFilesTest extends SimpleIOSuite {
   override def maxParallelism = 1
 
   val testEnv = new Env[IO] {
-    private val mp                                     = Map("XDG_CONFIG_HOME" -> testDir.toString)
+    private val mp = Map("XDG_CONFIG_HOME" -> testDir.toString)
     override def get(name: String): IO[Option[String]] = IO.pure(mp.get(name))
     override def entries: IO[immutable.Iterable[(String, String)]] =
       IO.pure(mp.toList)

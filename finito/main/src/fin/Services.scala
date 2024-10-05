@@ -7,6 +7,7 @@ import cats.effect.kernel.Clock
 import cats.implicits._
 import doobie._
 import doobie.implicits._
+import fs2.compression.Compression
 import org.http4s.client.middleware.GZip
 import org.typelevel.log4cats.Logger
 
@@ -27,15 +28,15 @@ final case class Services[F[_]](
 )
 
 object Services {
-  def apply[F[_]: Async: Parallel: Logger](
+  def apply[F[_]: Async: Parallel: Logger: Compression](
       serviceResources: ServiceResources[F]
   ): F[Services[F]] = {
     val ServiceResources(client, config, transactor, _, _) = serviceResources
     val clock                                              = Clock[F]
-    val collectionRepo                                     = SqliteCollectionRepository
-    val bookRepo                                           = SqliteBookRepository
-    val bookInfoService                                    = GoogleBookInfoService[F](GZip()(client))
-    val connectionIOToF                                    = λ[FunctionK[ConnectionIO, F]](_.transact(transactor))
+    val collectionRepo  = SqliteCollectionRepository
+    val bookRepo        = SqliteBookRepository
+    val bookInfoService = GoogleBookInfoService[F](GZip()(client))
+    val connectionIOToF = λ[FunctionK[ConnectionIO, F]](_.transact(transactor))
     val wrappedInfoService = BookInfoAugmentationService[F, ConnectionIO](
       bookInfoService,
       bookRepo,
@@ -70,16 +71,15 @@ object Services {
         config.specialCollections,
         connectionIOToF
       )
-      .map {
-        case (wrappedBookManagementService, wrappedCollectionService) =>
-          Services[F](
-            bookInfoService,
-            seriesInfoService,
-            wrappedBookManagementService,
-            wrappedCollectionService,
-            exportService,
-            summaryService
-          )
+      .map { case (wrappedBookManagementService, wrappedCollectionService) =>
+        Services[F](
+          bookInfoService,
+          seriesInfoService,
+          wrappedBookManagementService,
+          wrappedCollectionService,
+          exportService,
+          summaryService
+        )
       }
   }
 }

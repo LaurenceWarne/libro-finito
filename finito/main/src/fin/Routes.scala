@@ -2,7 +2,7 @@ package fin
 
 import scala.concurrent.duration._
 
-import caliban.execution.QueryExecution
+import caliban.interop.tapir.HttpInterpreter
 import caliban.{CalibanError, GraphQLInterpreter, Http4sAdapter}
 import cats.data.{Kleisli, OptionT}
 import cats.effect._
@@ -28,9 +28,7 @@ object Routes {
   ): HttpApp[F] = {
     val serviceRoutes: HttpRoutes[F] =
       Http4sAdapter.makeHttpServiceF[F, Any, CalibanError](
-        interpreter,
-        skipValidation = true,
-        queryExecution = QueryExecution.Sequential
+        HttpInterpreter(interpreter)
       )
     val app = Router[F](
       "/version" -> Kleisli.liftF(

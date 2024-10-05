@@ -12,8 +12,8 @@ object ImageStitch {
       images: List[ImageChunk],
       columns: Int
   ): Map[(Int, Int), SingularChunk] = {
-    val gridStream = LazyList.iterate((0, 0)) {
-      case (r, c) => (r + (c + 1) / columns, (c + 1) % columns)
+    val gridStream = LazyList.iterate((0, 0)) { case (r, c) =>
+      (r + (c + 1) / columns, (c + 1) % columns)
     }
     stitchRec(gridStream, images, Map.empty, columns)
   }
@@ -89,8 +89,8 @@ final case class CompositeChunk(
 
   def flatten(at: (Int, Int)): List[((Int, Int), SingularChunk)] =
     LazyList
-      .iterate((0, 0)) {
-        case (r, c) => (r + (c + 1) / width, (c + 1) % width)
+      .iterate((0, 0)) { case (r, c) =>
+        (r + (c + 1) / width, (c + 1) % width)
       }
       .map(_ |+| at)
       .zip(chunks)

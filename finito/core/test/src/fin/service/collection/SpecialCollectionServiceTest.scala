@@ -99,7 +99,7 @@ object SpecialCollectionServiceTest extends IOSuite {
         collection =>
           Resource.eval(
             wrappedCollectionService.createCollection(
-              MutationsCreateCollectionArgs(
+              MutationCreateCollectionArgs(
                 collection.name,
                 None,
                 collection.preferredSort.map(_.`type`),
@@ -113,14 +113,14 @@ object SpecialCollectionServiceTest extends IOSuite {
   test("addBookToCollection adds for matching hook, but not for others") {
     collectionService =>
       val book     = fixtures.bookInput.copy(isbn = "isbn1")
-      val argsBook = MutationsAddBookArgs(otherCollection.some, book)
+      val argsBook = MutationAddBookArgs(otherCollection.some, book)
       for {
         _ <- collectionService.addBookToCollection(argsBook)
         hook1Response <- collectionService.collection(
-          QueriesCollectionArgs(hook1Collection, None)
+          QueryCollectionArgs(hook1Collection, None)
         )
         hook2Response <- collectionService.collection(
-          QueriesCollectionArgs(hook2Collection, None)
+          QueryCollectionArgs(hook2Collection, None)
         )
       } yield expect(hook1Response.books.contains(toUserBook(book))) and expect(
         !hook2Response.books.contains(toUserBook(book))
@@ -131,20 +131,20 @@ object SpecialCollectionServiceTest extends IOSuite {
     collectionService =>
       val book     = fixtures.bookInput.copy(isbn = "isbn2")
       val userBook = toUserBook(book)
-      val argsBook = MutationsAddBookArgs(otherCollection.some, book)
+      val argsBook = MutationAddBookArgs(otherCollection.some, book)
       for {
         _ <- collectionService.addBookToCollection(
-          MutationsAddBookArgs(hook1Collection.some, book)
+          MutationAddBookArgs(hook1Collection.some, book)
         )
         _ <- collectionService.addBookToCollection(
-          MutationsAddBookArgs(hook2Collection.some, book)
+          MutationAddBookArgs(hook2Collection.some, book)
         )
         _ <- collectionService.addBookToCollection(argsBook)
         hook1Response <- collectionService.collection(
-          QueriesCollectionArgs(hook1Collection, None)
+          QueryCollectionArgs(hook1Collection, None)
         )
         hook2Response <- collectionService.collection(
-          QueriesCollectionArgs(hook2Collection, None)
+          QueryCollectionArgs(hook2Collection, None)
         )
       } yield expect(hook1Response.books.contains(userBook)) and expect(
         !hook2Response.books.contains(userBook)
@@ -154,11 +154,11 @@ object SpecialCollectionServiceTest extends IOSuite {
   test("addBookToCollection ignores hook of wrong type") { collectionService =>
     val book     = fixtures.bookInput.copy(isbn = "isbn3")
     val userBook = toUserBook(book)
-    val argsBook = MutationsAddBookArgs(otherCollection.some, book)
+    val argsBook = MutationAddBookArgs(otherCollection.some, book)
     for {
       _ <- collectionService.addBookToCollection(argsBook)
       hook3Response <- collectionService.collection(
-        QueriesCollectionArgs(hook3Collection, None)
+        QueryCollectionArgs(hook3Collection, None)
       )
     } yield expect(!hook3Response.books.contains(userBook))
   }
@@ -166,13 +166,13 @@ object SpecialCollectionServiceTest extends IOSuite {
   test("addBookToCollection does not create special collection if add false") {
     collectionService =>
       val book     = fixtures.bookInput.copy(isbn = "isbn4")
-      val argsBook = MutationsAddBookArgs(otherCollection.some, book)
+      val argsBook = MutationAddBookArgs(otherCollection.some, book)
       for {
         _ <- collectionService.addBookToCollection(argsBook)
         hookResponse <-
           collectionService
             .collection(
-              QueriesCollectionArgs(hookAlwaysFalseCollection, None)
+              QueryCollectionArgs(hookAlwaysFalseCollection, None)
             )
             .attempt
       } yield expect(
@@ -185,13 +185,13 @@ object SpecialCollectionServiceTest extends IOSuite {
   test("addBookToCollection creates special collection if not exists") {
     collectionService =>
       val book     = fixtures.bookInput.copy(title = "special", isbn = "isbn5")
-      val argsBook = MutationsAddBookArgs(otherCollection.some, book)
+      val argsBook = MutationAddBookArgs(otherCollection.some, book)
       for {
         _ <- collectionService.addBookToCollection(argsBook)
         hookResponse <-
           collectionService
             .collection(
-              QueriesCollectionArgs(hookNotCreatedCollection, None)
+              QueryCollectionArgs(hookNotCreatedCollection, None)
             )
             .attempt
       } yield expect(hookResponse.isRight)
@@ -201,11 +201,11 @@ object SpecialCollectionServiceTest extends IOSuite {
     "addBookToCollection adds to default collection when no collection in args"
   ) { collectionService =>
     val book     = fixtures.bookInput.copy(isbn = "isbn-to-default")
-    val argsBook = MutationsAddBookArgs(None, book)
+    val argsBook = MutationAddBookArgs(None, book)
     for {
       _ <- collectionService.addBookToCollection(argsBook)
       hook1Collection <- collectionService.collection(
-        QueriesCollectionArgs(hook1Collection, None)
+        QueryCollectionArgs(hook1Collection, None)
       )
     } yield expect(hook1Collection.books.map(_.isbn).contains(book.isbn))
   }
@@ -220,7 +220,7 @@ object SpecialCollectionServiceTest extends IOSuite {
       HookExecutionServiceImpl[IO]
     )
     val book     = fixtures.bookInput.copy(isbn = "isbn will never be added")
-    val argsBook = MutationsAddBookArgs(None, book)
+    val argsBook = MutationAddBookArgs(None, book)
     for {
       response <- stubbedService.addBookToCollection(argsBook).attempt
     } yield expect(
@@ -234,7 +234,7 @@ object SpecialCollectionServiceTest extends IOSuite {
         response <-
           collectionService
             .updateCollection(
-              MutationsUpdateCollectionArgs(
+              MutationUpdateCollectionArgs(
                 hook1Collection,
                 "a new name".some,
                 None,
@@ -255,7 +255,7 @@ object SpecialCollectionServiceTest extends IOSuite {
       _ <-
         collectionService
           .updateCollection(
-            MutationsUpdateCollectionArgs(
+            MutationUpdateCollectionArgs(
               hook1Collection,
               None,
               newSort.`type`.some,
@@ -263,7 +263,7 @@ object SpecialCollectionServiceTest extends IOSuite {
             )
           )
       hookResponse <- collectionService.collection(
-        QueriesCollectionArgs(hook1Collection, None)
+        QueryCollectionArgs(hook1Collection, None)
       )
     } yield expect(hookResponse.preferredSort === newSort)
   }
@@ -272,7 +272,7 @@ object SpecialCollectionServiceTest extends IOSuite {
     for {
       response <-
         collectionService
-          .deleteCollection(MutationsDeleteCollectionArgs(hook1Collection))
+          .deleteCollection(MutationDeleteCollectionArgs(hook1Collection))
           .attempt
     } yield expect(
       response.swap.exists(_ == CannotDeleteSpecialCollectionError)
@@ -284,14 +284,14 @@ object SpecialCollectionServiceTest extends IOSuite {
       val collection = "not a special collection"
       for {
         _ <- collectionService.createCollection(
-          MutationsCreateCollectionArgs(collection, None, None, None)
+          MutationCreateCollectionArgs(collection, None, None, None)
         )
         _ <-
           collectionService
-            .deleteCollection(MutationsDeleteCollectionArgs(collection))
+            .deleteCollection(MutationDeleteCollectionArgs(collection))
         collection <-
           collectionService
-            .collection(QueriesCollectionArgs(collection, None))
+            .collection(QueryCollectionArgs(collection, None))
             .attempt
       } yield expect(collection.isLeft)
   }

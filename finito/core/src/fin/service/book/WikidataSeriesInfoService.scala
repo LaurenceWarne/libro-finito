@@ -23,7 +23,7 @@ class WikidataSeriesInfoService[F[_]: Concurrent: Parallel] private (
   private val uri     = uri"https://query.wikidata.org/sparql"
   private val headers = Headers(("Accept", "application/json"))
 
-  override def series(args: QueriesSeriesArgs): F[List[UserBook]] = {
+  override def series(args: QuerySeriesArgs): F[List[UserBook]] = {
     val BookInput(title, authors, _, _, _) = args.book
     val author                             = authors.headOption.getOrElse("???")
     val body                               = sparqlQuery(author, title)
@@ -62,7 +62,7 @@ class WikidataSeriesInfoService[F[_]: Concurrent: Parallel] private (
       books <-
         bookInfoService
           .search(
-            QueriesBooksArgs(title.some, author.some, None, None)
+            QueryBooksArgs(title.some, author.some, None, None)
           )
       book <- MonadThrow[F].fromOption(
         books.headOption,

@@ -98,7 +98,7 @@ object SpecialBookServiceTest extends IOSuite {
         collection =>
           Resource.eval(
             wrappedCollectionService.createCollection(
-              MutationsCreateCollectionArgs(
+              MutationCreateCollectionArgs(
                 collection.name,
                 None,
                 collection.preferredSort.map(_.`type`),
@@ -112,14 +112,14 @@ object SpecialBookServiceTest extends IOSuite {
   test("rateBook adds for matching hook, but not for others") {
     case (collectionService, bookService) =>
       val book     = fixtures.bookInput.copy(isbn = "book to rate")
-      val rateArgs = MutationsRateBookArgs(book, 5)
+      val rateArgs = MutationRateBookArgs(book, 5)
       for {
         _ <- bookService.rateBook(rateArgs)
         rateHookResponse <- collectionService.collection(
-          QueriesCollectionArgs(onRateHookCollection, None)
+          QueryCollectionArgs(onRateHookCollection, None)
         )
         alwaysFalseHookResponse <- collectionService.collection(
-          QueriesCollectionArgs(hookAlwaysFalseCollection, None)
+          QueryCollectionArgs(hookAlwaysFalseCollection, None)
         )
       } yield expect(
         rateHookResponse.books.contains(toUserBook(book))
@@ -130,15 +130,15 @@ object SpecialBookServiceTest extends IOSuite {
 
   test("startReading adds for matching hook, but not for others") {
     case (collectionService, bookService) =>
-      val book             = fixtures.bookInput.copy(isbn = "book to start reading")
-      val startReadingArgs = MutationsStartReadingArgs(book, None)
+      val book = fixtures.bookInput.copy(isbn = "book to start reading")
+      val startReadingArgs = MutationStartReadingArgs(book, None)
       for {
         _ <- bookService.startReading(startReadingArgs)
         startReadingHookResponse <- collectionService.collection(
-          QueriesCollectionArgs(onStartHookCollection, None)
+          QueryCollectionArgs(onStartHookCollection, None)
         )
         alwaysFalseHookResponse <- collectionService.collection(
-          QueriesCollectionArgs(hookAlwaysFalseCollection, None)
+          QueryCollectionArgs(hookAlwaysFalseCollection, None)
         )
       } yield expect(
         startReadingHookResponse.books.contains(toUserBook(book))
@@ -149,15 +149,15 @@ object SpecialBookServiceTest extends IOSuite {
 
   test("finishReading adds for matching hook, but not for others") {
     case (collectionService, bookService) =>
-      val book              = fixtures.bookInput.copy(isbn = "book to finish reading")
-      val finishReadingArgs = MutationsFinishReadingArgs(book, None)
+      val book = fixtures.bookInput.copy(isbn = "book to finish reading")
+      val finishReadingArgs = MutationFinishReadingArgs(book, None)
       for {
         _ <- bookService.finishReading(finishReadingArgs)
         finishReadingHookResponse <- collectionService.collection(
-          QueriesCollectionArgs(onFinishHookCollection, None)
+          QueryCollectionArgs(onFinishHookCollection, None)
         )
         alwaysFalseHookResponse <- collectionService.collection(
-          QueriesCollectionArgs(hookAlwaysFalseCollection, None)
+          QueryCollectionArgs(hookAlwaysFalseCollection, None)
         )
       } yield expect(
         finishReadingHookResponse.books.contains(toUserBook(book))
@@ -169,11 +169,11 @@ object SpecialBookServiceTest extends IOSuite {
   test("rateBook creates collection if not exists") {
     case (collectionService, bookService) =>
       val book     = fixtures.bookInput.copy(isbn = "book to trigger creation")
-      val rateArgs = MutationsRateBookArgs(book, triggerRating)
+      val rateArgs = MutationRateBookArgs(book, triggerRating)
       for {
         _ <- bookService.rateBook(rateArgs)
         rateHookResponse <- collectionService.collection(
-          QueriesCollectionArgs(lazyCollection, None)
+          QueryCollectionArgs(lazyCollection, None)
         )
       } yield expect(rateHookResponse.books.contains(toUserBook(book)))
   }
@@ -181,26 +181,26 @@ object SpecialBookServiceTest extends IOSuite {
   test("rateBook silent error if add to special collection fails") {
     case (collectionService, bookService) =>
       val book     = fixtures.bookInput.copy(isbn = "book to rate twice")
-      val rateArgs = MutationsRateBookArgs(book, 5)
+      val rateArgs = MutationRateBookArgs(book, 5)
       for {
         _ <- bookService.rateBook(rateArgs)
         // We should get a failure here by adding it again
         _ <- bookService.rateBook(rateArgs.copy(rating = 6))
         rateHookResponse <- collectionService.collection(
-          QueriesCollectionArgs(onRateHookCollection, None)
+          QueryCollectionArgs(onRateHookCollection, None)
         )
       } yield expect(rateHookResponse.books.contains(toUserBook(book)))
   }
 
   test("rateBook removes from collection") {
     case (collectionService, bookService) =>
-      val book     = fixtures.bookInput.copy(isbn = "book to rate good then bad")
-      val rateArgs = MutationsRateBookArgs(book, 5)
+      val book = fixtures.bookInput.copy(isbn = "book to rate good then bad")
+      val rateArgs = MutationRateBookArgs(book, 5)
       for {
         _ <- bookService.rateBook(rateArgs)
         _ <- bookService.rateBook(rateArgs.copy(rating = 2))
         rateHookResponse <- collectionService.collection(
-          QueriesCollectionArgs(onRateHookCollection, None)
+          QueryCollectionArgs(onRateHookCollection, None)
         )
       } yield expect(!rateHookResponse.books.contains(toUserBook(book)))
   }

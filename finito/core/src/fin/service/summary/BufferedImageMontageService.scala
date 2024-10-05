@@ -64,8 +64,8 @@ class BufferedImageMontageService[F[_]: Async: Parallel: Logger]
     val rows    = (chunkMapping.keySet.map(_._1) + 0).max
     val img     = new BufferedImage(columns * w, (rows + 1) * h, imageType)
     val g2d     = img.createGraphics()
-    chunkMapping.foreach {
-      case ((r, c), chunk) => g2d.drawImage(chunk.img, c * w, r * h, null)
+    chunkMapping.foreach { case ((r, c), chunk) =>
+      g2d.drawImage(chunk.img, c * w, r * h, null)
     }
     img
   }
@@ -93,8 +93,8 @@ class BufferedImageMontageService[F[_]: Async: Parallel: Logger]
     val imgScaleFactor = specification.largeImgScaleFactor
     val (w, h)         = MontageInputs.smallImageDim(specification)
     val subImages = List
-      .tabulate(imgScaleFactor, imgScaleFactor) {
-        case (y, x) => SingularChunk(img.getSubimage(x * w, y * h, w, h))
+      .tabulate(imgScaleFactor, imgScaleFactor) { case (y, x) =>
+        SingularChunk(img.getSubimage(x * w, y * h, w, h))
       }
       .flatten
     CompositeChunk(imgScaleFactor, subImages.toList)

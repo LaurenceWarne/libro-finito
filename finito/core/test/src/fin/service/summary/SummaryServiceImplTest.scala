@@ -52,7 +52,7 @@ object SummaryServiceImplTest extends IOSuite {
           )
         }
         summary <- summaryService.summary(
-          QueriesSummaryArgs(
+          QuerySummaryArgs(
             fixtures.date.some,
             fixtures.date.plusYears(1).some,
             None,

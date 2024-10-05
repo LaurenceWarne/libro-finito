@@ -1,8 +1,3 @@
-schema {
-  query: Queries
-  mutation: Mutations
-}
-
 scalar Date
 
 enum SortType {
@@ -75,7 +70,7 @@ type Summary {
   montage: String!
 }
 
-type Queries {
+type Query {
   """
   Search for books matching the specified parameters.  langRestrict should be
   a two-letter ISO-639-1 code, such as "en" or "fr".
@@ -99,7 +94,7 @@ type Queries {
   ): Summary!
 }
 
-type Mutations {
+type Mutation {
   createCollection(
     name: String!,
     books: [BookInput!],

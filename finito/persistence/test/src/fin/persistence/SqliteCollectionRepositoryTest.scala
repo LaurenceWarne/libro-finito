@@ -14,7 +14,7 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
   testDoobie("collection retrieves created collection") {
     val name = "retrieve_collection"
     for {
-      _                   <- repo.createCollection(name, Sort(SortType.DateAdded, true))
+      _ <- repo.createCollection(name, Sort(SortType.DateAdded, true))
       retrievedCollection <- repo.collection(name, None, None)
     } yield expect(
       retrievedCollection.exists(
@@ -34,9 +34,9 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
       fixtures.bookInput.copy(title = "added-second", isbn = "added-second")
     val date2 = fixtures.date.plusDays(1)
     for {
-      _                    <- repo.createCollection(name, Sort(SortType.DateAdded, true))
-      _                    <- repo.addBookToCollection(name, book2, date2)
-      _                    <- repo.addBookToCollection(name, fixtures.bookInput, fixtures.date)
+      _ <- repo.createCollection(name, Sort(SortType.DateAdded, true))
+      _ <- repo.addBookToCollection(name, book2, date2)
+      _ <- repo.addBookToCollection(name, fixtures.bookInput, fixtures.date)
       retrievedCollection1 <- repo.collection(name, None, None)
       newSort = Sort(SortType.DateAdded, false)
       _                    <- repo.updateCollection(name, name, newSort)
@@ -123,8 +123,8 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
       .toList
     val (limit, offset) = (5, 2)
     for {
-      _                   <- repo.createCollection(name, Sort(SortType.Title, true))
-      _                   <- books.traverse(b => repo.addBookToCollection(name, b, fixtures.date))
+      _ <- repo.createCollection(name, Sort(SortType.Title, true))
+      _ <- books.traverse(b => repo.addBookToCollection(name, b, fixtures.date))
       retrievedCollection <- repo.collection(name, limit.some, offset.some)
     } yield expect(
       retrievedCollection.exists(
@@ -150,9 +150,9 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
   testDoobie("collections retrieves created collections") {
     val (name1, name2, name3) = ("collection1", "collection2", "collection3")
     for {
-      _                    <- repo.createCollection(name1, Sort(SortType.DateAdded, true))
-      _                    <- repo.createCollection(name2, Sort(SortType.DateAdded, true))
-      _                    <- repo.createCollection(name3, Sort(SortType.DateAdded, true))
+      _ <- repo.createCollection(name1, Sort(SortType.DateAdded, true))
+      _ <- repo.createCollection(name2, Sort(SortType.DateAdded, true))
+      _ <- repo.createCollection(name3, Sort(SortType.DateAdded, true))
       retrievedCollections <- repo.collections
     } yield expect(
       Set(name1, name2, name3).subsetOf(retrievedCollections.map(_.name).toSet)
@@ -198,9 +198,9 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
     val oldSort = Sort(SortType.DateAdded, true)
     val newSort = Sort(SortType.Title, true)
     for {
-      _                   <- repo.createCollection(oldName, oldSort)
-      _                   <- repo.addBookToCollection(oldName, fixtures.bookInput, fixtures.date)
-      _                   <- repo.updateCollection(oldName, newName, newSort)
+      _ <- repo.createCollection(oldName, oldSort)
+      _ <- repo.addBookToCollection(oldName, fixtures.bookInput, fixtures.date)
+      _ <- repo.updateCollection(oldName, newName, newSort)
       retrievedCollection <- repo.collection(newName, None, None)
     } yield expect(
       retrievedCollection.exists(c =>
@@ -241,8 +241,8 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
     val name = "collection with books"
     val sort = Sort(SortType.DateAdded, true)
     for {
-      _                   <- repo.createCollection(name, sort)
-      _                   <- repo.addBookToCollection(name, fixtures.bookInput, fixtures.date)
+      _ <- repo.createCollection(name, sort)
+      _ <- repo.addBookToCollection(name, fixtures.bookInput, fixtures.date)
       retrievedCollection <- repo.collection(name, None, None)
     } yield expect(
       retrievedCollection.exists(
@@ -261,10 +261,10 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
     val name2 = "collection with books 2"
     val sort  = Sort(SortType.DateAdded, true)
     for {
-      _                   <- repo.createCollection(name1, sort)
-      _                   <- repo.createCollection(name2, sort)
-      _                   <- repo.addBookToCollection(name1, fixtures.bookInput, fixtures.date)
-      _                   <- repo.addBookToCollection(name2, fixtures.bookInput, fixtures.date)
+      _ <- repo.createCollection(name1, sort)
+      _ <- repo.createCollection(name2, sort)
+      _ <- repo.addBookToCollection(name1, fixtures.bookInput, fixtures.date)
+      _ <- repo.addBookToCollection(name2, fixtures.bookInput, fixtures.date)
       retrievedCollection <- repo.collection(name2, None, None)
     } yield expect(
       retrievedCollection.exists(
@@ -291,8 +291,8 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
   testDoobie("deleteCollection successful with collection with no books") {
     val name = "collection to delete"
     for {
-      _               <- repo.createCollection(name, Sort(SortType.DateAdded, true))
-      _               <- repo.deleteCollection(name)
+      _ <- repo.createCollection(name, Sort(SortType.DateAdded, true))
+      _ <- repo.deleteCollection(name)
       maybeCollection <- repo.collection(name, None, None)
     } yield expect(maybeCollection.isEmpty)
   }
@@ -301,9 +301,9 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
     val name  = "collection to delete with books"
     val book2 = fixtures.bookInput.copy(isbn = "isbn-d")
     for {
-      _               <- repo.createCollection(name, Sort(SortType.DateAdded, true))
-      _               <- repo.addBookToCollection(name, book2, fixtures.date)
-      _               <- repo.deleteCollection(name)
+      _ <- repo.createCollection(name, Sort(SortType.DateAdded, true))
+      _ <- repo.addBookToCollection(name, book2, fixtures.date)
+      _ <- repo.deleteCollection(name)
       maybeCollection <- repo.collection(name, None, None)
     } yield expect(maybeCollection.isEmpty)
   }
@@ -320,9 +320,9 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
     val name  = "collection with book to delete"
     val book2 = fixtures.bookInput.copy(isbn = "isbn-d")
     for {
-      _               <- repo.createCollection(name, Sort(SortType.DateAdded, true))
-      _               <- repo.addBookToCollection(name, book2, fixtures.date)
-      _               <- repo.removeBookFromCollection(name, book2.isbn)
+      _ <- repo.createCollection(name, Sort(SortType.DateAdded, true))
+      _ <- repo.addBookToCollection(name, book2, fixtures.date)
+      _ <- repo.removeBookFromCollection(name, book2.isbn)
       maybeCollection <- repo.collection(name, None, None)
     } yield expect(maybeCollection.exists(_.books.isEmpty))
   }

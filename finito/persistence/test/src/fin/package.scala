@@ -318,10 +318,10 @@ package object fixtures {
   }
 }
 
-/**
-  * A Test clock that always returns a constant time.
+/** A Test clock that always returns a constant time.
   *
-  * @param epoch the constant time as a unix epoch
+  * @param epoch
+  *   the constant time as a unix epoch
   */
 final case class TestClock[F[_]: Applicative](epoch: Long) extends Clock[F] {
 

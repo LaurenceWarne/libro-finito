@@ -23,7 +23,7 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
     transact(collectionRepo.collections)
 
   override def createCollection(
-      args: MutationsCreateCollectionArgs
+      args: MutationCreateCollectionArgs
   ): F[Collection] = {
     val transaction = for {
       maybeExistingCollection <-
@@ -49,7 +49,7 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
   }
 
   override def collection(
-      args: QueriesCollectionArgs
+      args: QueryCollectionArgs
   ): F[Collection] =
     transact(
       collectionOrError(
@@ -60,11 +60,11 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
     )
 
   override def deleteCollection(
-      args: MutationsDeleteCollectionArgs
+      args: MutationDeleteCollectionArgs
   ): F[Unit] = transact(collectionRepo.deleteCollection(args.name))
 
   override def updateCollection(
-      args: MutationsUpdateCollectionArgs
+      args: MutationUpdateCollectionArgs
   ): F[Collection] = {
     val transaction = for {
       _ <- MonadThrow[G].raiseUnless(
@@ -90,7 +90,7 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
   }
 
   override def addBookToCollection(
-      args: MutationsAddBookArgs
+      args: MutationAddBookArgs
   ): F[Collection] = {
     val transaction: LocalDate => G[Collection] = date =>
       for {
@@ -109,7 +109,7 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
   }
 
   override def removeBookFromCollection(
-      args: MutationsRemoveBookArgs
+      args: MutationRemoveBookArgs
   ): F[Unit] = {
     val transaction =
       for {

@@ -15,15 +15,18 @@ import fin.implicits._
 import HookType._
 import Bindable._
 
-/**
-  * This class manages special collection hooks on top of a collection
-  * service.  Essentially, for each method, we run special
-  * collection hooks and then delegate to the service.
+/** This class manages special collection hooks on top of a collection service.
+  * Essentially, for each method, we run special collection hooks and then
+  * delegate to the service.
   *
-  * @param maybeDefaultCollection the default collection
-  * @param wrappedCollectionService the wrapped collection service
-  * @param specialCollections special collections
-  * @param hookExecutionService the hook execution service
+  * @param maybeDefaultCollection
+  *   the default collection
+  * @param wrappedCollectionService
+  *   the wrapped collection service
+  * @param specialCollections
+  *   special collections
+  * @param hookExecutionService
+  *   the hook execution service
   */
 class SpecialCollectionService[F[_]: Sync: Logger] private (
     maybeDefaultCollection: Option[String],
@@ -38,15 +41,15 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
     wrappedCollectionService.collections
 
   override def createCollection(
-      args: MutationsCreateCollectionArgs
+      args: MutationCreateCollectionArgs
   ): F[Collection] = wrappedCollectionService.createCollection(args)
 
   override def collection(
-      args: QueriesCollectionArgs
+      args: QueryCollectionArgs
   ): F[Collection] = wrappedCollectionService.collection(args)
 
   override def deleteCollection(
-      args: MutationsDeleteCollectionArgs
+      args: MutationDeleteCollectionArgs
   ): F[Unit] =
     Sync[F].raiseWhen(
       collectionHooks.exists(_.collection === args.name)
@@ -54,7 +57,7 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
       wrappedCollectionService.deleteCollection(args)
 
   override def updateCollection(
-      args: MutationsUpdateCollectionArgs
+      args: MutationUpdateCollectionArgs
   ): F[Collection] =
     Sync[F].raiseWhen(
       args.newName.nonEmpty && collectionHooks.exists(
@@ -64,7 +67,7 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
       wrappedCollectionService.updateCollection(args)
 
   override def addBookToCollection(
-      args: MutationsAddBookArgs
+      args: MutationAddBookArgs
   ): F[Collection] = {
     val maybeCollectionName = args.collection.orElse(maybeDefaultCollection)
     for {
@@ -98,7 +101,7 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
   }
 
   override def removeBookFromCollection(
-      args: MutationsRemoveBookArgs
+      args: MutationRemoveBookArgs
   ): F[Unit] = wrappedCollectionService.removeBookFromCollection(args)
 
   private def addHookCollection(
@@ -111,7 +114,7 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
       createCollectionIfNotExists(collection.name, collection.preferredSort) *>
       wrappedCollectionService
         .addBookToCollection(
-          MutationsAddBookArgs(collection.name.some, book)
+          MutationAddBookArgs(collection.name.some, book)
         )
         .void
         .handleErrorWith { err =>
@@ -132,7 +135,7 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
     ) *>
       wrappedCollectionService
         .removeBookFromCollection(
-          MutationsRemoveBookArgs(collection.name, book.isbn)
+          MutationRemoveBookArgs(collection.name, book.isbn)
         )
         .void
         .handleErrorWith { err =>
@@ -152,7 +155,7 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
       maybeSort: Option[Sort]
   ): F[Unit] =
     createCollection(
-      MutationsCreateCollectionArgs(
+      MutationCreateCollectionArgs(
         collection,
         None,
         maybeSort.map(_.`type`),

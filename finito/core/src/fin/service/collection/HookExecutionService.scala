@@ -36,11 +36,10 @@ class HookExecutionServiceImpl[F[_]: Sync: Logger] private ()
           .traverse { hook =>
             processHook(hook, engine, additionalBindings)
               .tupleLeft(hook)
-              .flatTap {
-                case (hook, result) =>
-                  Logger[F].debug(
-                    s"Hook for ${hook.collection} ran with result $result"
-                  )
+              .flatTap { case (hook, result) =>
+                Logger[F].debug(
+                  s"Hook for ${hook.collection} ran with result $result"
+                )
               }
 
           }

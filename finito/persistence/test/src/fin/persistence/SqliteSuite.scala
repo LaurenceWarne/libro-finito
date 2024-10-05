@@ -12,14 +12,8 @@ trait SqliteSuite extends IOSuite {
   val dbFile                = Path(".").normalize.absolute / "tmp.db"
   val (uri, user, password) = (show"jdbc:sqlite:$dbFile", "", "")
 
-  def transactor: Resource[IO, Transactor[IO]] = {
-    ExecutionContexts.fixedThreadPool[IO](4).flatMap { ec =>
-      TransactorSetup.sqliteTransactor[IO](
-        uri,
-        ec
-      )
-    }
-  }
+  def transactor: Resource[IO, Transactor[IO]] =
+    TransactorSetup.sqliteTransactor[IO](uri)
 
   // We can't use the in memory db since that is killed whenever no connections
   // exist

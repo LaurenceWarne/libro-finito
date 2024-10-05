@@ -55,8 +55,8 @@ object SqliteCollectionRepository extends CollectionRepository[ConnectionIO] {
     val limFrag =
       bookLimit
         .zip(bookOffset)
-        .map {
-          case (l, o) => CollectionFragments.limitOffset(l, o)
+        .map { case (l, o) =>
+          CollectionFragments.limitOffset(l, o)
         }
         .getOrElse(Fragment.empty)
     val nameFrag = CollectionFragments.fromName(name)
@@ -131,11 +131,10 @@ object SqliteCollectionRepository extends CollectionRepository[ConnectionIO] {
         _.toBook.toList
       )(_ ++ _)
       .toList
-      .traverse {
-        case ((name, preferredSort, sortAscending), books) =>
-          SortConversions
-            .fromString(preferredSort)
-            .map(t => Collection(name, books, Sort(t, sortAscending), None))
+      .traverse { case ((name, preferredSort, sortAscending), books) =>
+        SortConversions
+          .fromString(preferredSort)
+          .map(t => Collection(name, books, Sort(t, sortAscending), None))
       }
   }
 }

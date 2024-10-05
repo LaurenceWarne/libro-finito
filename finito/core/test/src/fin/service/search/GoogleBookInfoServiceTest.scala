@@ -25,7 +25,7 @@ object GoogleBookInfoServiceTest extends SimpleIOSuite {
     val bookAPI: BookInfoService[IO] = GoogleBookInfoService(client)
     for {
       result <-
-        bookAPI.search(QueriesBooksArgs("non-empty".some, None, None, None))
+        bookAPI.search(QueryBooksArgs("non-empty".some, None, None, None))
       maybeBook = result.headOption
     } yield expect(result.length === 1) and
       expect(maybeBook.map(_.title) === title.some) and
@@ -40,7 +40,7 @@ object GoogleBookInfoServiceTest extends SimpleIOSuite {
     for {
       response <-
         bookAPI
-          .search(QueriesBooksArgs("".some, "".some, None, None))
+          .search(QueryBooksArgs("".some, "".some, None, None))
           .attempt
     } yield expect(response == NoKeywordsSpecifiedError.asLeft)
   }
@@ -52,7 +52,7 @@ object GoogleBookInfoServiceTest extends SimpleIOSuite {
     for {
       response <-
         bookAPI
-          .search(QueriesBooksArgs(None, None, None, None))
+          .search(QueryBooksArgs(None, None, None, None))
           .attempt
     } yield expect(response == NoKeywordsSpecifiedError.asLeft)
   }
@@ -63,7 +63,7 @@ object GoogleBookInfoServiceTest extends SimpleIOSuite {
       fixtures.HTTPClient(fixtures.BooksResponses.isbnResponse(isbn))
     val bookAPI: BookInfoService[IO] = GoogleBookInfoService(client)
     for {
-      response <- bookAPI.fromIsbn(QueriesBookArgs(isbn, None))
+      response <- bookAPI.fromIsbn(QueryBookArgs(isbn, None))
       maybeBook = response.headOption
     } yield expect(response.length === 1) and expect(
       maybeBook.map(_.isbn) === ("978" + isbn).some

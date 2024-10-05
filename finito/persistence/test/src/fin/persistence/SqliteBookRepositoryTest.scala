@@ -132,7 +132,7 @@ object SqliteBookRepositoryTest extends SqliteSuite {
   }
 
   testDoobie("deleteBookData deletes all book data") {
-    val bookToUse          = fixtures.bookInput.copy(isbn = "book to delete data from")
+    val bookToUse = fixtures.bookInput.copy(isbn = "book to delete data from")
     val startedReadingDate = LocalDate.parse("2020-03-28")
     for {
       _         <- repo.createBook(bookToUse, fixtures.date)

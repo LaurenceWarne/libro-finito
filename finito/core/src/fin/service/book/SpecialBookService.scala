@@ -20,10 +20,10 @@ class SpecialBookService[F[_]: Sync: Logger] private (
 
   private val collectionHooks = specialCollections.flatMap(_.collectionHooks)
 
-  override def createBook(args: MutationsCreateBookArgs): F[UserBook] =
+  override def createBook(args: MutationCreateBookArgs): F[UserBook] =
     wrappedBookService.createBook(args)
 
-  override def rateBook(args: MutationsRateBookArgs): F[UserBook] =
+  override def rateBook(args: MutationRateBookArgs): F[UserBook] =
     for {
       response <- wrappedBookService.rateBook(args)
       bindings = Map("rating" -> args.rating).asBindings
@@ -34,10 +34,10 @@ class SpecialBookService[F[_]: Sync: Logger] private (
       )
     } yield response
 
-  override def addBookReview(args: MutationsAddBookReviewArgs): F[UserBook] =
+  override def addBookReview(args: MutationAddBookReviewArgs): F[UserBook] =
     wrappedBookService.addBookReview(args)
 
-  override def startReading(args: MutationsStartReadingArgs): F[UserBook] =
+  override def startReading(args: MutationStartReadingArgs): F[UserBook] =
     for {
       response <- wrappedBookService.startReading(args)
       _ <- processHooks(
@@ -47,7 +47,7 @@ class SpecialBookService[F[_]: Sync: Logger] private (
       )
     } yield response
 
-  override def finishReading(args: MutationsFinishReadingArgs): F[UserBook] =
+  override def finishReading(args: MutationFinishReadingArgs): F[UserBook] =
     for {
       response <- wrappedBookService.finishReading(args)
       _ <- processHooks(
@@ -57,7 +57,7 @@ class SpecialBookService[F[_]: Sync: Logger] private (
       )
     } yield response
 
-  override def deleteBookData(args: MutationsDeleteBookDataArgs): F[Unit] =
+  override def deleteBookData(args: MutationDeleteBookDataArgs): F[Unit] =
     wrappedBookService.deleteBookData(args)
 
   private def processHooks(
@@ -89,7 +89,7 @@ class SpecialBookService[F[_]: Sync: Logger] private (
       createCollectionIfNotExists(collection.name, collection.preferredSort) *>
       wrappedCollectionService
         .addBookToCollection(
-          MutationsAddBookArgs(collection.name.some, book)
+          MutationAddBookArgs(collection.name.some, book)
         )
         .void
         .handleErrorWith { err =>
@@ -111,7 +111,7 @@ class SpecialBookService[F[_]: Sync: Logger] private (
       createCollectionIfNotExists(collection.name, collection.preferredSort) *>
       wrappedCollectionService
         .removeBookFromCollection(
-          MutationsRemoveBookArgs(collection.name, book.isbn)
+          MutationRemoveBookArgs(collection.name, book.isbn)
         )
         .void
         .handleErrorWith { err =>
@@ -130,7 +130,7 @@ class SpecialBookService[F[_]: Sync: Logger] private (
   ): F[Unit] =
     wrappedCollectionService
       .createCollection(
-        MutationsCreateCollectionArgs(
+        MutationCreateCollectionArgs(
           collection,
           None,
           maybeSort.map(_.`type`),
