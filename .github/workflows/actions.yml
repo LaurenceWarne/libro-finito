@@ -11,20 +11,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-java@v2
         with:
           distribution: temurin
           java-version: 11
+
       - name: Compile
         run: ./mill __.compile
+
       - name: Check Formatting
         run: ./mill __.checkFormat
+
       - name: Scalafix
         run: ./mill __.fix --check
+
       - name: Create docker Image
         run: ./mill finito.main.docker.build
+
       - name: Run tests
         run: ./mill __.test
+
       ##################
       # Coverage Stuff #
       ##################
@@ -37,6 +44,9 @@ jobs:
           files: ./out/finito/core/scoverage/xmlReport.dest/scoverage.xml,./out/finito/persistence/scoverage/xmlReport.dest/scoverage.xml #,./out/main/scoverage/xmlReport/dest/scoverage.xml # optional
           flags: unittests # optional
           fail_ci_if_error: true # optional (default = false)
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
       ####################
       # GH Release Stuff #
       ####################
