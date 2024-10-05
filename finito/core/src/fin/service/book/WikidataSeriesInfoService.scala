@@ -109,15 +109,15 @@ object WikidataDecoding {
     deriveDecoder[WikidataSeriesResponse]
 }
 
-case class WikidataSeriesResponse(results: WikidataBindings)
+final case class WikidataSeriesResponse(results: WikidataBindings)
 
-case class WikidataBindings(bindings: List[WikidataSeriesEntry])
+final case class WikidataBindings(bindings: List[WikidataSeriesEntry])
 
-case class WikidataSeriesEntry(
+final case class WikidataSeriesEntry(
     seriesBookLabel: WikidataBookLabel,
     ordinal: WikidataBookOrdinal
 )
 
-case class WikidataBookLabel(value: String)
+final case class WikidataBookLabel(value: String)
 
-case class WikidataBookOrdinal(value: String)
+final case class WikidataBookOrdinal(value: String)

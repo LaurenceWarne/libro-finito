@@ -1,31 +1,24 @@
 package fin.config
 
 import cats.Show
-import cats.implicits._
 import cats.kernel.Eq
 
 import fin.service.collection._
 
 final case class ServiceConfig(
-    databasePath: String,
     databaseUser: String,
     databasePassword: String,
     host: String,
     port: Int,
     defaultCollection: Option[String],
     specialCollections: List[SpecialCollection]
-) {
-  def databaseUri: String = show"jdbc:sqlite:$databasePath"
-}
+)
 
 object ServiceConfig {
   implicit val serviceConfigEq: Eq[ServiceConfig] =
     Eq.fromUniversalEquals[ServiceConfig]
   implicit val serviceConfigShow: Show[ServiceConfig] =
     Show.fromToString[ServiceConfig]
-
-  def defaultDatabasePath(configDirectory: String): String =
-    show"$configDirectory/db.sqlite"
 
   val defaultDatabaseUser: String      = ""
   val defaultDatabasePassword: String  = ""

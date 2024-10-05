@@ -38,7 +38,7 @@ object Main extends IOApp {
       val timer                 = Temporal[IO]
       for {
         _ <- FlywaySetup.init[IO](
-          config.databaseUri,
+          serviceResources.databaseUri,
           config.databaseUser,
           config.databasePassword
         )
@@ -78,15 +78,13 @@ object Main extends IOApp {
   ): Resource[IO, ServiceResources[IO]] =
     for {
       client <- BlazeClientBuilder[IO].resource
-      config <- Resource.eval(Config[IO](env))
+      config <- Resource.eval(FinitoFiles.config[IO](env))
+      dbUri  <- Resource.eval(FinitoFiles.databaseUri(env))
       transactor <- ExecutionContexts.fixedThreadPool[IO](4).flatMap { ec =>
-        TransactorSetup.sqliteTransactor[IO](
-          config.databaseUri,
-          ec
-        )
+        TransactorSetup.sqliteTransactor[IO](dbUri, ec)
       }
       dispatcher <- Dispatcher.parallel[IO]
-    } yield ServiceResources(client, config, transactor, dispatcher)
+    } yield ServiceResources(client, config, transactor, dispatcher, dbUri)
 }
 
 object Banner {
@@ -115,5 +113,6 @@ final case class ServiceResources[F[_]](
     client: Client[F],
     config: ServiceConfig,
     transactor: Transactor[F],
-    dispatcher: Dispatcher[F]
+    dispatcher: Dispatcher[F],
+    databaseUri: String
 )

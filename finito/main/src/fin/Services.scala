@@ -30,12 +30,12 @@ object Services {
   def apply[F[_]: Async: Parallel: Logger](
       serviceResources: ServiceResources[F]
   ): F[Services[F]] = {
-    val ServiceResources(client, config, transactor, _) = serviceResources
-    val clock                                           = Clock[F]
-    val collectionRepo                                  = SqliteCollectionRepository
-    val bookRepo                                        = SqliteBookRepository
-    val bookInfoService                                 = GoogleBookInfoService[F](GZip()(client))
-    val connectionIOToF                                 = λ[FunctionK[ConnectionIO, F]](_.transact(transactor))
+    val ServiceResources(client, config, transactor, _, _) = serviceResources
+    val clock                                              = Clock[F]
+    val collectionRepo                                     = SqliteCollectionRepository
+    val bookRepo                                           = SqliteBookRepository
+    val bookInfoService                                    = GoogleBookInfoService[F](GZip()(client))
+    val connectionIOToF                                    = λ[FunctionK[ConnectionIO, F]](_.transact(transactor))
     val wrappedInfoService = BookInfoAugmentationService[F, ConnectionIO](
       bookInfoService,
       bookRepo,

@@ -10,7 +10,6 @@ Also check out the [Changelog](/CHANGELOG.md).
 The server may be configured in a number of ways via a [HOCON](https://github.com/lightbend/config/blob/main/HOCON.md) file whose expected location is `~/.config/libro-finito/service.conf`:
 
 ```hocon
-database-path = "~/.config/libro-finito/db.sqlite",
 port = 56848,
 default-collection = "My Books",
 special-collections = [
@@ -40,8 +39,6 @@ special-collections = [
   }
 ]
 ```
-
-`database-path` is the path of the sqlite database the service will use whilst `port` is the port which the http server will use.
 
 `default-collection` is the collection which books will be added to in the case no collection is specified in the `addBook` mutation.
 

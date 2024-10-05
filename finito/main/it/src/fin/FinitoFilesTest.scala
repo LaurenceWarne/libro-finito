@@ -11,9 +11,9 @@ import org.typelevel.log4cats.Logger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 import weaver._
 
-import fin.config.{Config, ServiceConfig}
+import fin.config.ServiceConfig
 
-object ConfigTest extends SimpleIOSuite {
+object FinitoFilesTest extends SimpleIOSuite {
 
   implicit val logger: Logger[IO] = Slf4jLogger.getLogger[IO]
   val testDir                     = Path("./out/conf-test").normalize.absolute
@@ -33,7 +33,7 @@ object ConfigTest extends SimpleIOSuite {
       _ <- Files[IO].deleteRecursively(testDir).recover {
         case _: NoSuchFileException => ()
       }
-      _      <- Config(testEnv)
+      _      <- FinitoFiles.config(testEnv)
       exists <- Files[IO].exists(testDir)
       _      <- Files[IO].deleteRecursively(testDir)
     } yield expect(exists)
@@ -44,7 +44,7 @@ object ConfigTest extends SimpleIOSuite {
       _ <- Files[IO].deleteRecursively(testDir).recover {
         case _: NoSuchFileException => ()
       }
-      _ <- Config(testEnv)
+      _ <- FinitoFiles.config(testEnv)
       _ <- Files[IO].deleteRecursively(testDir)
     } yield success
   }
@@ -67,11 +67,10 @@ object ConfigTest extends SimpleIOSuite {
           )
           .compile
           .drain
-      conf <- Config(testEnv)
+      conf <- FinitoFiles.config(testEnv)
       _    <- Files[IO].deleteRecursively(testDir)
     } yield expect(
       ServiceConfig(
-        ServiceConfig.defaultDatabasePath(configPath.toString),
         ServiceConfig.defaultDatabaseUser,
         ServiceConfig.defaultDatabasePassword,
         ServiceConfig.defaultHost,
