@@ -121,6 +121,8 @@ object finito extends Module {
         Deps.Circe.generic,
         Deps.Circe.genericExtras,
         Deps.Circe.parser,
+        Deps.Fs2.csv,
+        Deps.Fs2.csvGeneric,
         Deps.Http4s.http4sEmberClient,
         Deps.Http4s.http4sDsl,
         Deps.Http4s.http4sCirce,
@@ -166,12 +168,11 @@ object finito extends Module {
     def moduleDeps = Seq(main)
   }
 }
-// TODO figure out what the below TODO means
-// TODO use this when https://github.com/com-lihaoyi/mill/pull/1309 is merged
-// object scoverage extends ScoverageReport {
-//   def scalaVersion     = Deps.scalaVersion
-//   def scoverageVersion = Deps.scoverageVersion
-// }
+
+object scoverage extends ScoverageReport {
+  def scalaVersion     = Deps.scalaVersion
+  def scoverageVersion = Deps.scoverageVersion
+}
 
 trait LibroFinitoModuleNoLinting
     extends ScalaModule
@@ -222,7 +223,7 @@ object Deps {
   val scoverageVersion = "2.2.1"
   val logback          = ivy"ch.qos.logback:logback-classic:1.1.3"
   val weaver           = ivy"com.disneystreaming::weaver-cats:0.8.3"
-  val sqlite           = ivy"org.xerial:sqlite-jdbc:3.41.2.1"
+  val sqlite           = ivy"org.xerial:sqlite-jdbc:3.46.1.3"
   val flyway           = ivy"org.flywaydb:flyway-core:7.10.0"
   // https://github.com/luaj/luaj/issues/91 ):
   val luaj           = ivy"org.luaj:luaj-jse:3.0.1"
@@ -255,9 +256,12 @@ object Deps {
   }
 
   object Fs2 {
-    val version = "3.11.0"
-    val core    = ivy"co.fs2::fs2-core:$version"
-    val io      = ivy"co.fs2::fs2-io:$version"
+    val version    = "3.11.0"
+    val core       = ivy"co.fs2::fs2-core:$version"
+    val io         = ivy"co.fs2::fs2-io:$version"
+    val csvVersion = "1.11.1"
+    val csv        = ivy"org.gnieh::fs2-data-csv:$csvVersion"
+    val csvGeneric = ivy"org.gnieh::fs2-data-csv-generic:$csvVersion"
   }
 
   object CatsLogging {

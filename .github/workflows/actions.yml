@@ -36,12 +36,11 @@ jobs:
       # Coverage Stuff #
       ##################
       - name: Generate Coverage Reports
-        run: ./mill __.scoverage.xmlReport
+        run: ./mill scoverage.xmlReportAll
       - name: Send Coverage Reports
         uses: codecov/codecov-action@v1
         with:
-          # TODO do for all modules automatically
-          files: ./out/finito/core/scoverage/xmlReport.dest/scoverage.xml,./out/finito/persistence/scoverage/xmlReport.dest/scoverage.xml #,./out/main/scoverage/xmlReport/dest/scoverage.xml # optional
+          files: out/scoverage/xmlReportAll.dest/scoverage.xml
           flags: unittests # optional
           fail_ci_if_error: true # optional (default = false)
         env:
