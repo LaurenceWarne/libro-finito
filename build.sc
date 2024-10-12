@@ -108,7 +108,9 @@ object finito extends Module {
       )
   }
 
-  object core extends LibroFinitoModule {
+  object core extends LibroFinitoModule with ScoverageModule {
+
+    def scoverageVersion = Deps.scoverageVersion
 
     def moduleDeps = Seq(api, persistence)
 
@@ -138,7 +140,9 @@ object finito extends Module {
     }
   }
 
-  object persistence extends LibroFinitoModule {
+  object persistence extends LibroFinitoModule with ScoverageModule {
+
+    def scoverageVersion = Deps.scoverageVersion
 
     def moduleDeps = Seq(api)
 
@@ -170,18 +174,14 @@ object finito extends Module {
 }
 
 object scoverage extends ScoverageReport {
-  def scalaVersion     = Deps.scalaVersion
+  def scalaVersion = Deps.scalaVersion
+  // https://github.com/com-lihaoyi/mill/blob/main/docs/antora/modules/ROOT/pages/Contrib_Modules.adoc#scoverage
   def scoverageVersion = Deps.scoverageVersion
 }
 
-trait LibroFinitoModuleNoLinting
-    extends ScalaModule
-    with ScoverageModule
-    with TpolecatModule {
+trait LibroFinitoModuleNoLinting extends ScalaModule with TpolecatModule {
   def scalaVersion    = Deps.scalaVersion
   def ammoniteVersion = Deps.ammoniteVersion
-  // https://github.com/com-lihaoyi/mill/blob/main/docs/antora/modules/ROOT/pages/Contrib_Modules.adoc#scoverage
-  def scoverageVersion = Deps.scoverageVersion
 
   def repositoriesTask =
     T.task {
