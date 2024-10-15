@@ -45,6 +45,9 @@ object SqliteBookRepository extends BookRepository[ConnectionIO] {
   ): ConnectionIO[Unit] =
     BookFragments.insert(book, date).update.run.void
 
+  override def createBooks(books: List[UserBook]): ConnectionIO[Unit] =
+    BookFragments.insertMany(books).update.run.void
+
   override def rateBook(book: BookInput, rating: Int): ConnectionIO[Unit] =
     BookFragments.insertRating(book.isbn, rating).update.run.void
 
@@ -136,6 +139,25 @@ object BookFragments {
        |  ${book.thumbnailUri},
        |  $date
        |)""".stripMargin
+
+  def insertMany(books: List[UserBook]): Fragment =
+    books
+      .map { b =>
+        fr"""(
+       |  ${b.isbn},
+       |  ${b.title},
+       |  ${b.authors.mkString(",")},
+       |  ${b.description},
+       |  ${b.thumbnailUri},
+       |  ${b.dateAdded},
+       |  ${b.review}
+       |)""".stripMargin
+      }
+      .foldSmash(
+        fr"INSERT OR IGNORE INTO books (isbn, title, authors, description, thumbnail_uri, added, review) VALUES",
+        fr",",
+        Fragment.empty
+      )
 
   def addToCollection(collectionName: String, isbn: String): Fragment =
     fr"INSERT INTO collection_books VALUES ($collectionName, $isbn)"

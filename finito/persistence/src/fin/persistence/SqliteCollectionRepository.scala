@@ -87,24 +87,32 @@ object SqliteCollectionRepository extends CollectionRepository[ConnectionIO] {
     collectionOptionT.value
   }
 
-  override def collections: ConnectionIO[List[Collection]] = {
+  override def collections: ConnectionIO[List[Collection]] =
     CollectionFragments
       .retrieveCollections(CollectionFragments.allSelection, fr"LEFT")
       .query[CollectionBookRow]
       .to[List]
       .flatMap(rows => MonadThrow[ConnectionIO].fromEither(toCollections(rows)))
-  }
 
   override def createCollection(
       name: String,
       preferredSort: Sort
-  ): ConnectionIO[Unit] = {
+  ): ConnectionIO[Unit] =
     CollectionFragments
       .create(name, preferredSort.`type`, preferredSort.sortAscending)
       .update
       .run
       .void
-  }
+
+  override def createCollections(
+      names: Set[String],
+      preferredSort: Sort
+  ): ConnectionIO[Unit] =
+    CollectionFragments
+      .createMany(names, preferredSort.`type`, preferredSort.sortAscending)
+      .update
+      .run
+      .void
 
   override def deleteCollection(name: String): ConnectionIO[Unit] =
     CollectionFragments
@@ -186,6 +194,19 @@ object CollectionFragments {
        |c.sort_ascending,""".stripMargin ++ bookInfoSelection
 
   def fromName(name: String): Fragment = fr"WHERE name = $name"
+
+  def createMany(
+      names: Set[String],
+      preferredSort: SortType,
+      sortAscending: Boolean
+  ): Fragment =
+    names.toList
+      .map(name => fr"($name, $preferredSort, $sortAscending)")
+      .foldSmash(
+        fr"""INSERT INTO collections (name, preferred_sort, sort_ascending) VALUES""",
+        fr",",
+        Fragment.empty
+      )
 
   def create(
       name: String,

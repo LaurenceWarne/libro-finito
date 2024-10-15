@@ -19,7 +19,15 @@ class InMemoryCollectionRepository[F[_]: MonadThrow](
 
   override def createCollection(name: String, preferredSort: Sort): F[Unit] = {
     val collection = Collection(name, List.empty, preferredSort, None)
-    collectionsRef.getAndUpdate(collection :: _).void
+    collectionsRef.update(collection :: _)
+  }
+
+  override def createCollections(
+      names: Set[String],
+      preferredSort: Sort
+  ): F[Unit] = {
+    val collections = names.map(Collection(_, List.empty, preferredSort, None))
+    collectionsRef.update(collections.toList ::: _)
   }
 
   override def collection(
@@ -30,13 +38,13 @@ class InMemoryCollectionRepository[F[_]: MonadThrow](
     collectionsRef.get.map(_.find(_.name === name))
 
   override def deleteCollection(name: String): F[Unit] =
-    collectionsRef.getAndUpdate(_.filterNot(_.name === name)).void
+    collectionsRef.update(_.filterNot(_.name === name))
 
   override def updateCollection(
       currentName: String,
       newName: String,
       preferredSort: Sort
-  ): F[Unit] = {
+  ): F[Unit] =
     for {
       _ <- collectionOrError(currentName)
       _ <- collectionsRef.getAndUpdate(_.map { col =>
@@ -45,7 +53,6 @@ class InMemoryCollectionRepository[F[_]: MonadThrow](
         else col
       })
     } yield ()
-  }
 
   override def addBookToCollection(
       collectionName: String,

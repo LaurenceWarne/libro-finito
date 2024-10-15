@@ -126,9 +126,11 @@ type Mutation {
   """
   deleteBookData(isbn: String!): Boolean
   """
-  Import books from given resource to a collection.  If a collection is not
-  specified, if a name can be inferred from the resource, use that, else import
-  to the default collection.
+  Import books from a given resource.  How books are added to collections is
+  determined by the port type.
+
+  For Goodreads, bookshelves will be assumed to correspond to collections, and
+  will be created if they do not exist.
   """
-  import(importType: PortType!, resource: String!, collection: String): Collection!
+  import(importType: PortType!, content: String!, langRestrict: String = "en"): Int!
 }

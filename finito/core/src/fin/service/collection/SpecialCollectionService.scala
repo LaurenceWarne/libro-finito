@@ -44,6 +44,9 @@ class SpecialCollectionService[F[_]: Sync: Logger] private (
       args: MutationCreateCollectionArgs
   ): F[Collection] = wrappedCollectionService.createCollection(args)
 
+  override def createCollections(names: Set[String]): F[List[Collection]] =
+    wrappedCollectionService.createCollections(names)
+
   override def collection(
       args: QueryCollectionArgs
   ): F[Collection] = wrappedCollectionService.collection(args)

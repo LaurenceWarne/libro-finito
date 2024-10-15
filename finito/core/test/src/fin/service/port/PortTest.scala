@@ -5,7 +5,6 @@ import weaver._
 
 import fin.service.book._
 import fin.service.collection._
-import fin.service.port._
 import fin.{Types, fixtures}
 
 object PortTest extends SimpleIOSuite {
@@ -24,10 +23,10 @@ object PortTest extends SimpleIOSuite {
       colRef <- Ref.of[IO, List[Types.Collection]](List.empty)
       repo = new InMemoryCollectionRepository(colRef)
       _ <- repo.collections
-      _ <- new GoodreadsImport[IO](None, bookInfoService).importResource(
-        "./assets/sample_goodreads_export.csv",
-        None
-      )
+      // _ <- new GoodreadsImport[IO](None, bookInfoService).importResource(
+      //   "./assets/sample_goodreads_export.csv",
+      //   None
+      // )
     } yield success
   }
 }

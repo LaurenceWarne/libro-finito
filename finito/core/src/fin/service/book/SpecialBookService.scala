@@ -23,6 +23,9 @@ class SpecialBookService[F[_]: Sync: Logger] private (
   override def createBook(args: MutationCreateBookArgs): F[UserBook] =
     wrappedBookService.createBook(args)
 
+  override def createBooks(books: List[UserBook]): F[List[UserBook]] =
+    wrappedBookService.createBooks(books)
+
   override def rateBook(args: MutationRateBookArgs): F[UserBook] =
     for {
       response <- wrappedBookService.rateBook(args)

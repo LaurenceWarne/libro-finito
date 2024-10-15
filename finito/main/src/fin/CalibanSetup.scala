@@ -36,7 +36,8 @@ object CalibanSetup {
       bookManagementService,
       collectionService,
       exportService,
-      summaryService
+      summaryService,
+      importService
     ) = services
     val queries = Query[F](
       booksArgs => bookInfoService.search(booksArgs),
@@ -59,7 +60,7 @@ object CalibanSetup {
       args => bookManagementService.addBookReview(args),
       args => bookManagementService.createBook(args),
       args => bookManagementService.deleteBookData(args).as(None),
-      _ => ???
+      args => importService.importResource(args)
     )
     val api = graphQL(RootResolver(queries, mutations))
     (api @@ apolloTracing() @@ Wrappers.printErrors)

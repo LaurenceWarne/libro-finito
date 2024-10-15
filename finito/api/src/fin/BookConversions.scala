@@ -25,4 +25,13 @@ object BookConversions {
       lastRead,
       review
     )
+
+  def toBookInput(userBook: UserBook): BookInput =
+    BookInput(
+      userBook.title,
+      userBook.authors,
+      userBook.description,
+      userBook.isbn,
+      userBook.thumbnailUri
+    )
 }

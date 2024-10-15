@@ -24,7 +24,8 @@ final case class Services[F[_]](
     bookManagementService: BookManagementService[F],
     collectionService: CollectionService[F],
     collectionExportService: CollectionExportService[F],
-    summaryService: SummaryService[F]
+    summaryService: SummaryService[F],
+    importService: ImportService[F]
 )
 
 object Services {
@@ -72,13 +73,20 @@ object Services {
         connectionIOToF
       )
       .map { case (wrappedBookManagementService, wrappedCollectionService) =>
+        val goodreadsImportService = GoodreadsImportService(
+          bookInfoService,
+          wrappedCollectionService,
+          wrappedBookManagementService
+        )
+        val importService = ImportServiceImpl(goodreadsImportService)
         Services[F](
           bookInfoService,
           seriesInfoService,
           wrappedBookManagementService,
           wrappedCollectionService,
           exportService,
-          summaryService
+          summaryService,
+          importService
         )
       }
   }

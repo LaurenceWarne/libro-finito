@@ -4,6 +4,7 @@ import fin.Types._
 
 trait CollectionService[F[_]] {
   def collections: F[List[Collection]]
+  def createCollections(names: Set[String]): F[List[Collection]]
   def createCollection(args: MutationCreateCollectionArgs): F[Collection]
   def collection(args: QueryCollectionArgs): F[Collection]
   def deleteCollection(args: MutationDeleteCollectionArgs): F[Unit]

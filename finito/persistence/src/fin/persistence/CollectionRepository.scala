@@ -7,6 +7,10 @@ import fin.Types._
 trait CollectionRepository[F[_]] {
   def collections: F[List[Collection]]
   def createCollection(name: String, preferredSort: Sort): F[Unit]
+  def createCollections(
+      names: Set[String],
+      preferredSort: Sort
+  ): F[Unit]
   def collection(
       name: String,
       bookLimit: Option[Int],

@@ -5,6 +5,8 @@ import cats.implicits._
 import doobie._
 import doobie.implicits._
 import fs2.io.file._
+import org.typelevel.log4cats.Logger
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 import weaver._
 
 trait SqliteSuite extends IOSuite {
@@ -12,6 +14,7 @@ trait SqliteSuite extends IOSuite {
   val dbFile                = Path(".").normalize.absolute / "tmp.db"
   val (uri, user, password) = (show"jdbc:sqlite:$dbFile", "", "")
 
+  implicit val logger: Logger[IO] = Slf4jLogger.getLogger
   def transactor: Resource[IO, Transactor[IO]] =
     TransactorSetup.sqliteTransactor[IO](uri)
 

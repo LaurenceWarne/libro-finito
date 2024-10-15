@@ -48,6 +48,16 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
     transact(transaction)
   }
 
+  override def createCollections(
+      names: Set[String]
+  ): F[List[Collection]] =
+    transact(
+      collectionRepo.createCollections(
+        names,
+        defaultSort
+      )
+    ).as(names.map(n => Collection(n, List.empty, defaultSort, None)).toList)
+
   override def collection(
       args: QueryCollectionArgs
   ): F[Collection] =

@@ -30,6 +30,10 @@ class BookManagementServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
       .flatMap(date => transact(transaction(date)))
   }
 
+  override def createBooks(
+      books: List[UserBook]
+  ): F[List[UserBook]] = transact(bookRepo.createBooks(books)).as(books)
+
   override def rateBook(args: MutationRateBookArgs): F[UserBook] = {
     val transaction: LocalDate => G[UserBook] = date =>
       for {
