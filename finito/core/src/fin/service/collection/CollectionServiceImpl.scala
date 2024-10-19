@@ -41,7 +41,7 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
       }
     } yield Collection(
       args.name,
-      args.books.fold(List.empty[UserBook])(_.map(toUserBook(_))),
+      args.books.fold(List.empty[UserBook])(_.map(_.toUserBook())),
       sort,
       None
     )
@@ -114,7 +114,9 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
           c.books.forall(_.isbn =!= args.book.isbn)
         }
         _ <- collectionRepo.addBookToCollection(collectionName, args.book, date)
-      } yield collection.copy(books = toUserBook(args.book) :: collection.books)
+      } yield collection.copy(books =
+        args.book.toUserBook() :: collection.books
+      )
     Dates.currentDate(clock).flatMap(date => transact(transaction(date)))
   }
 

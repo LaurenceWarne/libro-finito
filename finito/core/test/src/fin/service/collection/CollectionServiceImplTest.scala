@@ -234,7 +234,7 @@ object CollectionServiceImplTest extends IOSuite {
     } yield expect(
       collection === Collection(
         name,
-        List(toUserBook(fixtures.bookInput)),
+        List(fixtures.bookInput.toUserBook()),
         CollectionServiceImpl.defaultSort,
         None
       )

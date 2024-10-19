@@ -76,13 +76,13 @@ object BufferedImageMontageServiceTest extends SimpleIOSuite {
     val imgUri =
       "https://user-images.githubusercontent.com/17688577/144673930-add9233d-9308-4972-8043-2f519d808874.png"
     val books = (1 to noImages).toList.map { idx =>
-      toUserBook(
-        book.copy(
+      book
+        .copy(
           title = show"book-$idx",
           isbn = show"isbn-$idx",
           thumbnailUri = imgUri
         )
-      )
+        .toUserBook()
     }
     for {
       montage <- service.montage(books, None)

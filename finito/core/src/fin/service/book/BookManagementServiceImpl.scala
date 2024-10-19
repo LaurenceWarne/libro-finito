@@ -24,7 +24,7 @@ class BookManagementServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
         _ <- maybeBook.fold(bookRepo.createBook(args.book, date)) { _ =>
           MonadThrow[G].raiseError(BookAlreadyExistsError(args.book))
         }
-      } yield toUserBook(args.book)
+      } yield args.book.toUserBook()
     Dates
       .currentDate(clock)
       .flatMap(date => transact(transaction(date)))
@@ -95,7 +95,7 @@ class BookManagementServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
       _ <- MonadThrow[G].whenA(maybeBook.isEmpty)(
         bookRepo.createBook(book, date)
       )
-    } yield maybeBook.getOrElse(toUserBook(book, dateAdded = date.some))
+    } yield maybeBook.getOrElse(book.toUserBook(dateAdded = date.some))
 }
 
 object BookManagementServiceImpl {

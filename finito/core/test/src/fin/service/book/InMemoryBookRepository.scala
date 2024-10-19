@@ -17,7 +17,7 @@ class InMemoryBookRepository[F[_]: Monad](booksRef: Ref[F, List[UserBook]])
     extends BookRepository[F] {
 
   override def createBook(book: BookInput, date: LocalDate): F[Unit] =
-    booksRef.update(toUserBook(book, dateAdded = date.some) :: _)
+    booksRef.update(book.toUserBook(dateAdded = date.some) :: _)
 
   override def createBooks(books: List[UserBook]): F[Unit] =
     booksRef.update(ls => books.filterNot(b => ls.contains_(b)) ::: ls)

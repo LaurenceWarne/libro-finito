@@ -122,9 +122,9 @@ object SpecialBookServiceTest extends IOSuite {
           QueryCollectionArgs(hookAlwaysFalseCollection, None)
         )
       } yield expect(
-        rateHookResponse.books.contains(toUserBook(book))
+        rateHookResponse.books.contains(book.toUserBook())
       ) and expect(
-        !alwaysFalseHookResponse.books.contains(toUserBook(book))
+        !alwaysFalseHookResponse.books.contains(book.toUserBook())
       )
   }
 
@@ -141,9 +141,9 @@ object SpecialBookServiceTest extends IOSuite {
           QueryCollectionArgs(hookAlwaysFalseCollection, None)
         )
       } yield expect(
-        startReadingHookResponse.books.contains(toUserBook(book))
+        startReadingHookResponse.books.contains(book.toUserBook())
       ) and expect(
-        !alwaysFalseHookResponse.books.contains(toUserBook(book))
+        !alwaysFalseHookResponse.books.contains(book.toUserBook())
       )
   }
 
@@ -160,9 +160,9 @@ object SpecialBookServiceTest extends IOSuite {
           QueryCollectionArgs(hookAlwaysFalseCollection, None)
         )
       } yield expect(
-        finishReadingHookResponse.books.contains(toUserBook(book))
+        finishReadingHookResponse.books.contains(book.toUserBook())
       ) and expect(
-        !alwaysFalseHookResponse.books.contains(toUserBook(book))
+        !alwaysFalseHookResponse.books.contains(book.toUserBook())
       )
   }
 
@@ -175,7 +175,7 @@ object SpecialBookServiceTest extends IOSuite {
         rateHookResponse <- collectionService.collection(
           QueryCollectionArgs(lazyCollection, None)
         )
-      } yield expect(rateHookResponse.books.contains(toUserBook(book)))
+      } yield expect(rateHookResponse.books.contains(book.toUserBook()))
   }
 
   test("rateBook silent error if add to special collection fails") {
@@ -189,7 +189,7 @@ object SpecialBookServiceTest extends IOSuite {
         rateHookResponse <- collectionService.collection(
           QueryCollectionArgs(onRateHookCollection, None)
         )
-      } yield expect(rateHookResponse.books.contains(toUserBook(book)))
+      } yield expect(rateHookResponse.books.contains(book.toUserBook()))
   }
 
   test("rateBook removes from collection") {
@@ -202,6 +202,6 @@ object SpecialBookServiceTest extends IOSuite {
         rateHookResponse <- collectionService.collection(
           QueryCollectionArgs(onRateHookCollection, None)
         )
-      } yield expect(!rateHookResponse.books.contains(toUserBook(book)))
+      } yield expect(!rateHookResponse.books.contains(book.toUserBook()))
   }
 }

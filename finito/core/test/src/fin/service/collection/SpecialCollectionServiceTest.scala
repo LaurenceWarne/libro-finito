@@ -122,15 +122,17 @@ object SpecialCollectionServiceTest extends IOSuite {
         hook2Response <- collectionService.collection(
           QueryCollectionArgs(hook2Collection, None)
         )
-      } yield expect(hook1Response.books.contains(toUserBook(book))) and expect(
-        !hook2Response.books.contains(toUserBook(book))
+      } yield expect(
+        hook1Response.books.contains_(book.toUserBook())
+      ) and expect(
+        !hook2Response.books.contains_(book.toUserBook())
       )
   }
 
   test("addBookToCollection removes for matching hook, but not for others") {
     collectionService =>
       val book     = fixtures.bookInput.copy(isbn = "isbn2")
-      val userBook = toUserBook(book)
+      val userBook = book.toUserBook()
       val argsBook = MutationAddBookArgs(otherCollection.some, book)
       for {
         _ <- collectionService.addBookToCollection(
@@ -146,21 +148,21 @@ object SpecialCollectionServiceTest extends IOSuite {
         hook2Response <- collectionService.collection(
           QueryCollectionArgs(hook2Collection, None)
         )
-      } yield expect(hook1Response.books.contains(userBook)) and expect(
-        !hook2Response.books.contains(userBook)
+      } yield expect(hook1Response.books.contains_(userBook)) and expect(
+        !hook2Response.books.contains_(userBook)
       )
   }
 
   test("addBookToCollection ignores hook of wrong type") { collectionService =>
     val book     = fixtures.bookInput.copy(isbn = "isbn3")
-    val userBook = toUserBook(book)
+    val userBook = book.toUserBook()
     val argsBook = MutationAddBookArgs(otherCollection.some, book)
     for {
       _ <- collectionService.addBookToCollection(argsBook)
       hook3Response <- collectionService.collection(
         QueryCollectionArgs(hook3Collection, None)
       )
-    } yield expect(!hook3Response.books.contains(userBook))
+    } yield expect(!hook3Response.books.contains_(userBook))
   }
 
   test("addBookToCollection does not create special collection if add false") {

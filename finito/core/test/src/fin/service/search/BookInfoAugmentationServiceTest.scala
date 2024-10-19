@@ -24,7 +24,7 @@ object BookInfoAugmentationServiceTest extends SimpleIOSuite {
     val book2 = baseBook.copy(isbn = "isbn for search #2")
     val service =
       BookInfoAugmentationService[IO, IO](
-        new MockedInfoService(toUserBook(book2)),
+        new MockedInfoService(book2.toUserBook()),
         repo,
         FunctionK.id[IO]
       )
@@ -37,8 +37,7 @@ object BookInfoAugmentationServiceTest extends SimpleIOSuite {
       response <- service.search(QueryBooksArgs(None, None, None, None))
     } yield expect(
       response === List(
-        toUserBook(
-          book2,
+        book2.toUserBook(
           dateAdded = date.some,
           rating = rating.some,
           startedReading = date.some
@@ -51,7 +50,7 @@ object BookInfoAugmentationServiceTest extends SimpleIOSuite {
     val book = baseBook.copy(isbn = "isbn for fromIsbn")
     val service =
       BookInfoAugmentationService[IO, IO](
-        new MockedInfoService(toUserBook(book)),
+        new MockedInfoService(book.toUserBook()),
         repo,
         FunctionK.id[IO]
       )
@@ -63,8 +62,7 @@ object BookInfoAugmentationServiceTest extends SimpleIOSuite {
       bookResponse <- service.fromIsbn(QueryBookArgs(book.isbn, None))
     } yield expect(
       bookResponse === List(
-        toUserBook(
-          book,
+        book.toUserBook(
           dateAdded = date.some,
           rating = rating.some,
           startedReading = date.some

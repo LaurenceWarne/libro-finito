@@ -46,8 +46,8 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
         _ === Collection(
           name,
           List(
-            toUserBook(fixtures.bookInput, fixtures.date.some),
-            toUserBook(book2, date2.some)
+            fixtures.bookInput.toUserBook(fixtures.date.some),
+            book2.toUserBook(date2.some)
           ),
           Sort(SortType.DateAdded, true),
           PageInfo(2).some
@@ -58,8 +58,8 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
         _ === Collection(
           name,
           List(
-            toUserBook(book2, date2.some),
-            toUserBook(fixtures.bookInput, fixtures.date.some)
+            book2.toUserBook(date2.some),
+            fixtures.bookInput.toUserBook(fixtures.date.some)
           ),
           Sort(SortType.DateAdded, false),
           PageInfo(2).some
@@ -92,8 +92,8 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
   //       _ === Collection(
   //         name,
   //         List(
-  //           toUserBook(book1, fixtures.date.some),
-  //           toUserBook(book2, date2.some)
+  //           book1.toUserBook(fixtures.date.some),
+  //           book2.toUserBook(date2.some)
   //         ),
   //         Sort(SortType.Title, true),
   //         PageInfo(2).some
@@ -104,8 +104,8 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
   //       _ === Collection(
   //         name,
   //         List(
-  //           toUserBook(book2, date2.some),
-  //           toUserBook(book1, fixtures.date.some)
+  //           book2.toUserBook(date2.some),
+  //           book1.toUserBook(fixtures.date.some)
   //         ),
   //         Sort(SortType.Title, false),
   //         PageInfo(2).some
@@ -130,7 +130,7 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
       retrievedCollection.exists(
         _ === Collection(
           name,
-          books.drop(offset).take(limit).map(toUserBook(_, fixtures.date.some)),
+          books.drop(offset).take(limit).map(_.toUserBook(fixtures.date.some)),
           Sort(SortType.Title, true),
           PageInfo(9).some
         )
@@ -206,7 +206,7 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
       retrievedCollection.exists(c =>
         c === Collection(
           newName,
-          List(toUserBook(fixtures.bookInput, dateAdded = fixtures.date.some)),
+          List(fixtures.bookInput.toUserBook(dateAdded = fixtures.date.some)),
           newSort,
           PageInfo(1).some
         )
@@ -248,7 +248,7 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
       retrievedCollection.exists(
         _ === Collection(
           name,
-          List(toUserBook(fixtures.bookInput, dateAdded = fixtures.date.some)),
+          List(fixtures.bookInput.toUserBook(dateAdded = fixtures.date.some)),
           sort,
           PageInfo(1).some
         )
@@ -270,7 +270,7 @@ object SqliteCollectionRepositoryTest extends SqliteSuite {
       retrievedCollection.exists(
         _ === Collection(
           name2,
-          List(toUserBook(fixtures.bookInput, dateAdded = fixtures.date.some)),
+          List(fixtures.bookInput.toUserBook(dateAdded = fixtures.date.some)),
           sort,
           PageInfo(1).some
         )

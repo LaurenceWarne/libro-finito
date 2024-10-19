@@ -50,11 +50,11 @@ object BookManagementServiceImplTest extends IOSuite {
       ratedBook <-
         bookService.rateBook(MutationRateBookArgs(bookToRate, rating))
     } yield expect(
-      ratedBook === toUserBook(
-        bookToRate,
-        rating = rating.some,
-        dateAdded = fixtures.date.some
-      )
+      ratedBook ===
+        bookToRate.toUserBook(
+          rating = rating.some,
+          dateAdded = fixtures.date.some
+        )
     )
   }
 
@@ -65,11 +65,11 @@ object BookManagementServiceImplTest extends IOSuite {
       ratedBook <-
         bookService.rateBook(MutationRateBookArgs(bookToRate, rating))
     } yield expect(
-      ratedBook === toUserBook(
-        bookToRate,
-        dateAdded = fixtures.date.some,
-        rating = rating.some
-      )
+      ratedBook ===
+        bookToRate.toUserBook(
+          dateAdded = fixtures.date.some,
+          rating = rating.some
+        )
     )
   }
 
@@ -82,11 +82,11 @@ object BookManagementServiceImplTest extends IOSuite {
         MutationAddBookReviewArgs(bookToReview, review)
       )
     } yield expect(
-      reviewdBook === toUserBook(
-        bookToReview,
-        review = review.some,
-        dateAdded = fixtures.date.some
-      )
+      reviewdBook ===
+        bookToReview.toUserBook(
+          review = review.some,
+          dateAdded = fixtures.date.some
+        )
     )
   }
 
@@ -98,11 +98,11 @@ object BookManagementServiceImplTest extends IOSuite {
         MutationAddBookReviewArgs(bookToReview, review)
       )
     } yield expect(
-      reviewdBook === toUserBook(
-        bookToReview,
-        dateAdded = fixtures.date.some,
-        review = review.some
-      )
+      reviewdBook ===
+        bookToReview.toUserBook(
+          dateAdded = fixtures.date.some,
+          review = review.some
+        )
     )
   }
 
@@ -115,11 +115,11 @@ object BookManagementServiceImplTest extends IOSuite {
         MutationStartReadingArgs(bookToRead, startedReading.some)
       )
     } yield expect(
-      updatedBook === toUserBook(
-        bookToRead,
-        dateAdded = fixtures.date.some,
-        startedReading = startedReading.some
-      )
+      updatedBook ===
+        bookToRead.toUserBook(
+          dateAdded = fixtures.date.some,
+          startedReading = startedReading.some
+        )
     )
   }
 
@@ -131,11 +131,11 @@ object BookManagementServiceImplTest extends IOSuite {
         updatedBook <-
           bookService.startReading(MutationStartReadingArgs(bookToRead, None))
       } yield expect(
-        updatedBook === toUserBook(
-          bookToRead,
-          dateAdded = fixtures.date.some,
-          startedReading = fixtures.date.some
-        )
+        updatedBook ===
+          bookToRead.toUserBook(
+            dateAdded = fixtures.date.some,
+            startedReading = fixtures.date.some
+          )
       )
   }
 
@@ -163,12 +163,12 @@ object BookManagementServiceImplTest extends IOSuite {
       book <-
         bookService.startReading(MutationStartReadingArgs(popularBook, None))
     } yield expect(
-      book === toUserBook(
-        popularBook,
-        dateAdded = fixtures.date.some,
-        startedReading = fixtures.date.some,
-        lastRead = fixtures.date.some
-      )
+      book ===
+        popularBook.toUserBook(
+          dateAdded = fixtures.date.some,
+          startedReading = fixtures.date.some,
+          lastRead = fixtures.date.some
+        )
     )
   }
 
@@ -181,11 +181,11 @@ object BookManagementServiceImplTest extends IOSuite {
         MutationFinishReadingArgs(bookToRead, finishedReading.some)
       )
     } yield expect(
-      updatedBook === toUserBook(
-        bookToRead,
-        lastRead = finishedReading.some,
-        dateAdded = fixtures.date.some
-      )
+      updatedBook ===
+        bookToRead.toUserBook(
+          lastRead = finishedReading.some,
+          dateAdded = fixtures.date.some
+        )
     )
   }
 
@@ -198,11 +198,11 @@ object BookManagementServiceImplTest extends IOSuite {
           MutationFinishReadingArgs(bookToRead, None)
         )
       } yield expect(
-        updatedBook === toUserBook(
-          bookToRead,
-          lastRead = fixtures.date.some,
-          dateAdded = fixtures.date.some
-        )
+        updatedBook ===
+          bookToRead.toUserBook(
+            lastRead = fixtures.date.some,
+            dateAdded = fixtures.date.some
+          )
       )
   }
 
@@ -229,7 +229,7 @@ object BookManagementServiceImplTest extends IOSuite {
       )
       book <- repo.retrieveBook(bookToClear.isbn)
     } yield expect(
-      book.exists(_ == toUserBook(bookToClear, dateAdded = fixtures.date.some))
+      book.exists(_ == bookToClear.toUserBook(dateAdded = fixtures.date.some))
     )
   }
 }

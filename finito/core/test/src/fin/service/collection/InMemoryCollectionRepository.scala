@@ -63,7 +63,7 @@ class InMemoryCollectionRepository[F[_]: MonadThrow](
       _ <- collectionOrError(collectionName)
       _ <- collectionsRef.getAndUpdate(_.map { col =>
         if (col.name === collectionName)
-          col.copy(books = toUserBook(book) :: col.books)
+          col.copy(books = book.toUserBook() :: col.books)
         else col
       })
     } yield ()

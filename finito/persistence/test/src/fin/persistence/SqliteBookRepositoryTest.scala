@@ -25,7 +25,7 @@ object SqliteBookRepositoryTest extends SqliteSuite {
       maybeBook <- repo.retrieveBook(fixtures.bookInput.isbn)
     } yield expect(
       maybeBook.exists(
-        _ === toUserBook(fixtures.bookInput, dateAdded = fixtures.date.some)
+        _ === fixtures.bookInput.toUserBook(dateAdded = fixtures.date.some)
       )
     )
   }
@@ -120,13 +120,13 @@ object SqliteBookRepositoryTest extends SqliteSuite {
       maybeBook <- repo.retrieveBook(bookToUse.isbn)
     } yield expect(
       maybeBook.exists(
-        _ === toUserBook(
-          bookToUse,
-          dateAdded = fixtures.date.some,
-          rating = rating.some,
-          startedReading = startedReadingDate.some,
-          lastRead = fixtures.date.some
-        )
+        _ ===
+          bookToUse.toUserBook(
+            dateAdded = fixtures.date.some,
+            rating = rating.some,
+            startedReading = startedReadingDate.some,
+            lastRead = fixtures.date.some
+          )
       )
     )
   }
@@ -143,7 +143,7 @@ object SqliteBookRepositoryTest extends SqliteSuite {
       maybeBook <- repo.retrieveBook(bookToUse.isbn)
     } yield expect(
       maybeBook.exists(
-        _ === toUserBook(bookToUse, dateAdded = fixtures.date.some)
+        _ === bookToUse.toUserBook(dateAdded = fixtures.date.some)
       )
     )
   }
@@ -160,11 +160,11 @@ object SqliteBookRepositoryTest extends SqliteSuite {
       _     <- repo.createBook(book3, fixtures.date)
       books <- repo.retrieveMultipleBooks(isbns)
     } yield expect(books.size == 3) and expect(
-      books.contains(toUserBook(book1, dateAdded = fixtures.date.some))
+      books.contains(book1.toUserBook(dateAdded = fixtures.date.some))
     ) and expect(
-      books.contains(toUserBook(book2, dateAdded = fixtures.date.some))
+      books.contains(book2.toUserBook(dateAdded = fixtures.date.some))
     ) and expect(
-      books.contains(toUserBook(book3, dateAdded = fixtures.date.some))
+      books.contains(book3.toUserBook(dateAdded = fixtures.date.some))
     )
   }
 
@@ -183,8 +183,8 @@ object SqliteBookRepositoryTest extends SqliteSuite {
     } yield expect(
       books.sameElements(
         List(
-          toUserBook(book1, dateAdded = date1.some),
-          toUserBook(book2, dateAdded = date2.some)
+          book1.toUserBook(dateAdded = date1.some),
+          book2.toUserBook(dateAdded = date2.some)
         )
       )
     )

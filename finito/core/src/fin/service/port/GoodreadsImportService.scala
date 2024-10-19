@@ -14,6 +14,7 @@ import fs2.data.csv._
 import fs2.data.csv.generic.semiauto._
 import org.typelevel.log4cats.Logger
 
+import fin.BookAlreadyInCollectionError
 import fin.BookConversions._
 import fin.Types._
 import fin.service.book._
@@ -25,9 +26,11 @@ import fin.service.search.BookInfoService
 class GoodreadsImportService[F[_]: Async: Logger](
     bookInfoService: BookInfoService[F],
     collectionService: CollectionService[F],
-    bookManagementService: BookManagementService[F]
+    bookManagementService: BookManagementService[F],
+    specialBookManagementService: BookManagementService[F]
 ) extends ApplicationImportService[F] {
 
+  import GoodreadsImportService._
   private val parallelism = 1
   private val timer       = Temporal[F]
 
@@ -43,17 +46,40 @@ class GoodreadsImportService[F[_]: Async: Logger](
         .compile
         .toList
     for {
-      _ <- Logger[F].debug(s"Received ${content.length} chars worth of content")
+      // Books stuff
+      _ <- Logger[F].debug(
+        show"Received ${content.length} chars worth of content"
+      )
       rows      <- Async[F].fromEither(result)
       userBooks <- createBooks(rows, langRestrict)
-      bookShelfMap     = rows.map(row => row.isbn -> row.bookshelves).toMap
-      inputBookshelves = bookShelfMap.values.flatten
+      _         <- markBooks(userBooks)
+
+      // Collections stuff
+      rawBookShelfMap = rows
+        .map(row => row.sanitizedIsbn -> row.bookshelves)
+        .toMap
       existingCollections <- collectionService.collections.map { ls =>
         ls.map(_.name).toSet
       }
-      collectionsToCreate = inputBookshelves.filterNot { shelf =>
-        existingCollections.contains(shelf)
+      bookShelfMap = rawBookShelfMap.map { case (isbn, shelves) =>
+        isbn -> {
+          val filtered = shelves.filterNot(SpecialGoodreadsShelves.contains)
+          // Match e.g. 'wishlist' to 'Wishlist'
+          filtered.map { shelf =>
+            existingCollections
+              .find(_.toLowerCase === shelf.toLowerCase)
+              .getOrElse(shelf)
+          }
+        }
       }
+      inputBookshelves = bookShelfMap.values.flatten.toSet
+      collectionsToCreate = inputBookshelves.filterNot { shelf =>
+        existingCollections.contains(shelf) ||
+        SpecialGoodreadsShelves.contains(shelf)
+      }
+      _ <- Logger[F].info(
+        show"Creating collections ${collectionsToCreate.toList}"
+      )
       _ <- collectionService.createCollections(collectionsToCreate.toSet)
 
       _ <- userBooks
@@ -61,9 +87,13 @@ class GoodreadsImportService[F[_]: Async: Logger](
           bookShelfMap.getOrElse(b.isbn, Set.empty).toList.tupleLeft(b)
         }
         .traverse { case (book, shelf) =>
-          collectionService.addBookToCollection(
-            MutationAddBookArgs(Some(shelf), toBookInput(book))
-          )
+          Logger[F].info(s"Adding ${book.title} to ${shelf}") *>
+            collectionService
+              .addBookToCollection(
+                MutationAddBookArgs(Some(shelf), book.toBookInput)
+              )
+              .void
+              .recover { case BookAlreadyInCollectionError(_, _) => () }
         }
     } yield userBooks.length
   }
@@ -73,39 +103,86 @@ class GoodreadsImportService[F[_]: Async: Logger](
       langRestrict: Option[String]
   ): F[List[UserBook]] = {
     for {
-      userBooks <- rows.parTraverseN(parallelism) { row =>
-        bookInfoService
-          .search(
-            QueryBooksArgs(
-              titleKeywords = Some(row.title),
-              authorKeywords = Some(row.author),
-              maxResults = Some(5),
-              langRestrict = langRestrict
+      userBooks <- rows
+        .map { b =>
+          b.title match {
+            case s"$title ($_ #$_)" => b.copy(title = title)
+            case _                  => b
+          }
+        }
+        .parTraverseN(parallelism) { row =>
+          bookInfoService
+            .search(
+              QueryBooksArgs(
+                titleKeywords = Some(row.title),
+                authorKeywords = Some(row.author),
+                maxResults = Some(5),
+                langRestrict = langRestrict
+              )
             )
-          )
-          .map { books =>
-            books.headOption.fold(row.toUserBook("", "")) { book =>
-              row.toUserBook(book.description, book.thumbnailUri)
-            }
-          } <* Logger[F].info(
-          s"Succeeded obtaining extra information for: ${row.title}"
-        ) *> timer.sleep(500.millis)
-      }
+            .flatMap { books =>
+              books.headOption.fold {
+                Logger[F]
+                  .error(
+                    show"Failed obtaining extra information for: ${row.title}"
+                  )
+                  .as(row.toUserBook("", ""))
+              } { book =>
+                Logger[F]
+                  .info(
+                    show"Succeeded obtaining extra information for: ${row.title}"
+                  )
+                  .as(row.toUserBook(book.description, book.thumbnailUri))
+              }
+            } <* timer.sleep(500.millis)
+        }
       _ <- bookManagementService.createBooks(userBooks)
     } yield userBooks
+  }
+
+  private def markBooks(books: List[UserBook]): F[Unit] = {
+    for {
+      _ <- books.map(b => (b, b.lastRead)).traverseCollect {
+        case (b, Some(date)) =>
+          specialBookManagementService.finishReading(
+            MutationFinishReadingArgs(b.toBookInput, Some(date))
+          ) *> Logger[F]
+            .info(show"Marked ${b.title} as finished on ${date.toString}")
+      }
+      _ <- books.map(b => (b, b.startedReading)).traverseCollect {
+        case (b, Some(date)) =>
+          specialBookManagementService.startReading(
+            MutationStartReadingArgs(b.toBookInput, Some(date))
+          ) *> Logger[F]
+            .info(show"Marked ${b.title} as started on ${date.toString}")
+      }
+      _ <- books.map(b => (b, b.rating)).traverseCollect {
+        case (b, Some(rating)) =>
+          specialBookManagementService.rateBook(
+            MutationRateBookArgs(b.toBookInput, rating)
+          ) *> Logger[F].info(show"Gave ${b.title} a rating of $rating")
+      }
+    } yield ()
   }
 }
 
 object GoodreadsImportService {
+
+  val GoodreadsCurrentlyReadingShelf = "currently-reading"
+  private val SpecialGoodreadsShelves =
+    Set(GoodreadsCurrentlyReadingShelf, "read", "to-read", "favorites")
+
   def apply[F[_]: Async: Logger](
       bookInfoService: BookInfoService[F],
       collectionService: CollectionService[F],
-      bookManagementService: BookManagementService[F]
+      bookManagementService: BookManagementService[F],
+      specialBookManagementService: BookManagementService[F]
   ): GoodreadsImportService[F] =
     new GoodreadsImportService(
       bookInfoService,
       collectionService,
-      bookManagementService
+      bookManagementService,
+      specialBookManagementService
     )
 }
 
@@ -137,6 +214,9 @@ final case class GoodreadsCSVRow(
     readCount: String,
     ownedCopies: String
 ) {
+  import GoodreadsImportService.GoodreadsCurrentlyReadingShelf
+
+  def sanitizedIsbn = isbn.replace("\"", "")
 
   def toUserBook(description: String, thumbnailUri: String): UserBook =
     UserBook(
@@ -145,17 +225,22 @@ final case class GoodreadsCSVRow(
         _.split(", ").toList
       ),
       description = description,
-      isbn = isbn,
+      isbn = sanitizedIsbn,
       thumbnailUri = thumbnailUri,
       dateAdded = Some(dateAdded),
       rating = rating,
-      startedReading = None,
+      // Goodreads doesn't export the date a user started reading a book, so we just use the date added
+      startedReading = Option.when(
+        bookshelves.contains(GoodreadsCurrentlyReadingShelf)
+      )(dateAdded),
       lastRead = dateRead,
       review = myReview
     )
 
   def bookshelves: Set[String] =
-    bookshelvesStr.split(", ").toSet + exclusiveShelf
+    (bookshelvesStr.split(", ").toSet + exclusiveShelf)
+      .map(_.strip())
+      .filter(_.nonEmpty)
 }
 
 object GoodreadsCSVRow {

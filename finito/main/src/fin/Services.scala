@@ -48,7 +48,7 @@ object Services {
       clock,
       connectionIOToF
     )
-    val bookManagmentService = BookManagementServiceImpl[F, ConnectionIO](
+    val bookManagementService = BookManagementServiceImpl[F, ConnectionIO](
       bookRepo,
       clock,
       connectionIOToF
@@ -67,7 +67,7 @@ object Services {
       .setup[F, ConnectionIO](
         collectionRepo,
         collectionService,
-        bookManagmentService,
+        bookManagementService,
         config.defaultCollection,
         config.specialCollections,
         connectionIOToF
@@ -75,7 +75,8 @@ object Services {
       .map { case (wrappedBookManagementService, wrappedCollectionService) =>
         val goodreadsImportService = GoodreadsImportService(
           bookInfoService,
-          wrappedCollectionService,
+          collectionService,
+          bookManagementService,
           wrappedBookManagementService
         )
         val importService = ImportServiceImpl(goodreadsImportService)
