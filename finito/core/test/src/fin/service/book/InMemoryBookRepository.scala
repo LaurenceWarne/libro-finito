@@ -20,7 +20,11 @@ class InMemoryBookRepository[F[_]: Monad](booksRef: Ref[F, List[UserBook]])
     booksRef.update(book.toUserBook(dateAdded = date.some) :: _)
 
   override def createBooks(books: List[UserBook]): F[Unit] =
-    booksRef.update(ls => books.filterNot(b => ls.contains_(b)) ::: ls)
+    booksRef.update { ls =>
+      books
+        .filterNot(b => ls.contains_(b))
+        .map(_.copy(startedReading = None, lastRead = None)) ::: ls
+    }
 
   override def retrieveBook(isbn: String): F[Option[UserBook]] =
     booksRef.get.map(_.find(_.isbn === isbn))

@@ -228,7 +228,8 @@ final case class GoodreadsCSVRow(
       isbn = sanitizedIsbn,
       thumbnailUri = thumbnailUri,
       dateAdded = Some(dateAdded),
-      rating = rating,
+      // For non-rated books, Goodreads outputs '0', which is unambiguous since you can't rate lower than 1
+      rating = rating.filter(_ =!= 0),
       // Goodreads doesn't export the date a user started reading a book, so we just use the date added
       startedReading = Option.when(
         bookshelves.contains(GoodreadsCurrentlyReadingShelf)

@@ -76,15 +76,15 @@ object finito extends Module {
           Deps.CatsLogging.slf4j,
           Deps.Circe.core,
           Deps.Circe.generic,
-          Deps.Circe.parser,
           Deps.Circe.literal,
+          Deps.Circe.parser,
           Deps.Doobie.core,
           Deps.Doobie.hikari,
           Deps.Fs2.core,
           Deps.Fs2.io,
+          Deps.Http4s.http4sDsl,
           Deps.Http4s.http4sEmberClient,
           Deps.Http4s.http4sEmberServer,
-          Deps.Http4s.http4sDsl,
           Deps.flyway,
           Deps.logback,
           Deps.typesafeConfig
@@ -100,8 +100,8 @@ object finito extends Module {
 
     def ivyDeps =
       Agg(
-        Deps.Caliban.core,
         Deps.Caliban.cats,
+        Deps.Caliban.core,
         Deps.CatsEffect.catsEffect,
         Deps.Circe.core,
         Deps.Circe.generic
@@ -119,17 +119,18 @@ object finito extends Module {
         Deps.Caliban.cats,
         Deps.Caliban.core,
         Deps.Caliban.http4s,
+        Deps.CatsEffect.catsEffect,
+        Deps.CatsLogging.core,
         Deps.Circe.core,
         Deps.Circe.generic,
         Deps.Circe.genericExtras,
         Deps.Circe.parser,
         Deps.Fs2.csv,
         Deps.Fs2.csvGeneric,
-        Deps.Http4s.http4sEmberClient,
-        Deps.Http4s.http4sDsl,
         Deps.Http4s.http4sCirce,
-        Deps.CatsEffect.catsEffect,
-        Deps.CatsLogging.core,
+        Deps.Http4s.http4sDsl,
+        Deps.Http4s.http4sEmberClient,
+        Deps.catsTime,
         Deps.luaj
       )
 
@@ -232,6 +233,7 @@ object Deps {
   val jmh            = ivy"org.openjdk.jmh:jmh-core:1.35"
   // Hard to remove this dep without dropping HOCON, lets hope Lightbend don't start charging for it
   val typesafeConfig = ivy"com.typesafe:config:1.4.3"
+  val catsTime       = ivy"org.typelevel::cats-time:0.5.1"
 
   object Compiler {
     val semanticDb       = ivy"org.scalameta:::semanticdb-scalac:4.10.1"

@@ -8,7 +8,6 @@ import weaver._
 
 import fin.Types._
 import fin.fixtures
-import fin.service.search.BookInfoService
 
 object WikidataSeriesInfoServiceTest extends SimpleIOSuite {
 
@@ -69,13 +68,4 @@ object WikidataSeriesInfoServiceTest extends SimpleIOSuite {
           .attempt
     } yield expect(response.isLeft)
   }
-}
-
-class BookInfoServiceUsingTitles(books: List[UserBook])
-    extends BookInfoService[IO] {
-
-  override def search(booksArgs: QueryBooksArgs): IO[List[UserBook]] =
-    books.filter(b => booksArgs.titleKeywords.exists(_ === b.title)).pure[IO]
-
-  override def fromIsbn(bookArgs: QueryBookArgs): IO[List[UserBook]] = ???
 }
