@@ -12,7 +12,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v2
+      # https://github.com/actions/setup-java
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 11
@@ -35,10 +36,11 @@ jobs:
       ##################
       # Coverage Stuff #
       ##################
+      # https://github.com/codecov/codecov-action
       - name: Generate Coverage Reports
         run: ./mill scoverage.xmlReportAll
       - name: Send Coverage Reports
-        uses: codecov/codecov-action@v1
+        uses: codecov/codecov-action@v4
         with:
           files: out/scoverage/xmlReportAll.dest/scoverage.xml
           flags: unittests # optional
@@ -52,8 +54,10 @@ jobs:
       - name: Assembly
         if: startsWith(github.ref, 'refs/tags/')
         run: ./mill finito.main.assembly
+
+      # https://github.com/softprops/action-gh-release
       - name: Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: |
