@@ -159,7 +159,8 @@ class CollectionServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
 
 object CollectionServiceImpl {
 
-  val defaultSort: Sort = Sort(SortType.DateAdded, true)
+  val defaultSort: Sort =
+    Sort(`type` = SortType.DateAdded, sortAscending = false)
 
   def apply[F[_]: MonadThrow, G[_]: MonadThrow](
       collectionRepo: CollectionRepository[G],
