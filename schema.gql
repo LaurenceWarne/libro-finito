@@ -70,6 +70,13 @@ type Summary {
   montage: String!
 }
 
+type ImportResult {
+  successful: [UserBook!]!
+  partiallySuccessful: [UserBook!]!
+  unsuccessful: [UserBook!]!
+}
+
+
 type Query {
   """
   Search for books matching the specified parameters.  langRestrict should be
@@ -132,5 +139,5 @@ type Mutation {
   For Goodreads, bookshelves will be assumed to correspond to collections, and
   will be created if they do not exist.
   """
-  import(importType: PortType!, content: String!, langRestrict: String = "en"): Int!
+  import(importType: PortType!, content: String!, langRestrict: String = "en"): ImportResult!
 }

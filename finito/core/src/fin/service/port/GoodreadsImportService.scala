@@ -37,7 +37,7 @@ class GoodreadsImportService[F[_]: Async: Logger](
   override def importResource(
       content: String,
       langRestrict: Option[String]
-  ): F[Int] = {
+  ): F[ImportResult] = {
     val result =
       fs2.Stream
         .emit(content.replace("\\n", "\n").replace("\\\"", "\""))
@@ -95,7 +95,15 @@ class GoodreadsImportService[F[_]: Async: Logger](
               .void
               .recover { case BookAlreadyInCollectionError(_, _) => () }
         }
-    } yield userBooks.length
+
+      (imported, partiallyImported) = userBooks.partition(
+        _.thumbnailUri.nonEmpty
+      )
+    } yield ImportResult(
+      successful = imported,
+      partiallySuccessful = partiallyImported,
+      unsuccessful = List.empty
+    )
   }
 
   private def createBooks(

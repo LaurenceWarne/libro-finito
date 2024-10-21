@@ -5,14 +5,14 @@ import cats.MonadThrow
 import fin.Types._
 
 trait ImportService[F[_]] {
-  def importResource(args: MutationImportArgs): F[Int]
+  def importResource(args: MutationImportArgs): F[ImportResult]
 }
 
 trait ApplicationImportService[F[_]] {
   def importResource(
       content: String,
       langRestrict: Option[String]
-  ): F[Int]
+  ): F[ImportResult]
 }
 
 /** https://www.goodreads.com/review/import
@@ -21,7 +21,7 @@ class ImportServiceImpl[F[_]: MonadThrow](
     goodreadsImportService: ApplicationImportService[F]
 ) extends ImportService[F] {
 
-  override def importResource(args: MutationImportArgs): F[Int] =
+  override def importResource(args: MutationImportArgs): F[ImportResult] =
     args.importType match {
       case PortType.Goodreads =>
         goodreadsImportService.importResource(args.content, args.langRestrict)

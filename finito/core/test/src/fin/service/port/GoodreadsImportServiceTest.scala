@@ -66,8 +66,9 @@ object GoodreadsImportServiceTest extends IOSuite {
         Clock[IO],
         FunctionK.id[IO]
       )
-      books = List(fixtures.title1, fixtures.title2, fixtures.title3).map(t =>
-        fixtures.emptyBook.copy(title = t, authors = List(fixtures.author))
+      books = List(
+        fixtures.userBook.copy(title = title1),
+        fixtures.userBook.copy(title = title2)
       )
       bookInfoService = new BookInfoServiceUsingTitles(books)
 
@@ -84,10 +85,14 @@ object GoodreadsImportServiceTest extends IOSuite {
     case (importService, bookRepo, _, rnd) =>
       for {
         (isbn1, isbn2, csv) <- csv(rnd)
-        _                   <- importService.importResource(csv, None)
+        importResult        <- importService.importResource(csv, None)
         book1               <- bookRepo.retrieveBook(isbn1)
         book2               <- bookRepo.retrieveBook(isbn2)
-      } yield expect(book1.nonEmpty) && expect(book2.nonEmpty)
+      } yield expect(book1.nonEmpty) &&
+        expect(book2.nonEmpty) &&
+        expect(importResult.successful.length == 2) &&
+        expect(importResult.partiallySuccessful.length == 0) &&
+        expect(importResult.unsuccessful.length == 0)
   }
 
   test("importResource adds books to correct collections") {
@@ -100,9 +105,8 @@ object GoodreadsImportServiceTest extends IOSuite {
         )
         books      = collection.books
         bookTitles = books.map(_.title)
-      } yield expect(bookTitles.contains_(title1)) && expect(
-        !bookTitles.contains_(title2)
-      )
+      } yield expect(bookTitles.contains_(title1)) &&
+        expect(!bookTitles.contains_(title2))
   }
 
   test("importResource marks books as started") {
@@ -112,9 +116,8 @@ object GoodreadsImportServiceTest extends IOSuite {
         _                   <- importService.importResource(csv, None)
         book1               <- bookRepo.retrieveBook(isbn1)
         book2               <- bookRepo.retrieveBook(isbn2)
-      } yield expect(book1.exists(_.startedReading.isEmpty)) && expect(
-        book2.exists(_.startedReading.nonEmpty)
-      )
+      } yield expect(book1.exists(_.startedReading.isEmpty)) &&
+        expect(book2.exists(_.startedReading.nonEmpty))
   }
 
   test("importResource marks books as finished") {
@@ -124,9 +127,8 @@ object GoodreadsImportServiceTest extends IOSuite {
         _                   <- importService.importResource(csv, None)
         book1               <- bookRepo.retrieveBook(isbn1)
         book2               <- bookRepo.retrieveBook(isbn2)
-      } yield expect(book1.flatMap(_.lastRead).contains_(dateRead)) && expect(
-        book2.exists(_.lastRead.isEmpty)
-      )
+      } yield expect(book1.flatMap(_.lastRead).contains_(dateRead)) &&
+        expect(book2.exists(_.lastRead.isEmpty))
   }
 
   test("importResource rates books") { case (importService, bookRepo, _, rnd) =>
@@ -135,8 +137,7 @@ object GoodreadsImportServiceTest extends IOSuite {
       _                   <- importService.importResource(csv, None)
       book1               <- bookRepo.retrieveBook(isbn1)
       book2               <- bookRepo.retrieveBook(isbn2)
-    } yield expect(book1.flatMap(_.rating).contains_(rating)) && expect(
-      book2.exists(_.rating.isEmpty)
-    )
+    } yield expect(book1.flatMap(_.rating).contains_(rating)) &&
+      expect(book2.exists(_.rating.isEmpty))
   }
 }

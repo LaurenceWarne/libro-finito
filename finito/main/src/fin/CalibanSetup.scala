@@ -214,13 +214,15 @@ object FinitoSchema {
   implicit val mutationsImportArgsSchema: Schema[Any, MutationImportArgs] =
     Schema.gen[Any, MutationImportArgs]
 
+  implicit val importResultSchema: Schema[Any, ImportResult] =
+    Schema.gen[Any, ImportResult]
+
   implicit val sortTypeArg: ArgBuilder[SortType]               = ArgBuilder.gen
   implicit val portTypeArg: ArgBuilder[PortType]               = ArgBuilder.gen
   implicit val pageInfoArg: ArgBuilder[PageInfo]               = ArgBuilder.gen
   implicit val sortArg: ArgBuilder[Sort]                       = ArgBuilder.gen
   implicit val userBookArg: ArgBuilder[UserBook]               = ArgBuilder.gen
   implicit val collectionArg: ArgBuilder[Collection]           = ArgBuilder.gen
-  implicit val summaryArg: ArgBuilder[Summary]                 = ArgBuilder.gen
   implicit val bookInputArg: ArgBuilder[BookInput]             = ArgBuilder.gen
   implicit val montageInputArg: ArgBuilder[MontageInput]       = ArgBuilder.gen
   implicit val paginationInputArg: ArgBuilder[PaginationInput] = ArgBuilder.gen

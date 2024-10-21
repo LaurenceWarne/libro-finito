@@ -10,6 +10,7 @@ import cats.implicits._
 import org.http4s.Response
 import org.http4s.client.Client
 
+import fin.BookConversions.BookInputSyntax
 import fin.Types._
 
 package object fixtures {
@@ -27,12 +28,14 @@ package object fixtures {
     ("Neuromancer", "Count Zero", "Mona Lisa Overdrive")
 
   val bookInput = BookInput(
-    title1,
-    List(author),
-    "description",
-    "isbn",
-    "???"
+    title = title1,
+    authors = List(author),
+    description = "description",
+    isbn = "isbn",
+    thumbnailUri = "???"
   )
+
+  val userBook = bookInput.toUserBook()
 
   val emptyBook =
     UserBook("", List.empty, "", "", "", None, None, None, None, None)
