@@ -7,7 +7,7 @@ Also check out the [Changelog](/CHANGELOG.md).
 
 # Configuration
 
-The server may be configured in a number of ways via a [HOCON](https://github.com/lightbend/config/blob/main/HOCON.md) file whose expected location is `~/.config/libro-finito/service.conf`:
+The server may be configured in a number of ways via a [HOCON](https://github.com/lightbend/config/blob/main/HOCON.md) file whose expected location is `$XDG_CONFIG_HOME/libro-finito/service.conf`:
 
 ```hocon
 port = 56848,
@@ -41,6 +41,8 @@ special-collections = [
 ```
 
 `default-collection` is the collection which books will be added to in the case no collection is specified in the `addBook` mutation.
+
+The sqlite database is located in `$XDG_DATA_HOME/libro-finito/db.sqlite`.
 
 ## Special Collections
 
