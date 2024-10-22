@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.8.0
+
+* [1a5c684](https://github.com/LaurenceWarne/libro-finito/commit/1a5c6849b695a55f4333e86f5966b2d711c47d18): Implement Goodreads import
+
 ## v0.7.5
 
 * [635701c](https://github.com/LaurenceWarne/libro-finito/commit/635701c7af61ef2510157729b782c0520b36d4e7): Add `includeAdded` parameter to `summary` query to allow showing only read books in montage images
