@@ -17,7 +17,10 @@ object FinitoFiles {
 
   private val FinitoDir = "libro-finito"
 
-  def databaseUri[F[_]: Sync: Files: Logger](env: Env[F]): F[String] = {
+  def databaseUri(databasePath: Path): String =
+    s"jdbc:sqlite:${databasePath.absolute}"
+
+  def databasePath[F[_]: Sync: Files: Logger](env: Env[F]): F[Path] = {
     val dbName = "db.sqlite"
     for {
       xdgDataDir <- xdgDirectory(env, "XDG_DATA_HOME", ".local/share")
@@ -37,7 +40,13 @@ object FinitoFiles {
           }
       }
       _ <- Logger[F].info(show"Using data directory $xdgDataDir")
-    } yield s"jdbc:sqlite:${dbPath.absolute}"
+    } yield dbPath.absolute
+  }
+
+  def backupPath[F[_]: Sync: Files: Logger](path: Path): F[Path] = {
+    val backupPath = path.resolveSibling(path.fileName.toString + ".bkp")
+    Files[F].copy(path, backupPath, CopyFlags(CopyFlag.ReplaceExisting)) *>
+      Logger[F].info(show"Backed up $path to $backupPath").as(backupPath)
   }
 
   def config[F[_]: Sync: Files: Logger](env: Env[F]): F[ServiceConfig] =

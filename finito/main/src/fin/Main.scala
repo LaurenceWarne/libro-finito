@@ -36,6 +36,7 @@ object Main extends IOApp {
       implicit val dispatcherEv = serviceResources.dispatcher
       val config                = serviceResources.config
       val timer                 = Temporal[IO]
+
       for {
         _ <- FlywaySetup.init[IO](
           serviceResources.databaseUri,
@@ -83,9 +84,11 @@ object Main extends IOApp {
       env: Env[IO]
   ): Resource[IO, ServiceResources[IO]] =
     for {
-      client     <- EmberClientBuilder.default[IO].build
-      config     <- Resource.eval(FinitoFiles.config[IO](env))
-      dbUri      <- Resource.eval(FinitoFiles.databaseUri(env))
+      client <- EmberClientBuilder.default[IO].build
+      config <- Resource.eval(FinitoFiles.config[IO](env))
+      dbPath <- Resource.eval(FinitoFiles.databasePath[IO](env))
+      _      <- Resource.eval(FinitoFiles.backupPath[IO](dbPath))
+      dbUri = FinitoFiles.databaseUri(dbPath)
       transactor <- TransactorSetup.sqliteTransactor[IO](dbUri)
       dispatcher <- Dispatcher.parallel[IO]
     } yield ServiceResources(client, config, transactor, dispatcher, dbUri)
