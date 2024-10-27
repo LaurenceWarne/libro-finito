@@ -4,6 +4,7 @@ import java.time.LocalDate
 
 import scala.math.Ordering.Implicits._
 
+import cats.Monad
 import cats.data.NonEmptyList
 import cats.implicits._
 import doobie.Fragments._
@@ -46,7 +47,9 @@ object SqliteBookRepository extends BookRepository[ConnectionIO] {
     BookFragments.insert(book, date).update.run.void
 
   override def createBooks(books: List[UserBook]): ConnectionIO[Unit] =
-    BookFragments.insertMany(books).update.run.void
+    Monad[ConnectionIO].whenA(books.nonEmpty) {
+      BookFragments.insertMany(books).update.run.void
+    }
 
   override def rateBook(book: BookInput, rating: Int): ConnectionIO[Unit] =
     BookFragments.insertRating(book.isbn, rating).update.run.void

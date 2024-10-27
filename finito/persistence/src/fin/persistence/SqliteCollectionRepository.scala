@@ -108,11 +108,13 @@ object SqliteCollectionRepository extends CollectionRepository[ConnectionIO] {
       names: Set[String],
       preferredSort: Sort
   ): ConnectionIO[Unit] =
-    CollectionFragments
-      .createMany(names, preferredSort.`type`, preferredSort.sortAscending)
-      .update
-      .run
-      .void
+    Monad[ConnectionIO].whenA(names.nonEmpty) {
+      CollectionFragments
+        .createMany(names, preferredSort.`type`, preferredSort.sortAscending)
+        .update
+        .run
+        .void
+    }
 
   override def deleteCollection(name: String): ConnectionIO[Unit] =
     CollectionFragments
