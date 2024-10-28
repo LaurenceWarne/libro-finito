@@ -20,6 +20,8 @@ class SpecialBookService[F[_]: Sync: Logger] private (
 
   private val collectionHooks = specialCollections.flatMap(_.collectionHooks)
 
+  override def books: F[List[UserBook]] = wrappedBookService.books
+
   override def createBook(args: MutationCreateBookArgs): F[UserBook] =
     wrappedBookService.createBook(args)
 

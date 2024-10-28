@@ -17,6 +17,8 @@ class BookManagementServiceImpl[F[_]: MonadThrow, G[_]: MonadThrow] private (
     transact: G ~> F
 ) extends BookManagementService[F] {
 
+  override def books: F[List[UserBook]] = transact(bookRepo.books)
+
   override def createBook(args: MutationCreateBookArgs): F[UserBook] = {
     val transaction: LocalDate => G[UserBook] = date =>
       for {

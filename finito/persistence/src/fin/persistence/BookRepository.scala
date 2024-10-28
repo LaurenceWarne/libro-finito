@@ -5,6 +5,7 @@ import java.time.LocalDate
 import fin.Types._
 
 trait BookRepository[F[_]] {
+  def books: F[List[UserBook]]
   def retrieveBook(isbn: String): F[Option[UserBook]]
   def retrieveMultipleBooks(isbns: List[String]): F[List[UserBook]]
   def createBook(book: BookInput, date: LocalDate): F[Unit]

@@ -14,12 +14,12 @@ import fs2.data.csv._
 import fs2.data.csv.generic.semiauto._
 import org.typelevel.log4cats.Logger
 
-import fin.BookAlreadyInCollectionError
 import fin.BookConversions._
 import fin.Types._
 import fin.service.book._
 import fin.service.collection._
 import fin.service.search.BookInfoService
+import fin.{BookAlreadyBeingReadError, BookAlreadyInCollectionError}
 
 /** https://www.goodreads.com/review/import
   */
@@ -50,7 +50,8 @@ class GoodreadsImportService[F[_]: Async: Logger](
       _ <- Logger[F].debug(
         show"Received ${content.length} chars worth of content"
       )
-      rows      <- Async[F].fromEither(result)
+      rows <- Async[F].fromEither(result)
+
       userBooks <- createBooks(rows, langRestrict)
       _         <- markBooks(userBooks)
 
@@ -111,7 +112,10 @@ class GoodreadsImportService[F[_]: Async: Logger](
       langRestrict: Option[String]
   ): F[List[UserBook]] = {
     for {
+      existing <- specialBookManagementService.books
+      existingIsbs = existing.map(_.isbn).toSet
       userBooks <- rows
+        .filterNot(r => existingIsbs.contains(r.sanitizedIsbn))
         .map { b =>
           b.title match {
             case s"$title ($_ #$_)" => b.copy(title = title)
@@ -152,17 +156,20 @@ class GoodreadsImportService[F[_]: Async: Logger](
     for {
       _ <- books.map(b => (b, b.lastRead)).traverseCollect {
         case (b, Some(date)) =>
-          specialBookManagementService.finishReading(
-            MutationFinishReadingArgs(b.toBookInput, Some(date))
-          ) *> Logger[F]
+          specialBookManagementService
+            .finishReading(
+              MutationFinishReadingArgs(b.toBookInput, Some(date))
+            ) *> Logger[F]
             .info(show"Marked ${b.title} as finished on ${date.toString}")
       }
       _ <- books.map(b => (b, b.startedReading)).traverseCollect {
         case (b, Some(date)) =>
-          specialBookManagementService.startReading(
-            MutationStartReadingArgs(b.toBookInput, Some(date))
-          ) *> Logger[F]
-            .info(show"Marked ${b.title} as started on ${date.toString}")
+          specialBookManagementService
+            .startReading(MutationStartReadingArgs(b.toBookInput, Some(date)))
+            .void
+            .recover { case BookAlreadyBeingReadError(_) => () } *>
+            Logger[F]
+              .info(show"Marked ${b.title} as started on ${date.toString}")
       }
       _ <- books.map(b => (b, b.rating)).traverseCollect {
         case (b, Some(rating)) =>

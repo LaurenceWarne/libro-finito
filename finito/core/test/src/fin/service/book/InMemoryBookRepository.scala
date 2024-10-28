@@ -16,6 +16,8 @@ import fin.persistence.BookRepository
 class InMemoryBookRepository[F[_]: Monad](booksRef: Ref[F, List[UserBook]])
     extends BookRepository[F] {
 
+  override def books: F[List[UserBook]] = booksRef.get
+
   override def createBook(book: BookInput, date: LocalDate): F[Unit] =
     booksRef.update(book.toUserBook(dateAdded = date.some) :: _)
 

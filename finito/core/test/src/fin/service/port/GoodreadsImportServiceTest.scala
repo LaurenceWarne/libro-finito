@@ -95,6 +95,22 @@ object GoodreadsImportServiceTest extends IOSuite {
         expect(importResult.unsuccessful.length == 0)
   }
 
+  test(
+    "importResource doesn't fail when called when CSV contains already existing books"
+  ) { case (importService, bookRepo, _, rnd) =>
+    for {
+      (isbn1, isbn2, csv) <- csv(rnd)
+      _                   <- importService.importResource(csv, None)
+      importResult        <- importService.importResource(csv, None)
+      book1               <- bookRepo.retrieveBook(isbn1)
+      book2               <- bookRepo.retrieveBook(isbn2)
+    } yield expect(book1.nonEmpty) &&
+      expect(book2.nonEmpty) &&
+      expect(importResult.successful.length == 0) &&
+      expect(importResult.partiallySuccessful.length == 0) &&
+      expect(importResult.unsuccessful.length == 0)
+  }
+
   test("importResource adds books to correct collections") {
     case (importService, _, collectionService, rnd) =>
       for {

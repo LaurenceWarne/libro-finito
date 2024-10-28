@@ -17,6 +17,9 @@ object SqliteBookRepository extends BookRepository[ConnectionIO] {
 
   import BookFragments._
 
+  override def books: ConnectionIO[List[UserBook]] =
+    allBooks.query[BookRow].to[List].nested.map(_.toBook).value
+
   override def retrieveBook(isbn: String): ConnectionIO[Option[UserBook]] =
     BookFragments
       .retrieveBook(isbn)
