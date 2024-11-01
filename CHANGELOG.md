@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.8.1
+
+* [8107ace](https://github.com/LaurenceWarne/libro-finito/commit/2c22e99edc4108ae8ed544401938311c29cd3d4b): Make Goodreads import less error prone
+* [8107ace](https://github.com/LaurenceWarne/libro-finito/commit/8107acef724cbf2419172755a51fd5801768efc7): Backup the DB whenever the service starts
+
 ## v0.8.0
 
 * [1a5c684](https://github.com/LaurenceWarne/libro-finito/commit/1a5c6849b695a55f4333e86f5966b2d711c47d18): Implement Goodreads import
