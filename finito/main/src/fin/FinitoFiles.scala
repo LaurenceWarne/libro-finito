@@ -43,10 +43,15 @@ object FinitoFiles {
     } yield dbPath.absolute
   }
 
-  def backupPath[F[_]: Sync: Files: Logger](path: Path): F[Path] = {
-    val backupPath = path.resolveSibling(path.fileName.toString + ".bkp")
-    Files[F].copy(path, backupPath, CopyFlags(CopyFlag.ReplaceExisting)) *>
-      Logger[F].info(show"Backed up $path to $backupPath").as(backupPath)
+  def backupPath[F[_]: Sync: Files: Logger](path: Path): F[Option[Path]] = {
+    lazy val backupPath = path.resolveSibling(path.fileName.toString + ".bkp")
+    Sync[F].ifM(Files[F].exists(path))(
+      Files[F].copy(path, backupPath, CopyFlags(CopyFlag.ReplaceExisting)) *>
+        Logger[F]
+          .info(show"Backed up $path to $backupPath")
+          .as(Some(backupPath)),
+      Logger[F].info(show"$path does not exist, not backing up").as(None)
+    )
   }
 
   def config[F[_]: Sync: Files: Logger](env: Env[F]): F[ServiceConfig] =
