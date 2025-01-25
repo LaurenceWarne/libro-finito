@@ -26,7 +26,12 @@ class WikidataSeriesInfoService[F[_]: Concurrent: Parallel] private (
   override def series(args: QuerySeriesArgs): F[List[UserBook]] = {
     val BookInput(title, authors, _, _, _) = args.book
     val author                             = authors.headOption.getOrElse("???")
-    val body                               = sparqlQuery(author, title)
+    // Here we and try work around Wikidata using author names like 'Iain Banks' rather than 'Iain M. Banks'
+    val authorFallback = author.split(" ").toList match {
+      case first :: (_ +: List(last)) => s"$first $last"
+      case _                          => author
+    }
+    val body = sparqlQuery(List(author, authorFallback).distinct, title)
     val request =
       Request[F](uri = uri +? (("query", body)), headers = headers)
     for {
@@ -70,19 +75,26 @@ class WikidataSeriesInfoService[F[_]: Concurrent: Parallel] private (
       )
     } yield book
 
-  private def sparqlQuery(author: String, title: String): String =
+  private def sparqlQuery(authors: List[String], title: String): String = {
+    val authorFilter = authors
+      .map(a => s"""?authorLabel = "$a"@en""")
+      .mkString("FILTER(", " || ", ")")
+
     s"""
       |SELECT ?book ?seriesBookLabel ?ordinal WHERE {
       |  ?book wdt:P31 wd:Q7725634.
       |  ?book rdfs:label "$title"@en.
       |  ?book wdt:P50 ?author.
-      |  ?author rdfs:label "$author"@en.
+      |  ?author rdfs:label ?authorLabel.
+      |  $authorFilter
       |  ?book wdt:P179 ?series.
       |  ?series wdt:P527 ?seriesBook.
       |  ?seriesBook p:P179 ?membership.
       |  ?membership pq:P1545 ?ordinal.
       |  SERVICE wikibase:label { bd:serviceParam wikibase:language "en".}
       |} limit 100""".stripMargin
+
+  }
 }
 
 object WikidataSeriesInfoService {
