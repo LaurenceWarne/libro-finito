@@ -39,8 +39,9 @@ jobs:
       # https://github.com/codecov/codecov-action
       - name: Generate Coverage Reports
         run: ./mill scoverage.xmlReportAll
+
       - name: Send Coverage Reports
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: out/scoverage/xmlReportAll.dest/scoverage.xml
           flags: unittests # optional
