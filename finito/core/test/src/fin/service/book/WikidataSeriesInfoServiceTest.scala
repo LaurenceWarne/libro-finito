@@ -35,13 +35,16 @@ object WikidataSeriesInfoServiceTest extends SimpleIOSuite {
     } yield expect(response.toSet === books.toSet)
   }
 
-  test("series returns error when no book from book info service") {
+  test("series skips book when not found by book info service") {
     val client =
       fixtures.HTTPClient(
         fixtures.SeriesResponses
           .trilogy(fixtures.title1, fixtures.title2, fixtures.title3)
       )
-    val bookInfoService = new BookInfoServiceUsingTitles(List.empty)
+    val books = List(fixtures.title1, fixtures.title3).map(t =>
+      fixtures.emptyBook.copy(title = t, authors = List(fixtures.author))
+    )
+    val bookInfoService = new BookInfoServiceUsingTitles(books)
     val service         = WikidataSeriesInfoService(client, bookInfoService)
     for {
       response <-
@@ -51,8 +54,7 @@ object WikidataSeriesInfoServiceTest extends SimpleIOSuite {
               BookInput(fixtures.title1, List(fixtures.author), "", "", "")
             )
           )
-          .attempt
-    } yield expect(response.isLeft)
+    } yield expect(response.toSet === books.toSet)
   }
 
   test("series returns error when ordinal not integral") {

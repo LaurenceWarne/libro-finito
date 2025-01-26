@@ -9,11 +9,12 @@ import io.circe.parser.decode
 import org.http4s._
 import org.http4s.client._
 import org.http4s.implicits._
+import org.typelevel.log4cats.Logger
 
 import fin.Types._
 import fin.service.search.BookInfoService
 
-class WikidataSeriesInfoService[F[_]: Concurrent: Parallel] private (
+class WikidataSeriesInfoService[F[_]: Concurrent: Parallel: Logger] private (
     client: Client[F],
     bookInfoService: BookInfoService[F]
 ) extends SeriesInfoService[F] {
@@ -52,9 +53,9 @@ class WikidataSeriesInfoService[F[_]: Concurrent: Parallel] private (
             )
             .tupleLeft(title)
       }
-      booksAndOrdinals <- titlesAndOrdinals.parTraverse {
+      booksAndOrdinals <- titlesAndOrdinals.parFlatTraverse {
         case (title, ordinal) =>
-          topSearchResult(author, title).tupleRight(ordinal)
+          topSearchResult(author, title).map(_.tupleRight(ordinal).toList)
       }
     } yield booksAndOrdinals.sortBy(_._2).map(_._1)
   }
@@ -62,18 +63,19 @@ class WikidataSeriesInfoService[F[_]: Concurrent: Parallel] private (
   private def topSearchResult(
       author: String,
       title: String
-  ): F[UserBook] =
+  ): F[Option[UserBook]] =
     for {
       books <-
         bookInfoService
           .search(
             QueryBooksArgs(title.some, author.some, None, None)
           )
-      book <- MonadThrow[F].fromOption(
-        books.headOption,
-        new Exception(show"No book found for $title and $author")
-      )
-    } yield book
+      _ <- MonadThrow[F].whenA(books.isEmpty) {
+        Logger[F].warn(
+          show"No book information found for $title and $author, not showing in series"
+        )
+      }
+    } yield books.headOption
 
   private def sparqlQuery(authors: List[String], title: String): String = {
     val authorFilter = authors
@@ -98,7 +100,7 @@ class WikidataSeriesInfoService[F[_]: Concurrent: Parallel] private (
 }
 
 object WikidataSeriesInfoService {
-  def apply[F[_]: Concurrent: Parallel](
+  def apply[F[_]: Concurrent: Parallel: Logger](
       client: Client[F],
       bookInfoService: BookInfoService[F]
   ) = new WikidataSeriesInfoService[F](client, bookInfoService)
