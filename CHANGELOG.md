@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.8.2
+
+* [e083fe8](https://github.com/LaurenceWarne/libro-finito/commit/644b6b6320e323f1fd90258d36ba96ba7351c154): Improve book series lookups.
+
 ## v0.8.1
 
 * [8107ace](https://github.com/LaurenceWarne/libro-finito/commit/2c22e99edc4108ae8ed544401938311c29cd3d4b): Make Goodreads import less error prone
