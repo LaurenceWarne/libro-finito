@@ -1,8 +1,12 @@
 # Changelog
 
+## v0.8.3
+
+* [fc74700](https://github.com/LaurenceWarne/libro-finito/commit/fc74700ce2662d7765237e65a3f569f95ce2621f): Fix over-permissive address binding
+
 ## v0.8.2
 
-* [e083fe8](https://github.com/LaurenceWarne/libro-finito/commit/644b6b6320e323f1fd90258d36ba96ba7351c154): Improve book series lookups.
+* [e083fe8](https://github.com/LaurenceWarne/libro-finito/commit/644b6b6320e323f1fd90258d36ba96ba7351c154): Improve book series lookups
 
 ## v0.8.1
 
