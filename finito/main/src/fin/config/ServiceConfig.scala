@@ -22,7 +22,7 @@ object ServiceConfig {
 
   val defaultDatabaseUser: String      = ""
   val defaultDatabasePassword: String  = ""
-  val defaultHost: String              = "0.0.0.0"
+  val defaultHost: String              = "127.0.0.1"
   val defaultPort: Int                 = 56848
   val defaultDefaultCollection: String = "My Books"
   val defaultSpecialCollections: List[SpecialCollection] = List(

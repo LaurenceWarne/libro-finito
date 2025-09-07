@@ -10,8 +10,8 @@ Also check out the [Changelog](/CHANGELOG.md).
 The server may be configured in a number of ways via a [HOCON](https://github.com/lightbend/config/blob/main/HOCON.md) file whose expected location is `$XDG_CONFIG_HOME/libro-finito/service.conf`:
 
 ```hocon
-port = 56848,
-default-collection = "My Books",
+port = 56848
+default-collection = "My Books"
 special-collections = [
   {
     name = "My Books",

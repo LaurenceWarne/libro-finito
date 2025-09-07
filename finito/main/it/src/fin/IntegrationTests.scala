@@ -7,7 +7,11 @@ import caliban.client.Operations._
 import caliban.client.SelectionBuilder
 import cats.effect._
 import cats.syntax.all._
+import com.dimafeng.testcontainers.GenericContainer.FileSystemBind
 import com.dimafeng.testcontainers._
+import fs2._
+import fs2.io.file._
+import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.wait.strategy.Wait
 import sttp.capabilities.fs2.Fs2Streams
 import sttp.client3._
@@ -31,13 +35,30 @@ object IntegrationTests extends IOSuite {
   val container: Resource[IO, GenericContainer] =
     Resource.make(
       for {
+        cfg <- Files[IO].createTempFile
+        _ <- Stream
+          .emits(
+            // We need 'host = 0.0.0.0' for the docker port mapping
+            "host = 0.0.0.0\ndefault-collection = \"My Books\""
+              .getBytes("UTF-8")
+          )
+          .through(Files[IO].writeAll(cfg))
+          .compile
+          .drain
         container <- IO(
           GenericContainer(
             "finito-main",
             exposedPorts = Seq(ServiceConfig.defaultPort),
             waitStrategy = Wait
               .forHttp("/version")
-              .forPort(ServiceConfig.defaultPort)
+              .forPort(ServiceConfig.defaultPort),
+            fileSystemBind = Seq(
+              FileSystemBind(
+                cfg.absolute.toString,
+                "/root/.config/libro-finito/service.conf",
+                BindMode.READ_ONLY
+              )
+            )
           )
         )
         _ <- IO(container.start())
